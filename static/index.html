@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clara — Venta automatizada de seguros | Colsubsidio × 30X</title>
+<meta name="description" content="Clara: agente conversacional de venta de seguros de Colsubsidio. Diagnóstico, recomendación con respaldo documental, contrato, pago y emisión de póliza.">
+<script>
+  // Aplica el tema guardado antes de pintar para evitar parpadeo (default: dark).
+  (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brandlock">
+      <span class="cobrand" aria-label="Colsubsidio por 30X">
+        <img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio">
+        <span class="xsign">×</span>
+        <img class="logo-30x" src="/static/img/30x.png" alt="30X">
+      </span>
+      <span class="vdiv"></span>
+      <div class="product">
+        <div class="mark">C</div>
+        <div>
+          <b>Clara</b>
+          <span>Asesora digital de seguros</span>
+        </div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <button data-view="inicio" class="active">Inicio</button>
+      <button data-view="demo">Demo interactiva</button>
+      <button data-view="arquitectura">Arquitectura</button>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
+      <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="i-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <button class="nav-cta" data-view="demo">Probar la demo</button>
+  </div>
+</header>
+
+<!-- ============ INICIO ============ -->
+<main id="inicio" class="view active">
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">Reto 2 · Venta automatizada de seguros · Colsubsidio × 30X</span>
+        <h1>Venta de seguros <em>automatizada</em>, de principio a fin.</h1>
+        <p class="lead">Clara acompaña al afiliado desde el "no sé qué necesito" hasta "ya quedé asegurado":
+          diagnóstico, recomendación con respaldo documental, contrato con firma electrónica, pago en línea y
+          emisión inmediata de la póliza. Sin intervención humana y con trazabilidad total.</p>
+        <div class="hero-actions">
+          <button class="btn primary" data-view="demo">Iniciar conversación con Clara</button>
+          <button class="btn ghost" data-view="arquitectura">Ver la arquitectura</button>
+        </div>
+        <div class="hero-dev">
+          <span>Desarrollado por</span>
+          <span class="who">Mariana Sinisterra</span>
+          <a class="handle" href="https://github.com/MarianaCodebase" target="_blank" rel="noopener">@MarianaCodebase</a>
+        </div>
+      </div>
+      <div class="hero-card" aria-hidden="true">
+        <div class="hc-head">
+          <div class="hc-avatar">C</div>
+          <div><b>Clara</b><br><small><span class="live-dot"></span> En línea · responde al instante</small></div>
+        </div>
+        <div class="hc-body">
+          <div class="mini bot">Hola, soy Clara. Para recomendarte lo adecuado, primero quiero entender tu situación.</div>
+          <div class="mini user">Vivo en arriendo con mi pareja e hijo.</div>
+          <div class="mini bot">Con base en tu perfil te propongo el Seguro de Vida: protege el ingreso de tu familia.</div>
+          <div class="mini user">Me interesa. ¿Me lo envías por escrito?</div>
+          <div class="mini bot">Te envié el resumen a tu correo y aquí tienes tu enlace de pago seguro.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="kpis">
+        <div class="kpi"><b>8</b><span>fases automatizadas de punta a punta</span></div>
+        <div class="kpi"><b>0</b><span>afirmaciones sin respaldo documental</span></div>
+        <div class="kpi"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
+        <div class="kpi"><b>&lt; 5 min</b><span>del primer mensaje a la póliza emitida</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <div class="sec-head">
+        <span class="eyebrow">El problema y la solución</span>
+        <h2>El afiliado no sabe qué necesita. Clara lo lleva de la mano.</h2>
+        <p>Vender un seguro exige diagnóstico, información veraz y cumplimiento regulatorio. Clara resuelve las tres cosas
+          con una conversación clara y honesta, y con controles que viven en el código, no solo en el prompt.</p>
+      </div>
+      <div class="cols-3">
+        <div class="feature">
+          <div class="ic" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Diagnóstico primero, no venta</h3>
+          <p>Antes de mencionar un solo producto, Clara entiende con quién vives, qué te preocupa y qué proteges. La
+            recomendación se ordena por ajuste al perfil, no por precio.</p>
+        </div>
+        <div class="feature">
+          <div class="ic" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Cero invención</h3>
+          <p>Toda cobertura sale de documentos reales de póliza (RAG) y todo precio de un motor de reglas determinístico.
+            Un guardrail de salida audita cada respuesta antes de enviarla.</p>
+        </div>
+        <div class="feature">
+          <div class="ic" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <h3>Cierre completo</h3>
+          <p>Contrato en PDF con firma electrónica, consentimiento registrado, pago en pasarela (sandbox Wompi) y
+            emisión automática de la póliza. Todo sin un asesor humano.</p>
+        </div>
+      </div>
+
+      <div class="compliance">
+        <div>
+          <h3>Automatización sin sacrificar el control que una entidad regulada necesita</h3>
+          <p>La IA solo conversa. Las coberturas salen de los documentos, los precios de un motor auditable, el pago de
+            una pasarela y cada decisión queda registrada en SQLite.</p>
+        </div>
+        <div class="comp-list">
+          <div class="comp-item"><span class="chk">✓</span> Tratamiento de datos conforme a la Ley 1581 de 2012</div>
+          <div class="comp-item"><span class="chk">✓</span> Consentimiento explícito con texto y fecha registrados</div>
+          <div class="comp-item"><span class="chk">✓</span> Guardrails en el código, no solo en el prompt</div>
+          <div class="comp-item"><span class="chk">✓</span> Auditoría reconstruible de cada conversación</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ DEMO ============ -->
+<main id="demo" class="view">
+  <div class="demo-wrap">
+    <div class="container">
+      <div class="demo-top">
+        <div>
+          <h2>Demo interactiva</h2>
+          <p>Conversa con Clara como lo haría un afiliado. El agente corre con la API de Gemini en el backend.</p>
+        </div>
+        <button class="btn ghost" id="resetDemo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reiniciar
+        </button>
+      </div>
+
+      <div class="demo-grid">
+        <div class="chat-card">
+          <div class="chat-head">
+            <div class="hc-avatar">C</div>
+            <div><b>Clara</b><br><small><span class="live-dot"></span> Asesora digital</small></div>
+            <span class="chan" id="chanTag">Canal: WhatsApp</span>
+          </div>
+          <div class="chat-scroll" id="chat"></div>
+          <div class="composer">
+            <div class="chips" id="chips"></div>
+            <div class="input-row">
+              <input id="userInput" type="text" placeholder="Escribe un mensaje..." autocomplete="off" maxlength="2000" />
+              <button id="sendBtn" aria-label="Enviar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side">
+          <div class="panel">
+            <h3>Estado de la sesión</h3>
+            <div class="pbody">
+              <div class="states-v" id="stateTrack">
+                <div class="st" data-state="DIAGNOSTICO"><span class="dot">1</span><span class="txt">Diagnóstico</span></div>
+                <div class="st" data-state="RECOMENDACION"><span class="dot">2</span><span class="txt">Recomendación</span></div>
+                <div class="st" data-state="DUDAS"><span class="dot">3</span><span class="txt">Dudas</span></div>
+                <div class="st" data-state="CIERRE"><span class="dot">4</span><span class="txt">Cierre</span></div>
+                <div class="st" data-state="EMITIDA"><span class="dot">5</span><span class="txt">Emitida</span></div>
+                <div class="st" data-state="CERRADA"><span class="dot">6</span><span class="txt">Cerrada</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Perfil detectado</h3>
+            <div class="pbody">
+              <div class="profile-list" id="profileList">
+                <div class="pf"><span class="k">Hogar</span><span class="v empty" data-pf="hogar">Sin datos</span></div>
+                <div class="pf"><span class="k">Vehículo</span><span class="v empty" data-pf="vehiculo">Sin datos</span></div>
+                <div class="pf"><span class="k">Dependientes</span><span class="v empty" data-pf="dependientes">Sin datos</span></div>
+                <div class="pf"><span class="k">Ocupación</span><span class="v empty" data-pf="ocupacion">Sin datos</span></div>
+                <div class="pf"><span class="k">Rango de edad</span><span class="v empty" data-pf="edad">Sin datos</span></div>
+                <div class="pf"><span class="k">Prioridad</span><span class="v empty" data-pf="prioridad">Sin datos</span></div>
+                <div class="pf"><span class="k">Otros datos</span><span class="v empty" data-pf="notas">Sin datos</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Registro de auditoría</h3>
+            <div class="pbody">
+              <div class="audit" id="audit"><div class="audit-empty">Aún no hay eventos registrados.</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="guard-mini">
+              <div class="gi" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <b>Guardrail activo</b>
+                <p id="guardText">Cada respuesta se audita antes de enviarse.</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ ARQUITECTURA ============ -->
+<main id="arquitectura" class="view">
+  <div class="arch">
+    <div class="container">
+      <div class="sec-head">
+        <span class="eyebrow">Arquitectura de la solución</span>
+        <h2>Cuatro capas, un flujo determinístico y auditable</h2>
+        <p>El agente conversacional orquesta la interacción, pero los cálculos de precio y la emisión son
+          determinísticos y nunca los genera el modelo de lenguaje.</p>
+      </div>
+
+      <div class="arch-flow">
+        <div class="afl" style="--c:var(--info)">
+          <div class="afl-head">
+            <span class="afl-ic">01</span>
+            <div><b>Canales</b><span>Entrada del afiliado</span></div>
+          </div>
+          <div class="afl-nodes">
+            <span class="nchip">Chat web</span>
+            <span class="nchip">WhatsApp (Twilio)</span>
+            <span class="nchip mono">POST /api/chat</span>
+          </div>
+        </div>
+        <div class="afl-conn"><i></i></div>
+
+        <div class="afl" style="--c:var(--primary)">
+          <div class="afl-head">
+            <span class="afl-ic">02</span>
+            <div><b>Agente · Clara</b><span>Gemini con tool use</span></div>
+          </div>
+          <div class="afl-nodes">
+            <span class="nchip mono">Gemini API</span>
+            <span class="nchip">Orquestación conversacional</span>
+            <span class="nchip">Extracción estructurada (responseSchema)</span>
+          </div>
+        </div>
+        <div class="afl-conn"><i></i></div>
+
+        <div class="afl" style="--c:var(--warn)">
+          <div class="afl-head">
+            <span class="afl-ic">03</span>
+            <div><b>Backend</b><span>Control determinístico</span></div>
+          </div>
+          <div class="afl-nodes">
+            <span class="nchip mono">FastAPI</span>
+            <span class="nchip mono">SQLite (sesiones + auditoría)</span>
+            <span class="nchip">Máquina de estados</span>
+            <span class="nchip">Guardrails en código</span>
+          </div>
+        </div>
+        <div class="afl-conn"><i></i></div>
+
+        <div class="afl" style="--c:#a78bfa">
+          <div class="afl-head">
+            <span class="afl-ic">04</span>
+            <div><b>Servicios</b><span>Determinísticos</span></div>
+          </div>
+          <div class="afl-nodes">
+            <span class="nchip">RAG · coberturas</span>
+            <span class="nchip">Motor de reglas</span>
+            <span class="nchip">PDF (fpdf2)</span>
+            <span class="nchip">Wompi (sandbox)</span>
+            <span class="nchip">SMTP / Twilio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-head" style="margin-top:40px">
+        <span class="eyebrow">Workflow automatizado</span>
+        <h2 style="font-size:24px">El pipeline se ejecuta solo, de punta a punta</h2>
+      </div>
+      <div class="pipeline">
+        <div class="plnode"><span class="pl-dot">00</span><div class="pl-card"><h4>Entrada y sesión <span class="tagm">init</span></h4><p>Se crea la sesión en estado Diagnóstico y se persiste en SQLite. Primer mensaje: saludo y aviso de tratamiento de datos.</p></div></div>
+        <div class="plnode"><span class="pl-dot">01</span><div class="pl-card"><h4>Diagnóstico <span class="tagm">registrar_perfil</span></h4><p>Preguntas abiertas sobre la vida del afiliado. El perfil se extrae con doble capa: herramientas del agente + extracción estructurada de Gemini.</p></div></div>
+        <div class="plnode"><span class="pl-dot">02</span><div class="pl-card"><h4>Recomendación <span class="tagm">recomendar</span></h4><p>consultar_coberturas() y cotizar() arman las opciones rankeadas por ajuste, con lo que cubren, lo que no y su precio real.</p></div></div>
+        <div class="plnode"><span class="pl-dot">03</span><div class="pl-card"><h4>Resolución de dudas <span class="tagm">RAG</span></h4><p>Cada respuesta se respalda en las condiciones reales. Fuera de alcance, se escala a un humano con transparencia.</p></div></div>
+        <div class="plnode"><span class="pl-dot">04</span><div class="pl-card"><h4>Datos y contrato <span class="tagm">generar_contrato</span></h4><p>Nombre, contacto y datos del bien (carro, moto, mascota o viaje) capturados por regex + extracción estructurada. PDF único con detalle de póliza y firma.</p></div></div>
+        <div class="plnode"><span class="pl-dot">05</span><div class="pl-card"><h4>Firma y pago <span class="tagm">Wompi</span></h4><p>Firma electrónica con un botón: consentimiento registrado y checkout con tarjeta de prueba (aprueba o rechaza según la tarjeta).</p></div></div>
+        <div class="plnode"><span class="pl-dot">06</span><div class="pl-card"><h4>Emisión <span class="tagm">webhook</span></h4><p>Con la transacción APPROVED, el backend crea la póliza y genera la carátula en PDF con la referencia de pago, sin intervención del modelo.</p></div></div>
+        <div class="plnode"><span class="pl-dot">07</span><div class="pl-card"><h4>Post-venta <span class="tagm">CSAT</span></h4><p>Se explica cómo usar la póliza, se aplica una encuesta de satisfacción y la sesión pasa a Cerrada.</p></div></div>
+      </div>
+
+      <div class="sec-head"><h2 style="font-size:22px">Herramientas del agente</h2></div>
+      <table class="tools">
+        <thead><tr><th>Herramienta</th><th>Entrada</th><th>Salida</th><th>Quién decide el contenido</th></tr></thead>
+        <tbody>
+          <tr><td><code>consultar_coberturas</code></td><td>producto, tipo (amparo / exclusión / condición)</td><td>chunks con texto de la póliza y fuente</td><td>Documentos reales de Colsubsidio <span class="src">(RAG)</span></td></tr>
+          <tr><td><code>cotizar</code></td><td>producto, edad, dependientes</td><td>precio mensual y desglose</td><td>Motor de reglas determinístico <span class="src">(nunca el modelo)</span></td></tr>
+          <tr><td><code>registrar_datos</code></td><td>contacto y datos del bien</td><td>datos de contratación validados</td><td>Backend <span class="src">(+ regex + responseSchema)</span></td></tr>
+          <tr><td><code>generar_contrato</code></td><td>producto</td><td>PDF único: datos, detalle de póliza y firma</td><td>Plantilla con datos de la sesión</td></tr>
+          <tr><td><code>firmar-contrato</code></td><td>producto (botón de firma)</td><td>consentimiento + enlace y referencia de pago</td><td>Backend + Wompi sandbox</td></tr>
+          <tr><td><code>escalar_a_humano</code></td><td>motivo</td><td>ticket creado</td><td>Backend</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="container foot-inner">
+    <div class="foot-credits">
+      <span class="cobrand">
+        <img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio">
+        <span class="xsign">×</span>
+        <img class="logo-30x" src="/static/img/30x.png" alt="30X">
+      </span>
+      <span><b>Clara</b> · Reto 2 — Venta automatizada de seguros ·
+        <a href="https://innovacion.colsubsidio.com/" target="_blank" rel="noopener" style="color:var(--primary-d);font-weight:600">Hackathon Colsubsidio × 30X 2026</a></span>
+    </div>
+    <div class="dev-credit">
+      <span>Developer</span>
+      <b>Mariana Sinisterra</b>
+      <a href="https://github.com/MarianaCodebase" target="_blank" rel="noopener">@MarianaCodebase</a>
+    </div>
+  </div>
+  <div class="container foot-note">
+    Prototipo demostrativo. Datos tratados conforme a la Ley 1581 de 2012.
+  </div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

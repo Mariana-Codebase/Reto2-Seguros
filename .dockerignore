@@ -1,0 +1,9 @@
+.env
+.env.example
+.git
+__pycache__/
+*.pyc
+var/
+*.db
+data/reference/
+README.md
