@@ -75,8 +75,8 @@ class FirmaReq(BaseModel):
 def _startup():
     purged = store.purge_old_sessions()
     logger.info(
-        "Clara v%s lista · entorno=%s · modelo=%s · sesiones purgadas=%d",
-        __version__, settings.ENV, settings.GEMINI_MODEL, purged,
+        "Clara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
+        __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,
     )
 
 
