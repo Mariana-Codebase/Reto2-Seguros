@@ -1,3 +1,22 @@
 {
-  "python.defaultInterpreterPath": "C:\\Users\\maria\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+  // Clara — Colsubsidio × 30X · configuración del workspace
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "editor.rulers": [100],
+  "files.eol": "
+",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "var/": true
+  },
+  "files.watcherExclude": {
+    "**/var/**": true
+  },
+  "[python]": {
+    "editor.tabSize": 4
+  },
+  "[json]": {
+    "editor.tabSize": 2
+  }
 }

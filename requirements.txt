@@ -1,7 +1,16 @@
+# Clara — Venta automatizada de seguros (Colsubsidio × 30X)
+# Actualizado: 23 de julio de 2026
+
+# --- Núcleo de la aplicación ---
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 requests==2.32.3
 pydantic==2.10.4
 python-multipart==0.0.20
 python-dotenv==1.0.1
+
+# --- Documentos (contratos y pólizas en PDF) ---
 fpdf2==2.8.2
+
+# --- Procesamiento de la base de afiliados (scripts/perfilar_base.py) ---
+openpyxl==3.1.5

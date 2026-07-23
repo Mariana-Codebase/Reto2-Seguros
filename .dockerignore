@@ -1,9 +1,21 @@
+# Fuera de la imagen: secretos, runtime, datos crudos y archivos de desarrollo.
 .env
 .env.example
 .git
+.gitignore
+.claude/
+.vscode/
 __pycache__/
 *.pyc
 var/
 *.db
+*.db-wal
+*.db-shm
+*.tmp
+sid.tmp
+scripts/
 data/reference/
 README.md
+# La base real de afiliados JAMÁS entra a la imagen
+Usos_Productos_Afiliados*
+*.xlsx
