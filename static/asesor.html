@@ -125,12 +125,12 @@ function propSec(prop){
 function contratoSec(s){
   const c = (s.payload && s.payload.contrato) || {};
   const datos = (s.payload && s.payload.datos_contratante) || {};
-  const pol = s.payload && s.payload.poliza;
+  const vinc = s.payload && s.payload.vinculacion;
   return '<div class="sol-sec"><h4>Contratación</h4>' +
     kv("Tomador", datos.nombre) + kv("Contacto", datos.correo || datos.telefono) +
     kv("Solicitud", c.solicitud) + kv("Prima", c.precio_formateado ? c.precio_formateado + "/mes" : null) +
     kv("Firmado", c.firmado ? "Sí · " + ((c.firma && c.firma.at) || "") : "No") +
-    (pol ? kv("Póliza (interna)", pol.numero) : "") + '</div>';
+    (vinc ? kv("Vinculación radicada", vinc.radicado) : "") + '</div>';
 }
 
 function card(s){
@@ -163,11 +163,11 @@ function card(s){
     a.textContent = "Ver contrato (PDF)";
     actions.appendChild(a);
   }
-  const pol = s.payload && s.payload.poliza;
-  if (pol && pol.url) {
+  const vinc = s.payload && s.payload.vinculacion;
+  if (vinc && vinc.url) {
     const a = document.createElement("a");
-    a.href = pol.url; a.target = "_blank"; a.rel = "noopener";
-    a.textContent = "Ver póliza (PDF)";
+    a.href = vinc.url; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "Ver resumen de vinculación (PDF)";
     actions.appendChild(a);
   }
   const next = ESTADOS_SIGUIENTE[s.estado];

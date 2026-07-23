@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Clara — Venta automatizada de seguros | Colsubsidio × 30X</title>
-<meta name="description" content="Clara: agente conversacional de venta de seguros de Colsubsidio. Diagnóstico, recomendación con respaldo documental, contrato, pago y emisión de póliza.">
+<meta name="description" content="Clara: agente conversacional de venta de seguros de Colsubsidio. Diagnóstico, recomendación con respaldo documental, contrato, pago y confirmación de la vinculación.">
 <script>
   // Aplica el tema guardado antes de pintar para evitar parpadeo (default: dark).
   (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
@@ -53,7 +53,8 @@
         <h1>Venta de seguros <em>automatizada</em>, de principio a fin.</h1>
         <p class="lead">Clara acompaña al afiliado desde el "no sé qué necesito" hasta "ya quedé asegurado":
           diagnóstico, recomendación con respaldo documental, contrato con firma electrónica, pago en línea y
-          emisión inmediata de la póliza. Sin intervención humana y con trazabilidad total.</p>
+          confirmación de la vinculación, que pasa a la aseguradora para emitir la póliza. Sin intervención
+          humana y con trazabilidad total.</p>
         <div class="hero-actions">
           <button class="btn primary" data-view="demo">Iniciar conversación con Clara</button>
           <button class="btn ghost" data-view="arquitectura">Ver la arquitectura</button>
@@ -84,7 +85,7 @@
         <div class="kpi"><b>8</b><span>fases automatizadas de punta a punta</span></div>
         <div class="kpi"><b>0</b><span>afirmaciones sin respaldo documental</span></div>
         <div class="kpi"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
-        <div class="kpi"><b>&lt; 5 min</b><span>del primer mensaje a la póliza emitida</span></div>
+        <div class="kpi"><b>&lt; 5 min</b><span>del primer mensaje a la vinculación confirmada</span></div>
       </div>
     </div>
   </section>
@@ -120,7 +121,7 @@
           </div>
           <h3>Cierre completo</h3>
           <p>Contrato en PDF con firma electrónica, consentimiento registrado, pago en pasarela (sandbox Wompi) y
-            emisión automática de la póliza. Todo sin un asesor humano.</p>
+            confirmación de la vinculación, que se transmite a la aseguradora. Todo sin un asesor humano.</p>
         </div>
       </div>
 
@@ -190,7 +191,7 @@
                 <div class="st" data-state="RECOMENDACION"><span class="dot">2</span><span class="txt">Recomendación</span></div>
                 <div class="st" data-state="DUDAS"><span class="dot">3</span><span class="txt">Dudas</span></div>
                 <div class="st" data-state="CIERRE"><span class="dot">4</span><span class="txt">Cierre</span></div>
-                <div class="st" data-state="EMITIDA"><span class="dot">5</span><span class="txt">Emitida</span></div>
+                <div class="st" data-state="VINCULADA"><span class="dot">5</span><span class="txt">Vinculada</span></div>
                 <div class="st" data-state="CERRADA"><span class="dot">6</span><span class="txt">Cerrada</span></div>
               </div>
             </div>
@@ -323,8 +324,8 @@
         <div class="plnode"><span class="pl-dot">03</span><div class="pl-card"><h4>Resolución de dudas <span class="tagm">RAG</span></h4><p>Cada respuesta se respalda en las condiciones reales. Fuera de alcance, se escala a un humano con transparencia.</p></div></div>
         <div class="plnode"><span class="pl-dot">04</span><div class="pl-card"><h4>Datos y contrato <span class="tagm">generar_contrato</span></h4><p>Nombre, contacto y datos del bien (carro, moto, mascota o viaje) capturados por regex + extracción estructurada. PDF único con detalle de póliza y firma.</p></div></div>
         <div class="plnode"><span class="pl-dot">05</span><div class="pl-card"><h4>Firma y pago <span class="tagm">Wompi</span></h4><p>Firma electrónica con un botón: consentimiento registrado y checkout con tarjeta de prueba (aprueba o rechaza según la tarjeta).</p></div></div>
-        <div class="plnode"><span class="pl-dot">06</span><div class="pl-card"><h4>Emisión <span class="tagm">webhook</span></h4><p>Con la transacción APPROVED, el backend crea la póliza y genera la carátula en PDF con la referencia de pago, sin intervención del modelo.</p></div></div>
-        <div class="plnode"><span class="pl-dot">07</span><div class="pl-card"><h4>Post-venta <span class="tagm">CSAT</span></h4><p>Se explica cómo usar la póliza, se aplica una encuesta de satisfacción y la sesión pasa a Cerrada.</p></div></div>
+        <div class="plnode"><span class="pl-dot">06</span><div class="pl-card"><h4>Vinculación <span class="tagm">webhook</span></h4><p>Con la transacción APPROVED, el backend confirma y radica la vinculación y genera el resumen en PDF. La póliza la emite la aseguradora (panel del asesor), no Colsubsidio.</p></div></div>
+        <div class="plnode"><span class="pl-dot">07</span><div class="pl-card"><h4>Post-venta <span class="tagm">CSAT</span></h4><p>Se confirma la cobertura, se aplica una encuesta de satisfacción y la vinculación pasa a la bandeja del asesor.</p></div></div>
       </div>
 
       <div class="sec-head"><h2 style="font-size:22px">Herramientas del agente</h2></div>

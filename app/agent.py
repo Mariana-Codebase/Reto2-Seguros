@@ -117,9 +117,10 @@ FASE 5 · FIRMA Y PAGO (lo maneja el sistema, no tú)
 - Tras generar el contrato, invita al afiliado a revisarlo y firmarlo con el botón. NO llames a más herramientas ni repitas la invitación en cada turno.
 - Cuando firme, el sistema registra el consentimiento y genera el enlace de pago con su referencia. Nunca pidas datos de tarjeta, contraseñas ni códigos.
 
-FASE 6 · EMISIÓN Y POST-VENTA
-- Cuando el backend confirme el pago, confirma con calidez que ya quedó asegurado, menciona su número de póliza y la referencia de pago, explica en máximo 3 líneas cómo usarla (línea 018000 94 7900, qué hacer ante un siniestro) y ofrece una encuesta de satisfacción de 1 a 5.
-- Recuerda el rol de Colsubsidio: distribuye seguros de varias aseguradoras, no los fabrica. Si el afiliado pregunta quién emite su póliza, explícale con transparencia que su solicitud queda gestionada con la aseguradora a través de Colsubsidio y que un asesor de la caja hace seguimiento hasta la emisión oficial.
+FASE 6 · CONFIRMACIÓN DE LA VINCULACIÓN Y POST-VENTA
+- IMPORTANTE: Colsubsidio DISTRIBUYE seguros de varias aseguradoras; NO emite pólizas. Por eso el cierre NO es "emitir una póliza": es confirmar la vinculación y dejarla radicada para que la aseguradora expida la póliza.
+- Cuando el backend confirme el pago, confirma con calidez que su vinculación quedó CONFIRMADA y RADICADA, menciona su número de radicado y la referencia de pago, y aclara con transparencia que la ASEGURADORA emitirá la póliza y se la hará llegar (Colsubsidio le hace seguimiento). En máximo 3 líneas dile cómo quedará cubierto y la línea de servicio 018000 94 7900. Ofrece una encuesta de satisfacción de 1 a 5.
+- NUNCA digas que Colsubsidio "emitió" o "expidió" la póliza, ni inventes un número de póliza activa. Habla de vinculación radicada y de la aseguradora como emisora.
 
 CONTEXTO DE LA BASE DE AFILIADOS (si aplica)
 - Algunas sesiones llegan ancladas a un perfil real de la base de afiliados (verás un mensaje [PERFIL DE LA BASE DE AFILIADOS]). Úsalo para personalizar sin recitarlo, confirma en vez de interrogar, y recuerda: lo que la persona diga en la conversación SIEMPRE prevalece sobre lo que dice la base.
@@ -261,7 +262,7 @@ TOOLS: list[dict[str, Any]] = [
 ]
 
 _SNAPSHOT_FIELDS = [
-    "id", "canal", "estado", "perfil", "quotes", "consentimientos", "poliza",
+    "id", "canal", "estado", "perfil", "quotes", "consentimientos", "vinculacion",
     "contacto", "payments", "doc_resumen", "datos", "contrato", "contrato_doc",
     "firma", "messages", "afiliado", "propension",
 ]
@@ -278,7 +279,7 @@ class Session:
         self.perfil: dict[str, Any] = {}
         self.quotes: dict[str, Any] = {}
         self.consentimientos: dict[str, Any] = {}
-        self.poliza: dict[str, Any] | None = None
+        self.vinculacion: dict[str, Any] | None = None   # resumen de vinculación (Colsubsidio no emite pólizas)
         self.contacto: dict[str, str] = {}
         self.payments: dict[str, Any] = {}          # token -> pago
         self.doc_resumen: str | None = None
@@ -665,7 +666,7 @@ class Session:
         if destino and canal == "correo":
             cuerpo = (f"Hola {nombre},\n\nAdjunto encontrarás el contrato firmado del {contrato['producto']} "
                       f"(solicitud {contrato['solicitud']}).\nA continuación recibirás el enlace de pago para "
-                      f"activar tu póliza.\n\nColsubsidio Seguros.")
+                      f"confirmar tu vinculación.\n\nColsubsidio Seguros.")
             entrega = notify.send_email(destino, f"Tu contrato {contrato['solicitud']} - Colsubsidio", cuerpo,
                                         str(pdfgen.DOCS_DIR / fname))
         elif destino and canal == "whatsapp":
@@ -708,7 +709,7 @@ class Session:
                          if k in ("solicitud", "producto", "producto_id", "precio",
                                   "precio_formateado", "vigencia", "inicio", "fin",
                                   "firmado", "firma", "url")},
-            "poliza": self.poliza,
+            "vinculacion": self.vinculacion,
             "canal_venta": self.canal,
         }
 
@@ -721,48 +722,51 @@ class Session:
                                contrato.get("producto_id"), estado, self._paquete_asesor())
         self._log("db", "ASESOR", f"Solicitud {sol_id} transmitida a la bandeja del asesor · estado={estado}")
 
-    # ---- emisión de póliza (determinística, disparada por el pago aprobado) ----
-    def emitir_poliza(self, producto: str, referencia: str | None = None) -> dict[str, Any]:
+    # ---- confirmación de la vinculación (Colsubsidio DISTRIBUYE, no emite) ----
+    # Colsubsidio no diseña ni emite pólizas: facilita el acceso a seguros de
+    # distintas aseguradoras. Por eso el cierre no es "emitir una póliza", sino
+    # confirmar y radicar la vinculación (aceptación + confirmación + resumen) y
+    # transmitirla a la aseguradora, que es quien expide la póliza.
+    def confirmar_vinculacion(self, producto: str, referencia: str | None = None) -> dict[str, Any]:
         producto = producto.lower()
         p = kb.CATALOG[producto]
-        inicio = dt.date.today()
-        fin = inicio.replace(year=inicio.year + 1)
-        numero = f"{producto[:3].upper()}-{inicio.year}-{uuid.uuid4().hex[:6].upper()}"
-        self.poliza = {
-            "numero": numero, "producto": p["nombre"], "producto_id": producto,
-            "inicio": inicio.isoformat(), "fin": fin.isoformat(),
+        radicado = (self.contrato or {}).get("solicitud") or \
+            f"SOL-{dt.date.today().year}-{uuid.uuid4().hex[:6].upper()}"
+        self.vinculacion = {
+            "radicado": radicado, "producto": p["nombre"], "producto_id": producto,
+            "fecha": dt.date.today().isoformat(), "estado": "radicada",
             "precio": self.quotes.get(producto, {}).get("precio_mensual"),
             "cubre": p["amparo"], "no_cubre": p["exclusion"], "fuente": p["fuente"],
             "referencia": referencia, "tomador": self.datos.get("nombre") or "Afiliado Colsubsidio",
             "bien": self._bien_asegurado(producto),
         }
-        self._log("db", "WOMPI", f"Webhook APPROVED recibido · referencia {referencia or '—'}")
-        self._log("db", "POLICIES", f"INSERT policies · N.º {numero}, estado=activa")
+        self._log("db", "PAYMENTS", f"Pago confirmado · referencia {referencia or '—'}")
+        self._log("db", "VINCULACIONES",
+                  f"INSERT vinculaciones · radicado {radicado}, estado=radicada (la aseguradora emite la póliza)")
 
-        fname = pdfgen.generar_poliza_pdf(self.id, self.poliza)
+        fname = pdfgen.generar_resumen_vinculacion_pdf(self.id, self.vinculacion)
         url = f"{settings.public_base_url}/docs/{fname}"
-        self.poliza["url"] = url
+        self.vinculacion["url"] = url
 
         canal = self.contacto.get("canal", "correo")
         destino = self.contacto.get("destino", "")
         entrega = {"simulado": True, "detalle": "sin destino"}
         if destino and canal == "correo":
-            cuerpo = (f"Felicitaciones, ya quedaste asegurado.\n\nAdjunto encontrarás la carátula de tu póliza "
-                      f"N.º {numero} del {p['nombre']}.\nReferencia de pago: {referencia or '—'}.\n"
-                      f"Ante un siniestro comunícate con la línea 018000 94 7900.\n\nColsubsidio Seguros.")
-            entrega = notify.send_email(destino, f"Tu póliza {numero} - Colsubsidio", cuerpo,
+            cuerpo = (f"Hola,\n\nTu vinculación al {p['nombre']} quedó confirmada y radicada con el número {radicado}.\n"
+                      f"Colsubsidio transmitió tu solicitud a la aseguradora, que emitirá tu póliza y te la hará llegar.\n"
+                      f"Adjunto encontrarás el resumen de tu vinculación.\n\nColsubsidio Seguros.")
+            entrega = notify.send_email(destino, f"Resumen de tu vinculación {radicado} - Colsubsidio", cuerpo,
                                         str(pdfgen.DOCS_DIR / fname))
         elif destino and canal == "whatsapp":
-            entrega = notify.send_whatsapp(destino, f"Ya quedaste asegurado. Tu póliza {numero}: {url}")
-        self._log("db", "DELIVERY", f"Póliza -> {canal} {destino or '(pendiente)'} · {entrega['detalle']}")
+            entrega = notify.send_whatsapp(destino, f"Tu vinculación {radicado} quedó confirmada. Resumen: {url}")
+        self._log("db", "DELIVERY", f"Resumen de vinculación -> {canal} {destino or '(pendiente)'} · {entrega['detalle']}")
 
-        self._set_estado("EMITIDA")
-        self.actions.append({"type": "poliza", "data": {**self.poliza, "entrega": entrega}})
-        # Pago aprobado: el paquete completo (perfil + propensión + contrato +
-        # pago + póliza) queda en la bandeja del asesor, listo para tramitar
-        # la emisión oficial con la aseguradora.
+        self._set_estado("VINCULADA")
+        self.actions.append({"type": "vinculacion", "data": {**self.vinculacion, "entrega": entrega}})
+        # El paquete completo (perfil + propensión + contrato + pago + vinculación)
+        # queda en la bandeja del asesor para tramitar la emisión con la aseguradora.
         self._enviar_a_asesor("pagada")
-        return self.poliza
+        return self.vinculacion
 
 
 # --------------------------------------------------------------------------
@@ -786,7 +790,7 @@ def _guardrail(reply: str, tools_used: list[str], session: Session) -> None:
 # --------------------------------------------------------------------------
 def _capture_data(session: Session, user_text: str) -> None:
     # Capa determinística: correo, celular, placa, documento (cualquier fase).
-    if session.estado not in ("EMITIDA", "CERRADA"):
+    if session.estado not in ("VINCULADA", "CERRADA"):
         cambios = extraction.extract_contact_deterministic(user_text, session.datos)
         if cambios:
             session._tool_registrar_datos(cambios)

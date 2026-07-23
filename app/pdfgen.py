@@ -233,49 +233,52 @@ def generar_contrato_pdf(session_id: str, c: dict[str, Any]) -> str:
     return fname
 
 
-def generar_poliza_pdf(session_id: str, poliza: dict[str, Any]) -> str:
+def generar_resumen_vinculacion_pdf(session_id: str, vinc: dict[str, Any]) -> str:
+    """Resumen / constancia de vinculación. Colsubsidio DISTRIBUYE seguros: no
+    emite pólizas. Este documento confirma la vinculación radicada; la póliza la
+    expide la aseguradora."""
     pdf = _Doc()
     pdf.set_auto_page_break(True, margin=20)
     pdf.set_margins(12, 12, 12)
     pdf.add_page()
-    _title(pdf, "Caratula de poliza - " + poliza["producto"],
-           "Poliza activa. Conserva este documento.")
+    _title(pdf, "Resumen de vinculacion - " + vinc["producto"],
+           "Vinculacion radicada. La aseguradora emitira tu poliza.")
 
-    _section(pdf, "Datos de la poliza")
-    _kv(pdf, "Numero de poliza", poliza["numero"])
-    _kv(pdf, "Producto", poliza["producto"])
-    _kv(pdf, "Tomador", poliza.get("tomador", "Afiliado Colsubsidio"))
-    _kv(pdf, "Estado", "Activa")
-    _kv(pdf, "Vigencia inicio", poliza["inicio"])
-    _kv(pdf, "Vigencia fin", poliza["fin"])
-    if poliza.get("precio"):
-        _kv(pdf, "Prima mensual", "$" + f"{int(poliza['precio']):,}".replace(",", "."))
-    if poliza.get("referencia"):
-        _kv(pdf, "Referencia de pago", poliza["referencia"])
+    _section(pdf, "Datos de la vinculacion")
+    _kv(pdf, "Numero de radicado", vinc["radicado"])
+    _kv(pdf, "Producto", vinc["producto"])
+    _kv(pdf, "Tomador", vinc.get("tomador", "Afiliado Colsubsidio"))
+    _kv(pdf, "Estado", "Radicada - pendiente de emision por la aseguradora")
+    _kv(pdf, "Fecha de radicacion", vinc.get("fecha", ""))
+    if vinc.get("precio"):
+        _kv(pdf, "Prima mensual", "$" + f"{int(vinc['precio']):,}".replace(",", "."))
+    if vinc.get("referencia"):
+        _kv(pdf, "Referencia de pago", vinc["referencia"])
     pdf.ln(3)
 
-    bien = poliza.get("bien")
+    bien = vinc.get("bien")
     if bien and bien.get("items"):
-        _section(pdf, bien.get("titulo", "Bien asegurado"))
+        _section(pdf, bien.get("titulo", "Bien a asegurar"))
         for item in bien["items"]:
             k, v = (item[0], item[1]) if isinstance(item, (list, tuple)) else ("Dato", item)
             _kv(pdf, str(k), str(v))
         pdf.ln(3)
 
-    _section(pdf, "Amparos incluidos")
-    _bullets(pdf, poliza.get("cubre", []))
+    _section(pdf, "Amparos del producto")
+    _bullets(pdf, vinc.get("cubre", []))
     _section(pdf, "Exclusiones")
-    _bullets(pdf, poliza.get("no_cubre", []))
+    _bullets(pdf, vinc.get("no_cubre", []))
 
     pdf.ln(2)
     pdf.set_x(pdf.l_margin)
     pdf.set_font("helvetica", "", 9)
     pdf.set_text_color(*GRAY)
     pdf.multi_cell(0, 5, sanitize(
-        "Ante un siniestro comunicate con la linea nacional 018000 94 7900. "
-        "Fuente de condiciones: " + poliza.get("fuente", "")),
+        "Colsubsidio actua como distribuidor y facilita el acceso a este seguro; la poliza la emite "
+        "la aseguradora, que te la hara llegar. Linea de servicio 018000 94 7900. "
+        "Fuente de condiciones: " + vinc.get("fuente", "")),
         new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
-    fname = f"poliza_{poliza['numero']}.pdf"
+    fname = f"vinculacion_{vinc['radicado']}.pdf"
     pdf.output(str(DOCS_DIR / fname))
     return fname

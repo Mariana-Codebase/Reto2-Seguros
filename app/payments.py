@@ -137,7 +137,7 @@ def result_html(aprobado: bool, producto: str, precio: str, referencia: str,
     if aprobado:
         icon, klass, titulo = "✓", "ok", "Pago aprobado"
         msg = ("Este pago ya había sido aprobado." if ya_estaba
-               else "Ya puedes volver a la conversación con Clara.<br>Tu póliza se está emitiendo.")
+               else "Ya puedes volver a la conversación con Clara.<br>Estamos confirmando tu vinculación.")
         extra = ""
     else:
         icon, klass, titulo = "✕", "err", "Pago rechazado"

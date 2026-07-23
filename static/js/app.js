@@ -115,7 +115,7 @@ function showTyping() {
 const hideTyping = () => { const t = document.getElementById("typing"); if (t) t.remove(); };
 
 /* ---------- Paneles laterales ---------- */
-const STATE_ORDER = ["DIAGNOSTICO", "RECOMENDACION", "DUDAS", "CIERRE", "EMITIDA", "CERRADA"];
+const STATE_ORDER = ["DIAGNOSTICO", "RECOMENDACION", "DUDAS", "CIERRE", "VINCULADA", "CERRADA"];
 
 function setState(estado) {
   const at = STATE_ORDER.indexOf(estado);
@@ -350,11 +350,11 @@ function render(d) {
       addSystem("Enlace de pago seguro generado" + ref);
       actionChips.push({ label: "Abrir enlace de pago", style: "primary", action: () => window.open(a.data.link, "_blank") });
       startPaymentPolling(a.data.token);
-    } else if (a.type === "poliza") {
+    } else if (a.type === "vinculacion") {
       const ent = a.data.entrega || {};
       const ref = a.data.referencia ? " · Ref " + a.data.referencia : "";
-      addSystem("Carátula de póliza " + a.data.numero + " (PDF)" + ref + " · " + (ent.detalle || "generada"));
-      actionChips.push({ label: "Ver mi póliza (PDF)", action: () => window.open(a.data.url, "_blank") });
+      addSystem("Vinculación radicada " + a.data.radicado + " (resumen en PDF)" + ref + " · la aseguradora emitirá la póliza · " + (ent.detalle || "generado"));
+      actionChips.push({ label: "Ver resumen de vinculación (PDF)", action: () => window.open(a.data.url, "_blank") });
     }
   });
   if (actionChips.length) setChips(actionChips);

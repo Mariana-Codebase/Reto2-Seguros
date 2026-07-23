@@ -39,7 +39,9 @@ python server.py              # → http://localhost:8000
 3. Elegido un producto, Clara reúne los datos, genera el **contrato en PDF**, captura
    la **firma electrónica** y entrega el enlace de **pago** (sandbox: la tarjeta
    `4242 4242 4242 4242` aprueba; la `4111…` simula rechazo).
-4. Con el pago aprobado, la **póliza se emite en PDF** al instante. Cada decisión
+4. Con el pago aprobado, la **vinculación queda confirmada y radicada** y se genera
+   su **resumen en PDF**. Colsubsidio distribuye —no emite pólizas—, así que la
+   solicitud se transmite a la aseguradora, que expide la póliza. Cada decisión
    queda registrada en el panel de auditoría, en vivo junto al chat.
 5. En el **Panel del asesor** (`/asesor`) la vinculación llega empaquetada — perfil,
    propensión explicada, contrato firmado y pago — y avanza por estados hasta la
@@ -105,7 +107,8 @@ Colsubsidio **no fabrica pólizas: las distribuye**. Por eso la venta autónoma
 termina en una **bandeja de vinculaciones**: al firmarse el contrato, Clara
 transmite la solicitud empaquetada — perfil de la base con segmentos
 interpretados, propensión con razones, datos del tomador, contrato PDF, estado del
-pago y póliza interna — y el asesor la avanza por estados:
+pago y resumen de vinculación — y el asesor la avanza por estados hasta que la
+aseguradora emite la póliza:
 
 ```
 pendiente_pago → pagada → enviada a aseguradora → emitida → cerrada
@@ -128,10 +131,10 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 | **Coberturas ⇒ base de conocimiento** | Cada afirmación sale de `consultar_coberturas`, **con cita de la fuente**. |
 | **Precios ⇒ motor determinístico** | Ninguna cifra la produce el modelo: salen de `cotizar`, con factores auditables. |
 | **Propensión ⇒ reglas explicables** | 34 reglas documentadas sobre variables reales; nada de puntajes opacos. |
-| **Emisión ⇒ backend** | Contrato, firma, pago y póliza los ejecuta código determinístico. |
+| **Cierre ⇒ backend** | Contrato, firma, pago y radicación de la vinculación los ejecuta código determinístico; la póliza la emite la aseguradora, no Colsubsidio. |
 | **Guardrail de salida** | Cada respuesta se verifica: cobertura o precio sin respaldo queda marcado en auditoría. |
 | **Cumplimiento por diseño** | Aviso de tratamiento de datos (Ley 1581 de 2012) desde el saludo; alcance restringido; resistencia a manipulación del prompt. |
-| **Trazabilidad total** | Perfil, cotización, contrato, pago, póliza y solicitud quedan en SQLite y a la vista en la interfaz. |
+| **Trazabilidad total** | Perfil, cotización, contrato, pago y vinculación quedan en SQLite y a la vista en la interfaz. |
 
 ```
   Afiliado           Clara (Gemini)            Backend determinístico        Asesor
@@ -143,8 +146,9 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
      │    perfil, con    │                              │                      │
      │    el porqué      ├─ generar_contrato ──────────▶│ PDF + firma          │
      │  [firma y pago] ──┼─────────────────────────────▶│ checkout + webhook   │
-     │◀── "ya quedaste   │◀─ emisión ───────────────────┤ póliza PDF           │
+     │◀── "ya quedaste   │◀─ vinculación radicada ──────┤ resumen PDF          │
      │     asegurado"    │                              ├─ paquete completo ──▶│ bandeja
+     │                   │                              │      la aseguradora emite la póliza ▲
      │◀── estado de su solicitud ◀──────────────────────┴── avances ───────────┤
 ```
 
@@ -162,7 +166,7 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 │   ├── llm.py             # Cliente Gemini (AI Studio / Vertex) + respaldo automático
 │   ├── extraction.py      # Captura de datos: regex + salida estructurada
 │   ├── payments.py        # Pasarela simulada (tarjetas de prueba, Luhn)
-│   ├── pdfgen.py          # PDFs de resumen, contrato y póliza
+│   ├── pdfgen.py          # PDFs de resumen, contrato y vinculación
 │   ├── notify.py          # Correo / WhatsApp (opcional; sin credenciales, simula)
 │   ├── store.py           # SQLite: sesiones, auditoría y bandeja del asesor
 │   └── config.py          # Configuración central (.env)
@@ -210,7 +214,7 @@ El flujo principal se recorre completo de inicio a fin. Componentes y su estado:
 | Conversación (Gemini) | ✅ Funcional | Function-calling, escucha activa, atajos por petición directa. |
 | Flujo end-to-end | ✅ Funcional | Diagnóstico → recomendación → contrato → firma → pago → emisión. |
 | Panel del asesor | ✅ Funcional | Bandeja con paquete completo, estados y notificación al afiliado. |
-| PDFs y persistencia | ✅ Funcional | Contrato y póliza reales (fpdf2); SQLite sobrevive reinicios. |
+| PDFs y persistencia | ✅ Funcional | Contrato y resumen de vinculación reales (fpdf2); SQLite sobrevive reinicios. |
 | Pago (estilo Wompi) | 🟡 Sandbox | Checkout con tarjetas de prueba y validación Luhn. |
 | Correo / WhatsApp | 🟡 Simulado | Con credenciales SMTP/Twilio envía de verdad. |
 

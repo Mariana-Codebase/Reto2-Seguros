@@ -7,11 +7,11 @@ Endpoints:
   POST /api/session               -> crea una sesión y devuelve el saludo inicial
   POST /api/chat                  -> turno de conversación con el agente
   POST /api/firmar-contrato       -> firma electrónica + enlace de pago
-  GET  /docs/{archivo}            -> PDF generado (resumen / contrato / póliza)
+  GET  /docs/{archivo}            -> PDF generado (resumen / contrato / vinculación)
   GET  /pay/{session}/{token}     -> checkout de pago simulado (estilo Wompi)
   POST /pay/{session}/{token}     -> procesa la tarjeta (sandbox) y dispara el webhook
   GET  /api/pago-estado/{session} -> estado de pagos (polling del frontend)
-  POST /api/confirmar-pago        -> emite la póliza y Clara confirma en el chat
+  POST /api/confirmar-pago        -> confirma la vinculación (la aseguradora emite la póliza)
 
 Ejecuta:  python server.py   (o uvicorn app.main:app)
 """
@@ -276,7 +276,7 @@ def firmar_contrato(req: FirmaReq):
         f"Perfecto, {nombre}. Quedó firmado tu contrato del {contrato['producto']} "
         f"(solicitud {contrato['solicitud']}). Te dejé el enlace de pago seguro por "
         f"{kb.format_cop(pago['precio'])} al mes; tu referencia de pago es {pago['referencia']}. "
-        f"En cuanto completes el pago, emito tu póliza al instante."
+        f"En cuanto completes el pago, confirmo tu vinculación al instante."
     )
     return JSONResponse({
         "reply": reply, "estado": s.estado, "perfil": s.perfil,
@@ -351,8 +351,9 @@ def pago_estado(session_id: str):
 
 @app.post("/api/confirmar-pago")
 def confirmar_pago(req: ConfirmarReq):
-    """Tras el pago aprobado: emite la póliza (determinístico) y deja que Clara
-    confirme en lenguaje natural."""
+    """Tras el pago aprobado: confirma y radica la vinculación (Colsubsidio
+    distribuye, no emite pólizas) y deja que Clara confirme en lenguaje natural.
+    La póliza la emitirá la aseguradora desde el panel del asesor."""
     s = _get_session(req.session_id)
     pago = s.payments.get(req.token)
     if not pago:
@@ -365,27 +366,29 @@ def confirmar_pago(req: ConfirmarReq):
     producto = pago["producto"]
     s.audit = []
     s.actions = []
-    poliza = s.emitir_poliza(producto, pago.get("referencia"))
+    vinc = s.confirmar_vinculacion(producto, pago.get("referencia"))
     pre_audit = list(s.audit)
-    poliza_action = next((a for a in s.actions if a["type"] == "poliza"),
-                         {"type": "poliza", "data": s.poliza})
+    vinc_action = next((a for a in s.actions if a["type"] == "vinculacion"),
+                       {"type": "vinculacion", "data": s.vinculacion})
     pago["confirmado"] = True
 
     evento = (
         f"El pago fue APROBADO (referencia {pago.get('referencia', '—')}, transacción {pago.get('trx', '—')}) "
-        f"y la póliza N.º {poliza['numero']} del {poliza['producto']} quedó emitida y activa. Ya enviamos la "
-        f"carátula al canal del afiliado. Confírmale con calidez que ya quedó asegurado, menciona su número de "
-        f"póliza y la referencia de pago, explica en máximo 3 líneas cómo usar la póliza (línea 018000 94 7900, "
-        f"qué hacer ante un siniestro) y ofrécele una encuesta de satisfacción del 1 al 5."
+        f"y la vinculación al {vinc['producto']} quedó CONFIRMADA y RADICADA con el número {vinc['radicado']}. "
+        f"RECUERDA: Colsubsidio distribuye, NO emite pólizas; la aseguradora emitirá la póliza y se la hará llegar. "
+        f"Confírmale con calidez que su vinculación quedó lista, menciona su número de radicado y la referencia de "
+        f"pago, aclara que la aseguradora expedirá la póliza, dile la línea de servicio 018000 94 7900 y ofrécele "
+        f"una encuesta de satisfacción del 1 al 5. No inventes número de póliza."
     )
     try:
         out = agent.run_turn(s, user_text=None, system_event=evento)
     except llm.LLMError:
-        logger.warning("Emisión confirmada pero el modelo no respondió; usando texto de respaldo.")
-        out = {"reply": f"Ya quedaste asegurado. Tu póliza N.º {poliza['numero']} está activa.",
+        logger.warning("Vinculación confirmada pero el modelo no respondió; usando texto de respaldo.")
+        out = {"reply": (f"Tu vinculación quedó confirmada y radicada con el número {vinc['radicado']}. "
+                         f"La aseguradora emitirá tu póliza y te la hará llegar."),
                "estado": s.estado, "perfil": s.perfil, "audit": [], "actions": [], "verified": False}
         s.persist()
     out["audit"] = pre_audit + out.get("audit", [])
-    if not any(a["type"] == "poliza" for a in out.get("actions", [])):
-        out.setdefault("actions", []).append(poliza_action)
+    if not any(a["type"] == "vinculacion" for a in out.get("actions", [])):
+        out.setdefault("actions", []).append(vinc_action)
     return JSONResponse(out)
