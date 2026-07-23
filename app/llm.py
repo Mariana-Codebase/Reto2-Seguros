@@ -35,7 +35,7 @@ def _is_vertex_key() -> bool:
     """Las claves 'AQ....' son de Vertex AI en modo Express y usan el endpoint
     aiplatform.googleapis.com; las 'AIza...' (AI Studio) usan
     generativelanguage.googleapis.com."""
-    return settings.GEMINI_API_KEY.startswith("AQ.")
+    return settings.gemini_key.startswith("AQ.")
 
 
 def _endpoint_url() -> str:
@@ -62,11 +62,15 @@ def health() -> dict[str, Any]:
             "model": settings.llm_model,
             "ready": bool(settings.HF_TOKEN) if remoto else True,
         }
-    return {
+    key = settings.anthropic_key if _provider() == "anthropic" else settings.gemini_key
+    out = {
         "provider": labels.get(_provider(), _provider()),
         "model": settings.llm_model,
-        "ready": bool(settings.GEMINI_API_KEY),
+        "ready": bool(key),
     }
+    if settings.llm_fallback_gemini:
+        out["fallback"] = f"gemini ({settings.GEMINI_MODEL})"
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -75,8 +79,8 @@ def health() -> dict[str, Any]:
 def _post(url: str, *, headers: dict[str, str] | None = None,
           params: dict[str, str] | None = None, payload: dict[str, Any],
           label: str) -> dict[str, Any]:
-    if settings.llm_needs_key and not settings.GEMINI_API_KEY:
-        raise LLMError("Falta la clave del modelo (GEMINI_API_KEY) en el entorno (.env).")
+    if settings.llm_needs_key and not (settings.GEMINI_API_KEY or settings.ANTHROPIC_API_KEY):
+        raise LLMError("Falta la clave del modelo (GEMINI_API_KEY / ANTHROPIC_API_KEY) en el entorno (.env).")
     last_error: str = ""
     for attempt in range(settings.LLM_MAX_RETRIES + 1):
         try:
@@ -100,7 +104,9 @@ def _post(url: str, *, headers: dict[str, str] | None = None,
 
 def _generate(payload: dict[str, Any]) -> dict[str, Any]:
     """Llamada base a Gemini generateContent."""
-    return _post(_endpoint_url(), params={"key": settings.GEMINI_API_KEY},
+    if not settings.gemini_key:
+        raise LLMError("No hay clave Gemini configurada (GEMINI_API_KEY con AIza.../AQ.).")
+    return _post(_endpoint_url(), params={"key": settings.gemini_key},
                  payload=payload, label="Gemini")
 
 
@@ -108,10 +114,24 @@ def _generate(payload: dict[str, Any]) -> dict[str, Any]:
 # chat con herramientas
 # --------------------------------------------------------------------------
 def chat(messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    if _provider() == "ollama":
-        return _openai_chat(messages, tools)
-    if _provider() == "anthropic":
-        return _anthropic_chat(messages, tools)
+    try:
+        if _provider() == "ollama":
+            return _openai_chat(messages, tools)
+        if _provider() == "anthropic":
+            return _anthropic_chat(messages, tools)
+        return _gemini_chat(messages, tools)
+    except LLMError as e:
+        # Respaldo automático: si el proveedor primario falla (créditos
+        # agotados, caída, etc.) y hay clave Gemini, el turno se rescata con
+        # Gemini en vez de romper la conversación del afiliado.
+        if settings.llm_fallback_gemini:
+            logger.warning("Proveedor %s falló (%s) · usando Gemini como respaldo.", _provider(), e)
+            return _gemini_chat(messages, tools)
+        raise
+
+
+def _gemini_chat(messages: list[dict[str, Any]],
+                 tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     system, contents = _to_gemini_contents(messages)
     payload: dict[str, Any] = {
         "contents": contents,
@@ -159,10 +179,20 @@ def _parse_candidate(data: dict[str, Any]) -> dict[str, Any]:
 def extract_json(system: str, user_text: str, schema: dict[str, Any] | None = None) -> dict[str, Any]:
     """Pide al modelo un objeto JSON. Con `schema` la salida queda restringida
     al esquema: mucho más fiable que parsear texto."""
-    if _provider() == "ollama":
-        return _openai_extract(system, user_text, schema)
-    if _provider() == "anthropic":
-        return _anthropic_extract(system, user_text, schema)
+    try:
+        if _provider() == "ollama":
+            return _openai_extract(system, user_text, schema)
+        if _provider() == "anthropic":
+            return _anthropic_extract(system, user_text, schema)
+        return _gemini_extract(system, user_text, schema)
+    except LLMError as e:
+        if settings.llm_fallback_gemini:
+            logger.warning("extract_json: %s falló (%s) · usando Gemini como respaldo.", _provider(), e)
+            return _gemini_extract(system, user_text, schema)
+        raise
+
+
+def _gemini_extract(system: str, user_text: str, schema: dict[str, Any] | None) -> dict[str, Any]:
     gen: dict[str, Any] = {"temperature": 0.0, "responseMimeType": "application/json"}
     if schema:
         gen["responseSchema"] = _to_gemini_schema(schema)
@@ -369,7 +399,7 @@ def _anthropic_generate(system: str, messages: list[dict[str, Any]],
     if tool_choice:
         payload["tool_choice"] = tool_choice
     headers = {
-        "x-api-key": settings.GEMINI_API_KEY,
+        "x-api-key": settings.anthropic_key,
         "anthropic-version": settings.ANTHROPIC_VERSION,
         "content-type": "application/json",
     }

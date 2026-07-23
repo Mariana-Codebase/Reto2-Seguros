@@ -8,3 +8,8 @@ var/
 sid.tmp
 *.tmp
 .DS_Store
+
+# Base real de afiliados: NUNCA versionarla (datos personales)
+Usos_Productos_Afiliados*.csv
+afiliados*.csv
+.claude/settings.local.json

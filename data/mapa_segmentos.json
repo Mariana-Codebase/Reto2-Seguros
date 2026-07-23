@@ -1,0 +1,280 @@
+{
+  "_metodo": "Correspondencia por coincidencia de participaciones con la distribución pública del insumo inicial del reto (mismo universo de afiliados), validada con evidencia interna de la propia base (edad, salario y marcas de consumo por etiqueta). Editable: ante el diccionario oficial de Colsubsidio, corregir aquí; el motor no cambia.",
+  "CATEGORIA": {
+    "etiquetas": {
+      "SIGMA": {
+        "clave": "A",
+        "significado": "Categoría A del subsidio familiar (ingresos hasta 2 SMLV)",
+        "confianza": "media",
+        "evidencia": {
+          "participacion_base": 72.8,
+          "participacion_referencia": 75.8,
+          "pct_hasta_2_smlv": 99.2
+        }
+      },
+      "PI": {
+        "clave": "B",
+        "significado": "Categoría B del subsidio familiar (ingresos 2 a 4 SMLV)",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 16.4,
+          "participacion_referencia": 14.5,
+          "pct_hasta_2_smlv": 20.1
+        }
+      },
+      "ZETA": {
+        "clave": "C",
+        "significado": "Categoría C del subsidio familiar (ingresos > 4 SMLV)",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 9.8,
+          "participacion_referencia": 8.8,
+          "pct_hasta_2_smlv": 0.6
+        }
+      },
+      "MU": {
+        "clave": "sin_dato",
+        "significado": "Sin categoría registrada",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 1.0,
+          "participacion_referencia": 0.9
+        }
+      }
+    }
+  },
+  "SEGMENTO_GRUPO_FAMILIAR": {
+    "etiquetas": {
+      "LAMBDA": {
+        "clave": "sin_grupo",
+        "significado": "Afiliado sin grupo familiar registrado",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 57.3,
+          "participacion_referencia": 58.0
+        }
+      },
+      "RHO": {
+        "clave": "monoparental",
+        "significado": "Familia monoparental",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 24.3,
+          "participacion_referencia": 23.5
+        }
+      },
+      "EPSILON": {
+        "clave": "nuclear",
+        "significado": "Familia nuclear integral (con hijos)",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 9.4,
+          "participacion_referencia": 9.4
+        }
+      },
+      "IOTA": {
+        "clave": "pareja",
+        "significado": "Pareja conyugal sin hijos registrados",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 5.1,
+          "participacion_referencia": 5.5
+        }
+      },
+      "CHI": {
+        "clave": "monoparental_ampliada",
+        "significado": "Familia monoparental ampliada",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 2.4,
+          "participacion_referencia": 2.2
+        }
+      },
+      "THETA": {
+        "clave": "sin_dato",
+        "significado": "Sin segmento registrado",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 1.6,
+          "participacion_referencia": 1.5
+        }
+      },
+      "PI": {
+        "clave": "nuclear_ampliada",
+        "significado": "Familia nuclear ampliada",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 0.0,
+          "participacion_referencia": 0.01
+        }
+      }
+    }
+  },
+  "SEGMENTO_POBLACIONAL": {
+    "etiquetas": {
+      "TAU": {
+        "clave": "basico",
+        "significado": "Segmento Básico (ingresos/edad/PAC nivel básico)",
+        "confianza": "media",
+        "evidencia": {
+          "participacion_base": 46.2,
+          "participacion_referencia": 48.8
+        }
+      },
+      "PI": {
+        "clave": "medio",
+        "significado": "Segmento Medio",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 26.9,
+          "participacion_referencia": 26.8
+        }
+      },
+      "ETA": {
+        "clave": "joven",
+        "significado": "Segmento Joven",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 25.5,
+          "participacion_referencia": 23.1,
+          "pct_20_35": 83.2
+        }
+      },
+      "OMEGA": {
+        "clave": "sin_dato",
+        "significado": "Sin segmento registrado",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 1.0,
+          "participacion_referencia": 0.9
+        }
+      },
+      "XI": {
+        "clave": "alto",
+        "significado": "Segmento Alto",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 0.3,
+          "participacion_referencia": 0.4
+        }
+      }
+    }
+  },
+  "EMPRESA_FOCO": {
+    "etiquetas": {
+      "EMP_000001": {
+        "clave": "no_foco",
+        "significado": "Sin empresa foco asociada",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 81.7,
+          "participacion_referencia": 83.2
+        }
+      },
+      "EMP_000002": {
+        "clave": "foco",
+        "significado": "Afiliado de empresa foco Colsubsidio",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 18.3,
+          "participacion_referencia": 16.8
+        }
+      }
+    }
+  },
+  "PIRAMIDE_NUEVA": {
+    "etiquetas": {
+      "ETA": {
+        "clave": "micro",
+        "significado": "Empresa micro transaccional",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 31.2,
+          "participacion_referencia": 32.5
+        }
+      },
+      "XI": {
+        "clave": "medianas",
+        "significado": "Empresas medianas",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 21.7,
+          "participacion_referencia": 20.1
+        }
+      },
+      "UPSILON": {
+        "clave": "grandes",
+        "significado": "Empresas grandes",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 20.4,
+          "participacion_referencia": 20.0
+        }
+      },
+      "DELTA": {
+        "clave": "empresarial_top",
+        "significado": "Empresarial top",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 11.5,
+          "participacion_referencia": 11.6
+        }
+      },
+      "BETA": {
+        "clave": "facultativo",
+        "significado": "Afiliado facultativo (6.1)",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 4.6,
+          "participacion_referencia": 5.2
+        }
+      },
+      "OMEGA": {
+        "clave": "empresarial_estandar",
+        "significado": "Empresarial estándar",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 3.8,
+          "participacion_referencia": 4.0
+        }
+      },
+      "KAPPA": {
+        "clave": "pensionado",
+        "significado": "Pensionado (6.3)",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 2.5,
+          "participacion_referencia": 2.8,
+          "pct_mayor_55": 95.5
+        }
+      },
+      "LAMBDA": {
+        "clave": "independiente",
+        "significado": "Trabajador independiente (6.2)",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 1.7,
+          "participacion_referencia": 1.6
+        }
+      },
+      "OMICRON": {
+        "clave": "sin_dato",
+        "significado": "Sin clasificación registrada",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 1.4,
+          "participacion_referencia": 1.3
+        }
+      },
+      "PSI": {
+        "clave": "micro_colsubsidio",
+        "significado": "Micro transaccional Colsubsidio",
+        "confianza": "alta",
+        "evidencia": {
+          "participacion_base": 1.3,
+          "participacion_referencia": 0.9
+        }
+      }
+    }
+  }
+}

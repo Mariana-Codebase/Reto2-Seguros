@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, agent, knowledge as kb, llm, payments, store
+from . import __version__, agent, knowledge as kb, llm, payments, propension, store
 from .config import settings
 
 logger = logging.getLogger("clara.api")
@@ -52,8 +52,33 @@ SALUDO = (
 )
 
 
+# Gancho del saludo personalizado, en segunda persona, según el producto de
+# mayor propensión. La razón técnica completa vive en el panel "Propensión".
+_GANCHOS = {
+    "vida": "cómo proteger el ingreso del que depende tu familia",
+    "hogar": "cómo proteger ese hogar que estás estrenando o mejorando",
+    "salud": "cómo agilizar la atención en salud tuya y de los tuyos",
+    "mascotas": "cómo cuidar la salud de tu mascota",
+    "moto": "cómo proteger tu moto",
+    "autos": "cómo proteger tu vehículo",
+    "juridica": "cómo tener respaldo legal cuando lo necesites",
+    "accidentes": "cómo proteger tu ingreso si un accidente te detiene",
+    "asistencia_multiple": "cómo resolver emergencias del día a día con una sola asistencia",
+    "exequial": "cómo darle tranquilidad a tu familia en los momentos más difíciles",
+    "accidentes_exequial": "cómo proteger a tu familia ante un accidente y sus consecuencias",
+    "vida_ahorro": "cómo protegerte mientras construyes un ahorro",
+    "asistencia_familiar": "cómo tener atención médica en casa para tu familia",
+    "viajes": "cómo viajar con la tranquilidad de estar cubierto",
+}
+
+
 class SessionReq(BaseModel):
     canal: str = "WhatsApp"
+    serie: str | None = None  # afiliado de la base (muestra demo) para arrancar personalizado
+
+
+class EstadoSolicitudReq(BaseModel):
+    estado: str = Field(pattern="^(nueva|pendiente_pago|pagada|enviada_aseguradora|emitida_aseguradora|cerrada)$")
 
 
 class ChatReq(BaseModel):
@@ -125,10 +150,32 @@ def crear_sesion(req: SessionReq):
     s = agent.Session(canal=req.canal)
     SESSIONS[s.id] = s
     s._log("db", "SESSIONS", "INSERT sessions · estado DIAGNOSTICO, perfil vacío")
-    s.messages.append({"role": "assistant", "content": SALUDO})
+
+    saludo = SALUDO
+    if req.serie:
+        af = propension.buscar_demo(req.serie)
+        if af is None:
+            raise HTTPException(status_code=404, detail=f"Afiliado SERIE {req.serie} no está en la muestra demo.")
+        s.set_afiliado(af)
+        top = s.propension["productos"][0] if s.propension.get("productos") else None
+        gancho = ""
+        if top:
+            hook = _GANCHOS.get(top["producto_id"], "")
+            if hook:
+                gancho = f" Por lo que Colsubsidio ya conoce de ti, creo que lo primero que deberíamos mirar juntos es {hook}."
+        saludo = (
+            "Hola, soy Clara, la asesora digital de seguros de Colsubsidio. "
+            "Tus datos se tratan conforme a la Política de Tratamiento de Datos Personales "
+            "(Ley 1581 de 2012) y puedes pedir su eliminación cuando quieras. "
+            f"Veo que eres parte de la familia Colsubsidio.{gancho} "
+            "¿Quieres que te muestre la protección que mejor encaja contigo, o prefieres contarme tú qué buscas?"
+        )
+
+    s.messages.append({"role": "assistant", "content": saludo})
     s.persist()
-    return {"session_id": s.id, "reply": SALUDO, "estado": s.estado,
-            "perfil": s.perfil, "audit": s.audit, "canal": s.canal}
+    return {"session_id": s.id, "reply": saludo, "estado": s.estado,
+            "perfil": s.perfil, "audit": s.audit, "canal": s.canal,
+            "afiliado": s.afiliado, "propension": s.propension}
 
 
 @app.post("/api/chat")
@@ -140,6 +187,69 @@ def chat(req: ChatReq):
         logger.error("Turno fallido en sesión %s: %s", s.id, e)
         raise HTTPException(status_code=503, detail=str(e))
     return JSONResponse(out)
+
+
+# --------------------------------------------------------------------------
+# Propensión: perfiles demo de la base, reglas documentadas y estadísticas
+# --------------------------------------------------------------------------
+@app.get("/api/afiliados-demo")
+def afiliados_demo():
+    """Muestra anonimizada de la base real (solo SERIE + variables, sin nombres),
+    con la propensión ya explicada para que el jurado compare ofertas por perfil."""
+    out = []
+    for a in propension.cargar_demo():
+        p = a.get("propension") or propension.perfilar(a)
+        out.append({**a, "propension": p})
+    return {"afiliados": out}
+
+
+@app.get("/api/propension/reglas")
+def propension_reglas():
+    """La lógica documentada del reto: cada regla del motor con su condición,
+    producto, puntos y razón. Nada de caja negra."""
+    return {"reglas": propension.reglas_documentadas(), "stats": propension.cargar_stats()}
+
+
+# --------------------------------------------------------------------------
+# Panel del asesor: Colsubsidio distribuye, no emite. Clara transmite cada
+# vinculación empaquetada y el asesor la gestiona con la aseguradora.
+# --------------------------------------------------------------------------
+@app.get("/asesor", include_in_schema=False)
+def asesor_panel():
+    return FileResponse(settings.STATIC_DIR / "asesor.html")
+
+
+@app.get("/api/asesor/solicitudes")
+def asesor_solicitudes():
+    return {"solicitudes": store.list_solicitudes()}
+
+
+_ESTADO_AVISO = {
+    "enviada_aseguradora": "El asesor envió la solicitud {sol} a la aseguradora para su emisión oficial.",
+    "emitida_aseguradora": "La aseguradora emitió oficialmente la póliza de la solicitud {sol}. El proceso quedó completo.",
+    "cerrada": "La solicitud {sol} fue cerrada por el asesor.",
+}
+
+
+@app.post("/api/asesor/solicitudes/{solicitud_id}/estado")
+def asesor_cambiar_estado(solicitud_id: str, req: EstadoSolicitudReq):
+    if not store.set_estado_solicitud(solicitud_id, req.estado):
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
+    # Lazo de vuelta al afiliado: la sesión queda enterada del avance para que
+    # Clara pueda informarlo si el afiliado pregunta por su solicitud.
+    aviso = _ESTADO_AVISO.get(req.estado)
+    sol = next((x for x in store.list_solicitudes() if x["id"] == solicitud_id), None)
+    if aviso and sol:
+        try:
+            s = _get_session(sol["session_id"])
+            s.audit = []
+            s._log("db", "ASESOR", f"Solicitud {solicitud_id} → {req.estado} (gestión del asesor)")
+            s.messages.append({"role": "system",
+                               "content": "[EVENTO DEL SISTEMA] " + aviso.format(sol=solicitud_id)})
+            s.persist()
+        except HTTPException:
+            pass  # sesión expirada: el estado queda igualmente en la bandeja
+    return {"ok": True, "id": solicitud_id, "estado": req.estado}
 
 
 # --------------------------------------------------------------------------

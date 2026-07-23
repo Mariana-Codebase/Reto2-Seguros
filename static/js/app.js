@@ -12,6 +12,7 @@ let started = false;
 let sessionId = null;
 let busy = false;
 let pollTimer = null;
+let afiliadosDemo = [];   // muestra anonimizada de la base (por SERIE)
 
 /* ---------- Navegación entre vistas ---------- */
 const views = document.querySelectorAll(".view");
@@ -171,20 +172,83 @@ async function apiPost(path, body) {
   });
 }
 
+/* ---------- Afiliados demo (la oferta cambia según el perfil) ---------- */
+const afiliadoSel = document.getElementById("afiliadoSel");
+
+async function loadAfiliados() {
+  if (afiliadosDemo.length || !afiliadoSel) return;
+  try {
+    const r = await fetch(API + "/api/afiliados-demo");
+    const d = await r.json();
+    afiliadosDemo = d.afiliados || [];
+    afiliadosDemo.forEach(a => {
+      const o = document.createElement("option");
+      o.value = a.serie;
+      const top = a.propension && a.propension.productos && a.propension.productos[0];
+      o.textContent = "SERIE " + a.serie + " · " + a.arquetipo_desc + (top ? " → " + top.nombre : "");
+      afiliadoSel.appendChild(o);
+    });
+  } catch (e) { /* la demo funciona igual como visitante anónimo */ }
+}
+
+if (afiliadoSel) afiliadoSel.addEventListener("change", () => resetDemo());
+
+function renderPropension(prop) {
+  const panel = document.getElementById("propensionPanel");
+  const list = document.getElementById("propensionList");
+  const mc = document.getElementById("propensionMC");
+  if (!panel || !list) return;
+  if (!prop || !prop.productos || !prop.productos.length) {
+    panel.style.display = "none";
+    list.innerHTML = "";
+    if (mc) mc.innerHTML = "";
+    return;
+  }
+  panel.style.display = "";
+  list.innerHTML = "";
+  prop.productos.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "prop-item";
+    const razones = (p.razones || []).map(r => r.razon);
+    div.innerHTML =
+      '<div class="prop-head"><b>' + p.nombre + '</b>' +
+      '<span class="prop-aff">' + Math.round(p.afinidad) + '%</span></div>' +
+      '<div class="prop-bar"><i style="width:' + Math.round(p.afinidad) + '%"></i></div>' +
+      '<ul class="prop-reasons">' + razones.map(r => "<li></li>").join("") + "</ul>";
+    div.querySelectorAll(".prop-reasons li").forEach((li, i) => { li.textContent = razones[i]; });
+    list.appendChild(div);
+  });
+  if (mc && prop.momento_canal) {
+    mc.innerHTML = "";
+    const b = document.createElement("div");
+    b.className = "prop-mc-box";
+    b.innerHTML = "<b>Momento y canal sugerido</b><p></p><small></small>";
+    b.querySelector("p").textContent = prop.momento_canal.momento + " · " + prop.momento_canal.canal;
+    b.querySelector("small").textContent = prop.momento_canal.porque;
+    mc.appendChild(b);
+  }
+}
+
 /* ---------- Inicio de la demo ---------- */
 async function startDemo() {
   started = true;
   busy = true;
   showTyping();
+  await loadAfiliados();
   try {
-    const r = await apiPost("/api/session", { canal: "WhatsApp" });
+    const serie = afiliadoSel && afiliadoSel.value ? afiliadoSel.value : null;
+    const body = { canal: "WhatsApp" };
+    if (serie) body.serie = serie;
+    const r = await apiPost("/api/session", body);
     const d = await r.json();
     sessionId = d.session_id;
     hideTyping();
     setState(d.estado || "DIAGNOSTICO");
     pushAudit(d.audit);
+    renderPropension(d.propension);
+    if (d.perfil) updateProfile(d.perfil);
     addBot(d.reply);
-    starterChips();
+    starterChips(!!serie);
   } catch (err) {
     hideTyping();
     addBot("No pude iniciar la sesión. Verifica que el servidor esté corriendo (python server.py) y que la clave de Gemini esté configurada.");
@@ -193,7 +257,15 @@ async function startDemo() {
   }
 }
 
-function starterChips() {
+function starterChips(conPerfil) {
+  if (conPerfil) {
+    setChips([
+      { label: "Muéstrame mi mejor opción", style: "primary", action: () => quickSend("Sí, muéstrame la protección que mejor encaja conmigo") },
+      { label: "Prefiero contarte qué busco", action: () => quickSend("Prefiero contarte yo qué estoy buscando") },
+      { label: "¿Por qué me recomiendas eso?", action: () => quickSend("¿Por qué me recomiendas eso a mí?") }
+    ]);
+    return;
+  }
   setChips([
     { label: "Ayúdame a encontrar mi mejor opción", action: () => quickSend("La verdad no estoy seguro, ayúdame a encontrar la mejor opción para mí") },
     { label: "Ya sé qué busco", action: () => quickSend("Ya sé qué busco") },
@@ -220,7 +292,9 @@ async function handleSend() {
     let r = await apiPost("/api/chat", { session_id: sessionId, text });
     // La sesión pudo perderse (reinicio + TTL): recrear y reintentar una vez.
     if (r.status === 404) {
-      const rs = await apiPost("/api/session", { canal: "WhatsApp" });
+      const body = { canal: "WhatsApp" };
+      if (afiliadoSel && afiliadoSel.value) body.serie = afiliadoSel.value;
+      const rs = await apiPost("/api/session", body);
       const ds = await rs.json();
       sessionId = ds.session_id;
       addSystem("La sesión anterior expiró; inicié una nueva y sigo contigo.");
@@ -292,10 +366,17 @@ function buildOptionCards(opciones) {
   (opciones || []).forEach((o, i) => {
     const card = document.createElement("div");
     card.className = "opt-card";
+    let propHtml = "";
+    if (o.propension && o.propension.razones && o.propension.razones.length) {
+      propHtml = '<div class="oc-row cov"><span class="lab">Por qué para ti</span><span>' +
+        o.propension.razones.slice(0, 2).map(r => String(r).replace(/&/g, "&amp;").replace(/</g, "&lt;")).join(" · ") +
+        "</span></div>";
+    }
     card.innerHTML =
       '<div class="oc-top"><h4>Opción ' + (i + 1) + " — " + o.nombre + "</h4>" +
       '<div class="price">' + o.precio_formateado + "<small>/mes</small></div></div>" +
       '<div class="why">' + o.por_que + "</div>" +
+      propHtml +
       '<div class="oc-row cov"><span class="lab">Cubre</span><span>' + o.cubre.join(" · ") + "</span></div>" +
       '<div class="oc-row exc"><span class="lab">No cubre</span><span>' + o.no_cubre.join(" · ") + "</span></div>";
     cont.appendChild(card);
@@ -423,6 +504,7 @@ async function resetDemo() {
     el.querySelector(".dot").textContent = String(i + 1);
   });
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  renderPropension(null);
   started = false;
   sessionId = null;
   await startDemo();

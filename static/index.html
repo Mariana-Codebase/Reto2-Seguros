@@ -34,6 +34,7 @@
       <button data-view="inicio" class="active">Inicio</button>
       <button data-view="demo">Demo interactiva</button>
       <button data-view="arquitectura">Arquitectura</button>
+      <button onclick="window.open('/asesor','_blank')" title="Bandeja de vinculaciones que Clara transmite al asesor">Panel del asesor</button>
     </nav>
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
       <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -149,6 +150,12 @@
           <h2>Demo interactiva</h2>
           <p>Conversa con Clara como lo haría un afiliado. El agente corre con la API de Gemini en el backend.</p>
         </div>
+        <div class="afiliado-pick">
+          <label for="afiliadoSel">Perfil de la base de afiliados</label>
+          <select id="afiliadoSel" title="La oferta cambia según el perfil: elige un afiliado real (anonimizado, por SERIE) y compara">
+            <option value="">Visitante anónimo (sin datos previos)</option>
+          </select>
+        </div>
         <button class="btn ghost" id="resetDemo">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
           Reiniciar
@@ -201,6 +208,14 @@
                 <div class="pf"><span class="k">Prioridad</span><span class="v empty" data-pf="prioridad">Sin datos</span></div>
                 <div class="pf"><span class="k">Otros datos</span><span class="v empty" data-pf="notas">Sin datos</span></div>
               </div>
+            </div>
+          </div>
+
+          <div class="panel" id="propensionPanel" style="display:none">
+            <h3>Propensión · por qué esta oferta</h3>
+            <div class="pbody">
+              <div id="propensionList"></div>
+              <div class="prop-mc" id="propensionMC"></div>
             </div>
           </div>
 
@@ -287,9 +302,11 @@
           </div>
           <div class="afl-nodes">
             <span class="nchip">RAG · coberturas</span>
+            <span class="nchip">Motor de propensión (base de afiliados)</span>
             <span class="nchip">Motor de reglas</span>
             <span class="nchip">PDF (fpdf2)</span>
             <span class="nchip">Wompi (sandbox)</span>
+            <span class="nchip">Bandeja del asesor</span>
             <span class="nchip">SMTP / Twilio</span>
           </div>
         </div>

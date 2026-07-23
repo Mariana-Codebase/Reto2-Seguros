@@ -391,3 +391,26 @@ footer.foot{border-top:1px solid var(--line);padding:30px 0;background:var(--sur
   .afl{grid-template-columns:1fr;gap:12px}
 }
 @media(max-width:560px){.product{display:none}}
+
+/* ---------- Selector de afiliado de la base (propensión) ---------- */
+.afiliado-pick{display:flex;flex-direction:column;gap:4px;min-width:260px;max-width:340px}
+.afiliado-pick label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.afiliado-pick select{
+  font:inherit;font-size:13.5px;padding:9px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;
+}
+.afiliado-pick select:focus{outline:none;border-color:var(--primary)}
+
+/* ---------- Panel de propensión (por qué esta oferta) ---------- */
+.prop-item{padding:9px 0;border-bottom:1px dashed var(--line)}
+.prop-item:last-child{border-bottom:none}
+.prop-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+.prop-aff{font-weight:800;color:var(--primary-d);font-size:12.5px}
+[data-theme="dark"] .prop-aff{color:var(--primary)}
+.prop-bar{height:5px;border-radius:4px;background:var(--primary-soft);margin:5px 0 6px;overflow:hidden}
+.prop-bar i{display:block;height:100%;border-radius:4px;background:var(--primary)}
+.prop-reasons{margin:0;padding-left:16px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.prop-mc-box{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--primary-soft);font-size:12.5px}
+.prop-mc-box b{font-size:12px}
+.prop-mc-box p{margin:3px 0}
+.prop-mc-box small{color:var(--muted)}

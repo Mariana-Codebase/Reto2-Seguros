@@ -1,0 +1,1880 @@
+[
+  {
+    "serie": "5",
+    "genero": "M",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 1.5 y 2 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "RHO",
+    "segmento_poblacional": "PI",
+    "piramide": "XI",
+    "empresa": "EMP_000002",
+    "ciudad": "Bogota D.C.",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "salud_activa",
+    "arquetipo_desc": "Cabeza de hogar monoparental que compra en droguerías",
+    "propension": {
+      "serie": "5",
+      "productos": [
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 30.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S1",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 30,
+              "razon": "Su segmento familiar corresponde a hogares de un solo sostén: si ese ingreso falta, los hijos quedan desprotegidos."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 28.0,
+          "afinidad": 93.0,
+          "razones": [
+            {
+              "regla": "R3",
+              "variable": "rango_salarial",
+              "condicion": "entre 1.5 y 4 SMLV",
+              "puntos": 8,
+              "razon": "Su nivel de ingresos permite complementar la EPS con atención más ágil sin desbalancear el presupuesto."
+            },
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 25.0,
+          "afinidad": 83.0,
+          "razones": [
+            {
+              "regla": "S2",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 15,
+              "razon": "En hogares a cargo de una sola persona, el médico a domicilio y la orientación 24/7 resuelven urgencias sin desplazarse."
+            },
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        },
+        {
+          "producto_id": "exequial",
+          "nombre": "Seguro Exequial",
+          "score": 10.0,
+          "afinidad": 33.0,
+          "razones": [
+            {
+              "regla": "S3",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 10,
+              "razon": "En una familia de un solo sostén, un evento exequial sin cobertura golpea directamente el presupuesto del hogar."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "9",
+    "genero": "F",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "RHO",
+    "segmento_poblacional": "PI",
+    "piramide": "DELTA",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "salud_activa",
+    "arquetipo_desc": "Cabeza de hogar monoparental que compra en droguerías",
+    "propension": {
+      "serie": "9",
+      "productos": [
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 30.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S1",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 30,
+              "razon": "Su segmento familiar corresponde a hogares de un solo sostén: si ese ingreso falta, los hijos quedan desprotegidos."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 25.0,
+          "afinidad": 83.0,
+          "razones": [
+            {
+              "regla": "S2",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 15,
+              "razon": "En hogares a cargo de una sola persona, el médico a domicilio y la orientación 24/7 resuelven urgencias sin desplazarse."
+            },
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 20.0,
+          "afinidad": 67.0,
+          "razones": [
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "exequial",
+          "nombre": "Seguro Exequial",
+          "score": 18.0,
+          "afinidad": 60.0,
+          "razones": [
+            {
+              "regla": "S3",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 10,
+              "razon": "En una familia de un solo sostén, un evento exequial sin cobertura golpea directamente el presupuesto del hogar."
+            },
+            {
+              "regla": "R1",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 8,
+              "razon": "Con ingresos de hasta 1.5 SMLV conviene priorizar coberturas de prima baja y alto impacto familiar."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "643",
+    "genero": "F",
+    "rango_edad": "36 a 45 años",
+    "rango_salarial": "Entre 1.5 y 2 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "RHO",
+    "segmento_poblacional": "PI",
+    "piramide": "PSI",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": true,
+      "vivienda": false
+    },
+    "arquetipo": "viajera",
+    "arquetipo_desc": "Compra en agencias de viajes Colsubsidio",
+    "propension": {
+      "serie": "643",
+      "productos": [
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 40.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S1",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 30,
+              "razon": "Su segmento familiar corresponde a hogares de un solo sostén: si ese ingreso falta, los hijos quedan desprotegidos."
+            },
+            {
+              "regla": "E3",
+              "variable": "rango_edad",
+              "condicion": "36 a 45 años",
+              "puntos": 10,
+              "razon": "Entre los 36 y 45 años suele estar en su etapa de mayores responsabilidades económicas."
+            }
+          ]
+        },
+        {
+          "producto_id": "viajes",
+          "nombre": "Asistencia Médica en Viajes",
+          "score": 35.0,
+          "afinidad": 88.0,
+          "razones": [
+            {
+              "regla": "M1",
+              "variable": "marca AGENCIAS",
+              "condicion": "compró en agencias de viajes Colsubsidio",
+              "puntos": 35,
+              "razon": "Ya compra viajes con Colsubsidio: la asistencia en viaje protege lo que ya hace."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 28.0,
+          "afinidad": 70.0,
+          "razones": [
+            {
+              "regla": "R3",
+              "variable": "rango_salarial",
+              "condicion": "entre 1.5 y 4 SMLV",
+              "puntos": 8,
+              "razon": "Su nivel de ingresos permite complementar la EPS con atención más ágil sin desbalancear el presupuesto."
+            },
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 25.0,
+          "afinidad": 62.0,
+          "razones": [
+            {
+              "regla": "S2",
+              "variable": "segmento_familiar",
+              "condicion": "familia monoparental",
+              "puntos": 15,
+              "razon": "En hogares a cargo de una sola persona, el médico a domicilio y la orientación 24/7 resuelven urgencias sin desplazarse."
+            },
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Al confirmar una reserva de viaje u hotel",
+        "canal": "Correo de confirmación de la reserva + WhatsApp",
+        "porque": "La necesidad de asistencia en viaje es evidente justo cuando la persona está comprando el viaje."
+      },
+      "rango_edad_cotizador": "31-45"
+    }
+  },
+  {
+    "serie": "1135",
+    "genero": "F",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 2 y 2.5 SMLV",
+    "categoria": "PI",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "ETA",
+    "piramide": "XI",
+    "empresa": "EMP_000002",
+    "ciudad": "Bogota D.C.",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": true,
+      "vivienda": false
+    },
+    "arquetipo": "viajera",
+    "arquetipo_desc": "Compra en agencias de viajes Colsubsidio",
+    "propension": {
+      "serie": "1135",
+      "productos": [
+        {
+          "producto_id": "viajes",
+          "nombre": "Asistencia Médica en Viajes",
+          "score": 35.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "M1",
+              "variable": "marca AGENCIAS",
+              "condicion": "compró en agencias de viajes Colsubsidio",
+              "puntos": 35,
+              "razon": "Ya compra viajes con Colsubsidio: la asistencia en viaje protege lo que ya hace."
+            }
+          ]
+        },
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 26.0,
+          "afinidad": 74.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "E1",
+              "variable": "rango_edad",
+              "condicion": "hasta 35 años",
+              "puntos": 8,
+              "razon": "En el rango de edad más activo, los accidentes son el riesgo más frecuente."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 24.0,
+          "afinidad": 69.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "E2",
+              "variable": "rango_edad",
+              "condicion": "20 a 35 años",
+              "puntos": 8,
+              "razon": "Empezar el ahorro protegido antes de los 35 multiplica el beneficio a largo plazo."
+            },
+            {
+              "regla": "B1",
+              "variable": "segmento_poblacional",
+              "condicion": "joven",
+              "puntos": 6,
+              "razon": "Su segmento poblacional agrupa a los afiliados jóvenes: el ahorro protegido rinde más cuanto antes empiece."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 23.0,
+          "afinidad": 66.0,
+          "razones": [
+            {
+              "regla": "R3",
+              "variable": "rango_salarial",
+              "condicion": "entre 1.5 y 4 SMLV",
+              "puntos": 8,
+              "razon": "Su nivel de ingresos permite complementar la EPS con atención más ágil sin desbalancear el presupuesto."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Al confirmar una reserva de viaje u hotel",
+        "canal": "Correo de confirmación de la reserva + WhatsApp",
+        "porque": "La necesidad de asistencia en viaje es evidente justo cuando la persona está comprando el viaje."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "6795",
+    "genero": "F",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "TAU",
+    "piramide": "UPSILON",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": true,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "hotelera",
+    "arquetipo_desc": "Se hospeda en hoteles Colsubsidio",
+    "propension": {
+      "serie": "6795",
+      "productos": [
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 32.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "E1",
+              "variable": "rango_edad",
+              "condicion": "hasta 35 años",
+              "puntos": 8,
+              "razon": "En el rango de edad más activo, los accidentes son el riesgo más frecuente."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            }
+          ]
+        },
+        {
+          "producto_id": "viajes",
+          "nombre": "Asistencia Médica en Viajes",
+          "score": 30.0,
+          "afinidad": 94.0,
+          "razones": [
+            {
+              "regla": "M2",
+              "variable": "marca HOTELES",
+              "condicion": "se hospedó en hoteles Colsubsidio",
+              "puntos": 30,
+              "razon": "Se hospeda en hoteles Colsubsidio: viaja, y un imprevisto médico en viaje es un gasto no planeado."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 18.0,
+          "afinidad": 56.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "E2",
+              "variable": "rango_edad",
+              "condicion": "20 a 35 años",
+              "puntos": 8,
+              "razon": "Empezar el ahorro protegido antes de los 35 multiplica el beneficio a largo plazo."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 15.0,
+          "afinidad": 47.0,
+          "razones": [
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Al confirmar una reserva de viaje u hotel",
+        "canal": "Correo de confirmación de la reserva + WhatsApp",
+        "porque": "La necesidad de asistencia en viaje es evidente justo cuando la persona está comprando el viaje."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "8873",
+    "genero": "F",
+    "rango_edad": "36 a 45 años",
+    "rango_salarial": "Entre 1.5 y 2 SMLV",
+    "categoria": "PI",
+    "segmento_familiar": "EPSILON",
+    "segmento_poblacional": "PI",
+    "piramide": "XI",
+    "empresa": "EMP_000002",
+    "ciudad": "Soacha",
+    "marcas": {
+      "hoteles": true,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "hotelera",
+    "arquetipo_desc": "Se hospeda en hoteles Colsubsidio",
+    "propension": {
+      "serie": "8873",
+      "productos": [
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 43.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S5",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 15,
+              "razon": "Con hijos en casa, un plan complementario agiliza consultas y especialistas para toda la familia."
+            },
+            {
+              "regla": "R3",
+              "variable": "rango_salarial",
+              "condicion": "entre 1.5 y 4 SMLV",
+              "puntos": 8,
+              "razon": "Su nivel de ingresos permite complementar la EPS con atención más ágil sin desbalancear el presupuesto."
+            },
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 35.0,
+          "afinidad": 81.0,
+          "razones": [
+            {
+              "regla": "S4",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 25,
+              "razon": "Su segmento familiar corresponde a familias con hijos que dependen de los ingresos del hogar."
+            },
+            {
+              "regla": "E3",
+              "variable": "rango_edad",
+              "condicion": "36 a 45 años",
+              "puntos": 10,
+              "razon": "Entre los 36 y 45 años suele estar en su etapa de mayores responsabilidades económicas."
+            }
+          ]
+        },
+        {
+          "producto_id": "viajes",
+          "nombre": "Asistencia Médica en Viajes",
+          "score": 30.0,
+          "afinidad": 70.0,
+          "razones": [
+            {
+              "regla": "M2",
+              "variable": "marca HOTELES",
+              "condicion": "se hospedó en hoteles Colsubsidio",
+              "puntos": 30,
+              "razon": "Se hospeda en hoteles Colsubsidio: viaja, y un imprevisto médico en viaje es un gasto no planeado."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 23.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Al confirmar una reserva de viaje u hotel",
+        "canal": "Correo de confirmación de la reserva + WhatsApp",
+        "porque": "La necesidad de asistencia en viaje es evidente justo cuando la persona está comprando el viaje."
+      },
+      "rango_edad_cotizador": "31-45"
+    }
+  },
+  {
+    "serie": "8350",
+    "genero": "M",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "ETA",
+    "piramide": "ETA",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": true
+    },
+    "arquetipo": "hogar_nuevo",
+    "arquetipo_desc": "Usó el servicio de vivienda Colsubsidio",
+    "propension": {
+      "serie": "8350",
+      "productos": [
+        {
+          "producto_id": "hogar",
+          "nombre": "Seguro de Hogar",
+          "score": 40.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "M6",
+              "variable": "marca VIVIENDA",
+              "condicion": "usó el servicio de vivienda Colsubsidio",
+              "puntos": 40,
+              "razon": "Acaba de usar el servicio de vivienda: quien estrena o mejora casa tiene un patrimonio nuevo que proteger."
+            }
+          ]
+        },
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 32.0,
+          "afinidad": 80.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "E1",
+              "variable": "rango_edad",
+              "condicion": "hasta 35 años",
+              "puntos": 8,
+              "razon": "En el rango de edad más activo, los accidentes son el riesgo más frecuente."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 24.0,
+          "afinidad": 60.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "E2",
+              "variable": "rango_edad",
+              "condicion": "20 a 35 años",
+              "puntos": 8,
+              "razon": "Empezar el ahorro protegido antes de los 35 multiplica el beneficio a largo plazo."
+            },
+            {
+              "regla": "B1",
+              "variable": "segmento_poblacional",
+              "condicion": "joven",
+              "puntos": 6,
+              "razon": "Su segmento poblacional agrupa a los afiliados jóvenes: el ahorro protegido rinde más cuanto antes empiece."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 15.0,
+          "afinidad": 38.0,
+          "razones": [
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Al momento del desembolso o entrega del servicio de vivienda",
+        "canal": "Notificación en la app + correo del proceso de vivienda",
+        "porque": "El evento de vida 'casa nueva' es la mayor ventana de receptividad para el seguro de hogar."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "9170",
+    "genero": "M",
+    "rango_edad": "36 a 45 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "EPSILON",
+    "segmento_poblacional": "TAU",
+    "piramide": "ETA",
+    "empresa": "EMP_000001",
+    "ciudad": "Bogota D.C.",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": true
+    },
+    "arquetipo": "hogar_nuevo",
+    "arquetipo_desc": "Usó el servicio de vivienda Colsubsidio",
+    "propension": {
+      "serie": "9170",
+      "productos": [
+        {
+          "producto_id": "hogar",
+          "nombre": "Seguro de Hogar",
+          "score": 40.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "M6",
+              "variable": "marca VIVIENDA",
+              "condicion": "usó el servicio de vivienda Colsubsidio",
+              "puntos": 40,
+              "razon": "Acaba de usar el servicio de vivienda: quien estrena o mejora casa tiene un patrimonio nuevo que proteger."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 35.0,
+          "afinidad": 88.0,
+          "razones": [
+            {
+              "regla": "S4",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 25,
+              "razon": "Su segmento familiar corresponde a familias con hijos que dependen de los ingresos del hogar."
+            },
+            {
+              "regla": "E3",
+              "variable": "rango_edad",
+              "condicion": "36 a 45 años",
+              "puntos": 10,
+              "razon": "Entre los 36 y 45 años suele estar en su etapa de mayores responsabilidades económicas."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 30.0,
+          "afinidad": 75.0,
+          "razones": [
+            {
+              "regla": "S5",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 15,
+              "razon": "Con hijos en casa, un plan complementario agiliza consultas y especialistas para toda la familia."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 25.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Al momento del desembolso o entrega del servicio de vivienda",
+        "canal": "Notificación en la app + correo del proceso de vivienda",
+        "porque": "El evento de vida 'casa nueva' es la mayor ventana de receptividad para el seguro de hogar."
+      },
+      "rango_edad_cotizador": "31-45"
+    }
+  },
+  {
+    "serie": "557",
+    "genero": "M",
+    "rango_edad": "Mayor de 55 años",
+    "rango_salarial": "Entre 8 y 10 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "PI",
+    "piramide": "KAPPA",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "pensionado",
+    "arquetipo_desc": "Pensionado mayor de 55 años",
+    "propension": {
+      "serie": "557",
+      "productos": [
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 38.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "E6",
+              "variable": "rango_edad",
+              "condicion": "mayor de 55 años",
+              "puntos": 10,
+              "razon": "Con la edad aumenta el uso de servicios médicos; el plan complementario agiliza la atención."
+            },
+            {
+              "regla": "P2",
+              "variable": "piramide",
+              "condicion": "pensionado",
+              "puntos": 8,
+              "razon": "Los pensionados concentran el mayor uso de servicios de salud."
+            },
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "exequial",
+          "nombre": "Seguro Exequial",
+          "score": 32.0,
+          "afinidad": 84.0,
+          "razones": [
+            {
+              "regla": "E5",
+              "variable": "rango_edad",
+              "condicion": "mayor de 55 años",
+              "puntos": 20,
+              "razon": "Después de los 55, anticipar la protección exequial evita a la familia una carga en el peor momento."
+            },
+            {
+              "regla": "P1",
+              "variable": "piramide",
+              "condicion": "pensionado",
+              "puntos": 12,
+              "razon": "Su segmento corresponde a pensionados: la protección exequial familiar es la más consultada en ese grupo."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 20.0,
+          "afinidad": 53.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "R4",
+              "variable": "rango_salarial",
+              "condicion": "más de 4 SMLV",
+              "puntos": 10,
+              "razon": "Con ingresos superiores a 4 SMLV tiene capacidad real de combinar protección con ahorro rentable."
+            }
+          ]
+        },
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 18.0,
+          "afinidad": 47.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "60+"
+    }
+  },
+  {
+    "serie": "35313",
+    "genero": "M",
+    "rango_edad": "Mayor de 55 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "TAU",
+    "piramide": "KAPPA",
+    "empresa": "EMP_000001",
+    "ciudad": "Bogota D.C.",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "pensionado",
+    "arquetipo_desc": "Pensionado mayor de 55 años",
+    "propension": {
+      "serie": "35313",
+      "productos": [
+        {
+          "producto_id": "exequial",
+          "nombre": "Seguro Exequial",
+          "score": 40.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "E5",
+              "variable": "rango_edad",
+              "condicion": "mayor de 55 años",
+              "puntos": 20,
+              "razon": "Después de los 55, anticipar la protección exequial evita a la familia una carga en el peor momento."
+            },
+            {
+              "regla": "R1",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 8,
+              "razon": "Con ingresos de hasta 1.5 SMLV conviene priorizar coberturas de prima baja y alto impacto familiar."
+            },
+            {
+              "regla": "P1",
+              "variable": "piramide",
+              "condicion": "pensionado",
+              "puntos": 12,
+              "razon": "Su segmento corresponde a pensionados: la protección exequial familiar es la más consultada en ese grupo."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 33.0,
+          "afinidad": 82.0,
+          "razones": [
+            {
+              "regla": "E6",
+              "variable": "rango_edad",
+              "condicion": "mayor de 55 años",
+              "puntos": 10,
+              "razon": "Con la edad aumenta el uso de servicios médicos; el plan complementario agiliza la atención."
+            },
+            {
+              "regla": "P2",
+              "variable": "piramide",
+              "condicion": "pensionado",
+              "puntos": 8,
+              "razon": "Los pensionados concentran el mayor uso de servicios de salud."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 24.0,
+          "afinidad": 60.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 10.0,
+          "afinidad": 25.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "60+"
+    }
+  },
+  {
+    "serie": "4",
+    "genero": "F",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "ETA",
+    "piramide": "ETA",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "joven_solo",
+    "arquetipo_desc": "Joven sin grupo familiar, ingresos hasta 1.5 SMLV",
+    "propension": {
+      "serie": "4",
+      "productos": [
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 32.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "E1",
+              "variable": "rango_edad",
+              "condicion": "hasta 35 años",
+              "puntos": 8,
+              "razon": "En el rango de edad más activo, los accidentes son el riesgo más frecuente."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 24.0,
+          "afinidad": 75.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "E2",
+              "variable": "rango_edad",
+              "condicion": "20 a 35 años",
+              "puntos": 8,
+              "razon": "Empezar el ahorro protegido antes de los 35 multiplica el beneficio a largo plazo."
+            },
+            {
+              "regla": "B1",
+              "variable": "segmento_poblacional",
+              "condicion": "joven",
+              "puntos": 6,
+              "razon": "Su segmento poblacional agrupa a los afiliados jóvenes: el ahorro protegido rinde más cuanto antes empiece."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 15.0,
+          "afinidad": 47.0,
+          "razones": [
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 31.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "6",
+    "genero": "M",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Menor al SMLV",
+    "categoria": "SIGMA",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "TAU",
+    "piramide": "PSI",
+    "empresa": "EMP_000001",
+    "ciudad": "Bogota D.C.",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "joven_solo",
+    "arquetipo_desc": "Joven sin grupo familiar, ingresos hasta 1.5 SMLV",
+    "propension": {
+      "serie": "6",
+      "productos": [
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 32.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "E1",
+              "variable": "rango_edad",
+              "condicion": "hasta 35 años",
+              "puntos": 8,
+              "razon": "En el rango de edad más activo, los accidentes son el riesgo más frecuente."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 18.0,
+          "afinidad": 56.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "E2",
+              "variable": "rango_edad",
+              "condicion": "20 a 35 años",
+              "puntos": 8,
+              "razon": "Empezar el ahorro protegido antes de los 35 multiplica el beneficio a largo plazo."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 15.0,
+          "afinidad": 47.0,
+          "razones": [
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 31.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "104",
+    "genero": "M",
+    "rango_edad": "20 a 35 años",
+    "rango_salarial": "Entre 1 y 1.5 SMLV",
+    "categoria": "PI",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "TAU",
+    "piramide": "LAMBDA",
+    "empresa": "EMP_000001",
+    "ciudad": "Bogota D.C.",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "independiente",
+    "arquetipo_desc": "Trabajador independiente",
+    "propension": {
+      "serie": "104",
+      "productos": [
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 42.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "E1",
+              "variable": "rango_edad",
+              "condicion": "hasta 35 años",
+              "puntos": 8,
+              "razon": "En el rango de edad más activo, los accidentes son el riesgo más frecuente."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            },
+            {
+              "regla": "P3",
+              "variable": "piramide",
+              "condicion": "independiente",
+              "puntos": 10,
+              "razon": "Su segmento corresponde a independientes, sin el respaldo de una ARL de empleador: un accidente frena su ingreso."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 18.0,
+          "afinidad": 43.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            },
+            {
+              "regla": "E2",
+              "variable": "rango_edad",
+              "condicion": "20 a 35 años",
+              "puntos": 8,
+              "razon": "Empezar el ahorro protegido antes de los 35 multiplica el beneficio a largo plazo."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 15.0,
+          "afinidad": 36.0,
+          "razones": [
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 24.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "18-30"
+    }
+  },
+  {
+    "serie": "168",
+    "genero": "F",
+    "rango_edad": "36 a 45 años",
+    "rango_salarial": "Menor al SMLV",
+    "categoria": "PI",
+    "segmento_familiar": "LAMBDA",
+    "segmento_poblacional": "TAU",
+    "piramide": "LAMBDA",
+    "empresa": "EMP_000001",
+    "ciudad": "Mosquera",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "independiente",
+    "arquetipo_desc": "Trabajador independiente",
+    "propension": {
+      "serie": "168",
+      "productos": [
+        {
+          "producto_id": "accidentes",
+          "nombre": "Seguro de Accidentes Personales",
+          "score": 34.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S8",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 18,
+              "razon": "Sin beneficiarios registrados a cargo, su mayor riesgo económico es su propia incapacidad: un accidente detiene su ingreso."
+            },
+            {
+              "regla": "R2",
+              "variable": "rango_salarial",
+              "condicion": "hasta 1.5 SMLV",
+              "puntos": 6,
+              "razon": "El seguro de accidentes protege el ingreso con una de las primas más bajas del portafolio."
+            },
+            {
+              "regla": "P3",
+              "variable": "piramide",
+              "condicion": "independiente",
+              "puntos": 10,
+              "razon": "Su segmento corresponde a independientes, sin el respaldo de una ARL de empleador: un accidente frena su ingreso."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 15.0,
+          "afinidad": 44.0,
+          "razones": [
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 10.0,
+          "afinidad": 29.0,
+          "razones": [
+            {
+              "regla": "S9",
+              "variable": "segmento_familiar",
+              "condicion": "afiliado sin grupo familiar",
+              "puntos": 10,
+              "razon": "Sin cargas familiares registradas es el mejor momento para crear un ahorro protegido a mediano plazo."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 10.0,
+          "afinidad": 29.0,
+          "razones": [
+            {
+              "regla": "E3",
+              "variable": "rango_edad",
+              "condicion": "36 a 45 años",
+              "puntos": 10,
+              "razon": "Entre los 36 y 45 años suele estar en su etapa de mayores responsabilidades económicas."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "31-45"
+    }
+  },
+  {
+    "serie": "636",
+    "genero": "F",
+    "rango_edad": "36 a 45 años",
+    "rango_salarial": "Entre 6 y 8 SMLV",
+    "categoria": "ZETA",
+    "segmento_familiar": "EPSILON",
+    "segmento_poblacional": "PI",
+    "piramide": "XI",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "familia_alta",
+    "arquetipo_desc": "Familia nuclear con ingresos superiores a 6 SMLV",
+    "propension": {
+      "serie": "636",
+      "productos": [
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 43.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S4",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 25,
+              "razon": "Su segmento familiar corresponde a familias con hijos que dependen de los ingresos del hogar."
+            },
+            {
+              "regla": "E3",
+              "variable": "rango_edad",
+              "condicion": "36 a 45 años",
+              "puntos": 10,
+              "razon": "Entre los 36 y 45 años suele estar en su etapa de mayores responsabilidades económicas."
+            },
+            {
+              "regla": "R6",
+              "variable": "rango_salarial",
+              "condicion": "más de 6 SMLV",
+              "puntos": 8,
+              "razon": "Un ingreso alto sostiene el nivel de vida del hogar: asegurarlo protege ese estándar."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 35.0,
+          "afinidad": 81.0,
+          "razones": [
+            {
+              "regla": "S5",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 15,
+              "razon": "Con hijos en casa, un plan complementario agiliza consultas y especialistas para toda la familia."
+            },
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 10.0,
+          "afinidad": 23.0,
+          "razones": [
+            {
+              "regla": "R4",
+              "variable": "rango_salarial",
+              "condicion": "más de 4 SMLV",
+              "puntos": 10,
+              "razon": "Con ingresos superiores a 4 SMLV tiene capacidad real de combinar protección con ahorro rentable."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 23.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "31-45"
+    }
+  },
+  {
+    "serie": "870",
+    "genero": "M",
+    "rango_edad": "36 a 45 años",
+    "rango_salarial": "Entre 6 y 8 SMLV",
+    "categoria": "ZETA",
+    "segmento_familiar": "EPSILON",
+    "segmento_poblacional": "PI",
+    "piramide": "DELTA",
+    "empresa": "EMP_000001",
+    "ciudad": "",
+    "marcas": {
+      "hoteles": false,
+      "piscilago": false,
+      "drogueria": true,
+      "agencias": false,
+      "vivienda": false
+    },
+    "arquetipo": "familia_alta",
+    "arquetipo_desc": "Familia nuclear con ingresos superiores a 6 SMLV",
+    "propension": {
+      "serie": "870",
+      "productos": [
+        {
+          "producto_id": "vida",
+          "nombre": "Seguro de Vida",
+          "score": 43.0,
+          "afinidad": 100.0,
+          "razones": [
+            {
+              "regla": "S4",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 25,
+              "razon": "Su segmento familiar corresponde a familias con hijos que dependen de los ingresos del hogar."
+            },
+            {
+              "regla": "E3",
+              "variable": "rango_edad",
+              "condicion": "36 a 45 años",
+              "puntos": 10,
+              "razon": "Entre los 36 y 45 años suele estar en su etapa de mayores responsabilidades económicas."
+            },
+            {
+              "regla": "R6",
+              "variable": "rango_salarial",
+              "condicion": "más de 6 SMLV",
+              "puntos": 8,
+              "razon": "Un ingreso alto sostiene el nivel de vida del hogar: asegurarlo protege ese estándar."
+            }
+          ]
+        },
+        {
+          "producto_id": "salud",
+          "nombre": "Plan Complementario de Salud",
+          "score": 35.0,
+          "afinidad": 81.0,
+          "razones": [
+            {
+              "regla": "S5",
+              "variable": "segmento_familiar",
+              "condicion": "familia nuclear (con hijos)",
+              "puntos": 15,
+              "razon": "Con hijos en casa, un plan complementario agiliza consultas y especialistas para toda la familia."
+            },
+            {
+              "regla": "B2",
+              "variable": "segmento_poblacional",
+              "condicion": "medio/alto",
+              "puntos": 5,
+              "razon": "Su segmento poblacional (construido con ingresos, edad y compensación) sugiere capacidad para complementar su EPS."
+            },
+            {
+              "regla": "M4",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 15,
+              "razon": "Su gasto recurrente en droguería revela una necesidad de salud activa que el plan complementario alivia."
+            }
+          ]
+        },
+        {
+          "producto_id": "vida_ahorro",
+          "nombre": "Seguro de Vida y Ahorro",
+          "score": 10.0,
+          "afinidad": 23.0,
+          "razones": [
+            {
+              "regla": "R4",
+              "variable": "rango_salarial",
+              "condicion": "más de 4 SMLV",
+              "puntos": 10,
+              "razon": "Con ingresos superiores a 4 SMLV tiene capacidad real de combinar protección con ahorro rentable."
+            }
+          ]
+        },
+        {
+          "producto_id": "asistencia_familiar",
+          "nombre": "Asistencias Médicas Familiares",
+          "score": 10.0,
+          "afinidad": 23.0,
+          "razones": [
+            {
+              "regla": "M5",
+              "variable": "marca DROGUERIA",
+              "condicion": "compra en droguerías Colsubsidio",
+              "puntos": 10,
+              "razon": "Quien compra medicamentos con frecuencia aprovecha médico a domicilio y orientación 24/7."
+            }
+          ]
+        }
+      ],
+      "momento_canal": {
+        "momento": "Tras una compra en droguería (recibo digital)",
+        "canal": "WhatsApp con el recibo + app Colsubsidio",
+        "porque": "El gasto en salud está fresco: es el momento en que un plan complementario se percibe como alivio, no como venta."
+      },
+      "rango_edad_cotizador": "31-45"
+    }
+  }
+]

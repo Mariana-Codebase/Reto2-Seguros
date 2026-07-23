@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY static ./static
+COPY data ./data
 COPY server.py .
 
 # Carpeta de trabajo escribible (PDFs generados + SQLite)

@@ -35,6 +35,11 @@ class Settings:
 
     # --- Anthropic / Claude (proveedor alternativo de LLM) ---
     # Si GEMINI_API_KEY empieza por 'sk-ant-' se usa Claude en vez de Gemini.
+    # También puede declararse en su propia variable ANTHROPIC_API_KEY, dejando
+    # GEMINI_API_KEY libre para una clave Gemini real: en ese caso Gemini queda
+    # disponible como RESPALDO automático si Claude falla (créditos agotados,
+    # caída del servicio, etc.).
+    ANTHROPIC_API_KEY: str = _env("ANTHROPIC_API_KEY")
     ANTHROPIC_MODEL: str = _env("ANTHROPIC_MODEL", "claude-sonnet-5")
     ANTHROPIC_VERSION: str = _env("ANTHROPIC_VERSION", "2023-06-01")
     ANTHROPIC_BASE_URL: str = _env("ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
@@ -56,17 +61,41 @@ class Settings:
     LLM_PROVIDER: str = _env("LLM_PROVIDER").lower()
 
     @property
+    def anthropic_key(self) -> str:
+        """Clave de Claude: ANTHROPIC_API_KEY dedicada, o GEMINI_API_KEY si
+        contiene una clave 'sk-ant-' (compatibilidad con la config anterior)."""
+        if self.ANTHROPIC_API_KEY:
+            return self.ANTHROPIC_API_KEY
+        if self.GEMINI_API_KEY.startswith("sk-ant-"):
+            return self.GEMINI_API_KEY
+        return ""
+
+    @property
+    def gemini_key(self) -> str:
+        """Clave Gemini real (AIza... de AI Studio o AQ. de Vertex Express)."""
+        if self.GEMINI_API_KEY and not self.GEMINI_API_KEY.startswith("sk-ant-"):
+            return self.GEMINI_API_KEY
+        return ""
+
+    @property
     def llm_provider(self) -> str:
         """Proveedor efectivo: LLM_PROVIDER manda; si está vacío se detecta por
-        el prefijo de la clave."""
+        las claves disponibles."""
         if self.LLM_PROVIDER:
             return self.LLM_PROVIDER
-        key = self.GEMINI_API_KEY
-        if key.startswith("sk-ant-"):
+        if self.anthropic_key and not self.gemini_key:
             return "anthropic"
-        if key.startswith("AQ."):
+        if self.anthropic_key and self.gemini_key:
+            return "anthropic"   # Claude primario, Gemini queda de respaldo
+        if self.gemini_key.startswith("AQ."):
             return "vertex"
         return "aistudio"
+
+    @property
+    def llm_fallback_gemini(self) -> bool:
+        """True si hay una clave Gemini disponible para usar como respaldo
+        cuando el proveedor primario (Claude/Ollama) falle."""
+        return self.llm_provider not in ("aistudio", "vertex") and bool(self.gemini_key)
 
     @property
     def llm_model(self) -> str:
@@ -104,6 +133,7 @@ class Settings:
     DB_PATH: pathlib.Path = BASE_DIR / "var" / "clara.db"
     STATIC_DIR: pathlib.Path = BASE_DIR / "static"
     INDEX_HTML: pathlib.Path = BASE_DIR / "static" / "index.html"
+    DATA_DIR: pathlib.Path = BASE_DIR / "data"
 
     # --- Sesiones ---
     SESSION_TTL_HOURS: int = int(_env("SESSION_TTL_HOURS", "24"))
@@ -130,9 +160,9 @@ class Settings:
     def validate(self) -> list[str]:
         """Devuelve una lista de advertencias de configuración (no aborta)."""
         warnings: list[str] = []
-        if self.llm_needs_key and not self.GEMINI_API_KEY:
+        if self.llm_needs_key and not (self.GEMINI_API_KEY or self.ANTHROPIC_API_KEY):
             warnings.append(
-                "GEMINI_API_KEY (clave del modelo) no está configurada: el agente no podrá responder."
+                "Ninguna clave de modelo configurada (GEMINI_API_KEY / ANTHROPIC_API_KEY): el agente no podrá responder."
             )
         if self.llm_provider == "ollama":
             destino = self.OLLAMA_BASE_URL

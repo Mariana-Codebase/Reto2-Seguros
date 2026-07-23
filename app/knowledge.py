@@ -419,9 +419,14 @@ _PRIORIDAD_MAP: dict[str, list[str]] = {
 }
 
 
-def recomendar(perfil: dict[str, Any], productos: list[str] | None = None) -> dict[str, Any]:
-    # Si el agente ya sabe qué productos quiere mostrar (p. ej. la persona pidió
-    # uno concreto), los respetamos; solo validamos que existan en el catálogo.
+def recomendar(perfil: dict[str, Any], productos: list[str] | None = None,
+               propension: dict[str, Any] | None = None) -> dict[str, Any]:
+    # Prioridad de señales (de más a menos fuerte):
+    #   1. Producto pedido explícitamente en la conversación.
+    #   2. Prioridad expresada por la persona durante el diagnóstico.
+    #   3. Ranking del motor de propensión (variables reales de la base).
+    #   4. Portafolio por defecto.
+    # Lo que la persona dice SIEMPRE le gana a lo que la base sugiere.
     ids: list[str] = [p for p in (productos or []) if p in CATALOG]
 
     if not ids:
@@ -437,6 +442,8 @@ def recomendar(perfil: dict[str, Any], productos: list[str] | None = None) -> di
             ids = [veh_prod, "asistencia_multiple", "vida"]
         elif prioridad in _PRIORIDAD_MAP:
             ids = list(_PRIORIDAD_MAP[prioridad])
+        elif propension and propension.get("productos"):
+            ids = [p["producto_id"] for p in propension["productos"] if p["producto_id"] in CATALOG]
         else:
             ids = ["vida", "salud", "hogar"]
 
@@ -450,6 +457,16 @@ def recomendar(perfil: dict[str, Any], productos: list[str] | None = None) -> di
     dependientes = perfil.get("dependientes", 0) or 0
     rango_edad = perfil.get("rango_edad")
 
+    # Razones del motor de propensión por producto (si la sesión está anclada
+    # a un afiliado de la base): alimentan el "por qué" explicable de la oferta.
+    razones_base: dict[str, Any] = {}
+    if propension:
+        for p in propension.get("productos", []):
+            razones_base[p["producto_id"]] = {
+                "afinidad": p.get("afinidad"),
+                "razones": [r["razon"] for r in p.get("razones", [])],
+            }
+
     opciones = []
     for i in ids:
         q = cotizar(i, rango_edad, dependientes)
@@ -458,6 +475,7 @@ def recomendar(perfil: dict[str, Any], productos: list[str] | None = None) -> di
             "producto_id": i,
             "nombre": p["nombre"],
             "por_que": _REASONS[i],
+            "propension": razones_base.get(i),
             "cubre": p["amparo"][:3],
             "no_cubre": p["exclusion"],
             "precio_mensual": q["precio_mensual"],

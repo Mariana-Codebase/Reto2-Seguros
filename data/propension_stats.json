@@ -1,0 +1,127 @@
+{
+  "total_afiliados": 500000,
+  "fuente": "Usos_Productos_Afiliados_SIN_ID.xlsx (base anonimizada Colsubsidio, sin nombres ni cédulas)",
+  "recomendacion_top1": {
+    "accidentes": 229339,
+    "vida": 164058,
+    "salud": 38046,
+    "exequial": 35976,
+    "vida_ahorro": 32556,
+    "viajes": 19,
+    "hogar": 6
+  },
+  "reglas_dominantes_por_producto": {
+    "vida_ahorro": {
+      "R4": 30519,
+      "S9": 28665,
+      "B1": 17511,
+      "E2": 14254,
+      "S7": 3658
+    },
+    "vida": {
+      "S1": 130042,
+      "E3": 73519,
+      "S4": 26041,
+      "R6": 8040,
+      "S6": 6736
+    },
+    "accidentes": {
+      "S8": 224082,
+      "R2": 175256,
+      "E1": 169428,
+      "P3": 4979
+    },
+    "salud": {
+      "B2": 26122,
+      "R3": 24816,
+      "E4": 19356,
+      "S5": 19038,
+      "M4": 10629
+    },
+    "exequial": {
+      "E5": 35976,
+      "R1": 32598,
+      "P1": 11793,
+      "S3": 3168
+    },
+    "viajes": {
+      "M1": 14,
+      "M2": 5
+    },
+    "hogar": {
+      "M6": 6
+    }
+  },
+  "distribuciones": {
+    "rango_edad": {
+      "20 a 35 años": 248109,
+      "36 a 45 años": 128529,
+      "46 a 55 años": 66544,
+      "Mayor de 55 años": 49932,
+      "Menor de 19 años": 6886
+    },
+    "rango_salarial": {
+      "Entre 1 y 1.5 SMLV": 302490,
+      "Entre 1.5 y 2 SMLV": 41805,
+      "Menor al SMLV": 33868,
+      "Entre 2 y 2.5 SMLV": 27295,
+      "Entre 3 y 4 SMLV": 23780,
+      "Entre 4 y 6 SMLV": 23021,
+      "Entre 2.5 y 3 SMLV": 19347,
+      "Entre 10 y 20 SMLV": 9778,
+      "Entre 6 y 8 SMLV": 8721,
+      "(sin dato)": 4988,
+      "Entre 8 y 10 SMLV": 3098,
+      "Entre 20 y 30 SMLV": 1238,
+      "Mayor a 30 SMLV": 431,
+      "Menor a 2 SMLV": 123,
+      "Entre 2 y 4 SMLV": 13,
+      "Entre 4 y 8 SMLV": 3,
+      "Entre 8 y 19 SMLV": 1
+    },
+    "marcas_consumo": {
+      "drogueria": 88231,
+      "hoteles": 159,
+      "agencias": 114,
+      "vivienda": 36
+    },
+    "CATEGORIA": {
+      "SIGMA": 364079,
+      "PI": 82248,
+      "ZETA": 48875,
+      "MU": 4798
+    },
+    "SEGMENTO_GRUPO_FAMILIAR": {
+      "LAMBDA": 286457,
+      "RHO": 121478,
+      "EPSILON": 46999,
+      "IOTA": 25263,
+      "CHI": 11843,
+      "THETA": 7933,
+      "PI": 27
+    },
+    "SEGMENTO_POBLACIONAL": {
+      "TAU": 231119,
+      "PI": 134725,
+      "ETA": 127439,
+      "OMEGA": 4988,
+      "XI": 1729
+    },
+    "PIRAMIDE_NUEVA": {
+      "ETA": 155832,
+      "XI": 108341,
+      "UPSILON": 101791,
+      "DELTA": 57705,
+      "BETA": 22758,
+      "OMEGA": 19137,
+      "KAPPA": 12457,
+      "LAMBDA": 8636,
+      "OMICRON": 7081,
+      "PSI": 6262
+    }
+  },
+  "empresas_top": {
+    "EMP_000001": 408715,
+    "EMP_000002": 91285
+  }
+}

@@ -21,7 +21,7 @@ import logging
 import uuid
 from typing import Any
 
-from . import extraction, knowledge as kb, llm, notify, payments, pdfgen, store
+from . import extraction, knowledge as kb, llm, notify, payments, pdfgen, propension, store
 from .config import settings
 
 logger = logging.getLogger("clara.agent")
@@ -119,6 +119,10 @@ FASE 5 · FIRMA Y PAGO (lo maneja el sistema, no tú)
 
 FASE 6 · EMISIÓN Y POST-VENTA
 - Cuando el backend confirme el pago, confirma con calidez que ya quedó asegurado, menciona su número de póliza y la referencia de pago, explica en máximo 3 líneas cómo usarla (línea 018000 94 7900, qué hacer ante un siniestro) y ofrece una encuesta de satisfacción de 1 a 5.
+- Recuerda el rol de Colsubsidio: distribuye seguros de varias aseguradoras, no los fabrica. Si el afiliado pregunta quién emite su póliza, explícale con transparencia que su solicitud queda gestionada con la aseguradora a través de Colsubsidio y que un asesor de la caja hace seguimiento hasta la emisión oficial.
+
+CONTEXTO DE LA BASE DE AFILIADOS (si aplica)
+- Algunas sesiones llegan ancladas a un perfil real de la base de afiliados (verás un mensaje [PERFIL DE LA BASE DE AFILIADOS]). Úsalo para personalizar sin recitarlo, confirma en vez de interrogar, y recuerda: lo que la persona diga en la conversación SIEMPRE prevalece sobre lo que dice la base.
 
 PROTECCIÓN DE DATOS
 - Ya diste el aviso de tratamiento de datos (Ley 1581 de 2012) en el saludo inicial.
@@ -259,7 +263,7 @@ TOOLS: list[dict[str, Any]] = [
 _SNAPSHOT_FIELDS = [
     "id", "canal", "estado", "perfil", "quotes", "consentimientos", "poliza",
     "contacto", "payments", "doc_resumen", "datos", "contrato", "contrato_doc",
-    "firma", "messages",
+    "firma", "messages", "afiliado", "propension",
 ]
 
 
@@ -282,6 +286,8 @@ class Session:
         self.contrato: dict[str, Any] | None = None
         self.contrato_doc: str | None = None
         self.firma: dict[str, str] | None = None
+        self.afiliado: dict[str, Any] | None = None      # registro de la base (por SERIE, sin nombre)
+        self.propension: dict[str, Any] | None = None    # salida del motor de propensión
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
         # Buffers por turno para reportar al frontend
         self.audit: list[dict[str, str]] = []
@@ -306,6 +312,48 @@ class Session:
             store.append_audit(self.id, self.audit)
         except Exception as e:  # noqa: BLE001
             logger.error("No se pudo persistir la sesión %s: %s", self.id, e)
+
+    # ---- perfil de la base de afiliados (propensión) ----
+    def set_afiliado(self, afiliado: dict[str, Any]) -> None:
+        """Ancla la sesión a un afiliado real de la base (identificado por SERIE,
+        sin nombre). Corre el motor de propensión y le da a Clara el contexto y
+        el ranking explicado, para que la oferta arranque personalizada."""
+        self.afiliado = afiliado
+        self.propension = propension.perfilar(afiliado)
+        rango = propension.rango_edad_cotizador(afiliado)
+        if rango:
+            self.perfil["rango_edad"] = rango
+
+        top = self.propension["productos"]
+        lineas = []
+        for p in top:
+            nombre = kb.CATALOG[p["producto_id"]]["nombre"]
+            razones = " / ".join(r["razon"] for r in p["razones"][:2])
+            lineas.append(f"- {nombre} (afinidad {int(p['afinidad'])}%): {razones}")
+        mc = self.propension["momento_canal"]
+        segmentos = propension.describir_segmentos(afiliado)
+        contexto = (
+            f"[PERFIL DE LA BASE DE AFILIADOS — SERIE {afiliado.get('serie')}]\n"
+            f"Género: {afiliado.get('genero') or '—'} · Edad: {afiliado.get('rango_edad') or '—'} · "
+            f"Rango salarial: {afiliado.get('rango_salarial') or '—'} · Ciudad: {afiliado.get('ciudad') or '—'}\n"
+            f"Segmentos (etiquetas anonimizadas interpretadas según el mapa documentado): "
+            f"grupo familiar: {segmentos.get('segmento_familiar', '—')} · "
+            f"poblacional: {segmentos.get('segmento_poblacional', '—')} · "
+            f"pirámide: {segmentos.get('piramide', '—')}\n"
+            f"Marcas de consumo Colsubsidio: "
+            + (", ".join(k for k, v in (afiliado.get('marcas') or {}).items() if v) or "ninguna registrada") + ".\n"
+            f"PROPENSIÓN (motor de reglas, ya calculada):\n" + "\n".join(lineas) + "\n"
+            f"Momento/canal sugerido: {mc['momento']} · {mc['canal']}.\n"
+            "CÓMO USAR ESTO: NO recites estos datos ni menciones 'la base' o 'propensión'. Úsalos para "
+            "personalizar con naturalidad: saluda reconociendo su relación con Colsubsidio, haz 1 o 2 preguntas "
+            "para confirmar su situación (no interrogatorio completo: ya conoces su contexto) y orienta la "
+            "recomendación hacia los productos de mayor afinidad, explicando el porqué con las razones de arriba "
+            "en lenguaje cercano. Si la persona corrige algún dato, lo que ella diga SIEMPRE prevalece."
+        )
+        self.messages.append({"role": "system", "content": contexto})
+        top_txt = ", ".join(f"{p['producto_id']}({int(p['afinidad'])}%)" for p in top)
+        self._log("tool", "PROPENSION", f"Motor de reglas sobre SERIE {afiliado.get('serie')} → {top_txt}")
+        self._log("db", "PROFILES", f"Sesión anclada al afiliado SERIE {afiliado.get('serie')} (base anonimizada)")
 
     # ---- utilidades de reporte ----
     def _log(self, kind: str, tag: str, desc: str):
@@ -364,11 +412,45 @@ class Session:
             self._log("tool", "TOOL", f"cotizar({a.get('producto')}) = {res['precio_formateado']}/mes")
         return res
 
+    # Campos cuya presencia evidencia que hubo diagnóstico real.
+    _CAMPOS_PERFIL = ("hogar", "vehiculo", "dependientes", "ocupacion",
+                      "rango_edad", "prioridad", "notas")
+
+    def _perfil_vacio(self) -> bool:
+        """True si no se registró ningún dato del afiliado todavía.
+        Nota: `dependientes=0` es un dato válido, no ausencia de dato."""
+        for campo in self._CAMPOS_PERFIL:
+            valor = self.perfil.get(campo)
+            if valor is None:
+                continue
+            if isinstance(valor, (str, list, dict)) and not valor:
+                continue
+            return False
+        return True
+
     def _tool_recomendar(self, a: dict[str, Any]) -> dict[str, Any]:
         productos = a.get("productos") or None
         if isinstance(productos, str):
             productos = [productos]
-        res = kb.recomendar(self.perfil, productos)
+
+        # Guardrail de fase. El prompt ya prohíbe recomendar durante el
+        # diagnóstico, pero un modelo puede saltarse la fase (y lo hace: ante
+        # "quiero comprar un seguro pero no sé" tiende a leer solo la primera
+        # mitad y disparar el ATAJO). Aquí no puede: sin perfil y sin producto
+        # pedido explícitamente, la herramienta rechaza y le dice qué hacer.
+        if not productos and self._perfil_vacio():
+            self._log("guard", "FASE", "recomendar() bloqueado · sin perfil ni producto solicitado")
+            return {
+                "error": "fase_incorrecta",
+                "mensaje": (
+                    "Todavía no hay diagnóstico: el perfil está vacío y el afiliado no pidió "
+                    "un producto concreto. NO recomiendes ni menciones productos o precios. "
+                    "Haz una pregunta abierta para conocer su situación y llama a "
+                    "registrar_perfil con lo que te cuente."
+                ),
+            }
+
+        res = kb.recomendar(self.perfil, productos, propension=self.propension)
         for o in res.get("opciones", []):
             self.quotes[o["producto_id"]] = {
                 "producto_id": o["producto_id"], "producto": o["nombre"],
@@ -382,7 +464,7 @@ class Session:
     def _tool_generar_resumen(self, a: dict[str, Any]) -> dict[str, Any]:
         canal = (a.get("canal") or "correo").lower()
         destino = (a.get("destino") or "").strip()
-        rec = kb.recomendar(self.perfil)
+        rec = kb.recomendar(self.perfil, propension=self.propension)
         opciones = rec["opciones"]
 
         fname = pdfgen.generar_resumen_pdf(self.id, self.perfil, opciones, perfil_humano(self.perfil))
@@ -593,13 +675,51 @@ class Session:
         self.actions.append({"type": "contrato",
                              "data": {**contrato, "faltan": [], "firmado": True, "entrega": entrega}})
         pago = self._crear_pago(producto)
+        # Contrato firmado: la solicitud entra a la bandeja del asesor a la
+        # espera del pago para gestionarla con la aseguradora.
+        self._enviar_a_asesor("pendiente_pago")
         return {"contrato": contrato, "pago": pago}
 
     def _tool_escalar_a_humano(self, a: dict[str, Any]) -> dict[str, Any]:
         motivo = a.get("motivo", "fuera de alcance")
+        ticket = "TCK-" + uuid.uuid4().hex[:6].upper()
         self._log("tool", "TOOL", f"escalar_a_humano() · motivo: {motivo}")
-        return {"ok": True, "ticket": "TCK-" + uuid.uuid4().hex[:6].upper(),
+        store.upsert_solicitud(ticket, self.id, "escalamiento", None, "nueva", {
+            "motivo": motivo, "perfil": self.perfil, "afiliado": self.afiliado,
+            "datos": {k: v for k, v in self.datos.items()},
+        })
+        self._log("db", "ASESOR", f"Escalamiento {ticket} → bandeja del asesor · {motivo}")
+        return {"ok": True, "ticket": ticket,
                 "mensaje": "Un asesor humano tomará el caso y contactará al afiliado."}
+
+    # ---- paquete de vinculación para el asesor / aseguradora ----
+    # Colsubsidio no fabrica las pólizas: las distribuye. Clara empaqueta todo
+    # lo que la aseguradora necesita (perfil, propensión explicada, datos,
+    # contrato firmado, pago) y lo transmite a la bandeja del asesor.
+    def _paquete_asesor(self) -> dict[str, Any]:
+        return {
+            "afiliado": self.afiliado,           # registro de la base (SERIE, sin nombre)
+            "segmentos_interpretados": propension.describir_segmentos(self.afiliado) if self.afiliado else {},
+            "propension": self.propension,       # ranking + razones del motor de reglas
+            "perfil_conversacional": self.perfil,
+            "datos_contratante": self.datos,
+            "contacto": self.contacto,
+            "contrato": {k: v for k, v in (self.contrato or {}).items()
+                         if k in ("solicitud", "producto", "producto_id", "precio",
+                                  "precio_formateado", "vigencia", "inicio", "fin",
+                                  "firmado", "firma", "url")},
+            "poliza": self.poliza,
+            "canal_venta": self.canal,
+        }
+
+    def _enviar_a_asesor(self, estado: str) -> None:
+        contrato = self.contrato or {}
+        sol_id = contrato.get("solicitud")
+        if not sol_id:
+            return
+        store.upsert_solicitud(sol_id, self.id, "vinculacion",
+                               contrato.get("producto_id"), estado, self._paquete_asesor())
+        self._log("db", "ASESOR", f"Solicitud {sol_id} transmitida a la bandeja del asesor · estado={estado}")
 
     # ---- emisión de póliza (determinística, disparada por el pago aprobado) ----
     def emitir_poliza(self, producto: str, referencia: str | None = None) -> dict[str, Any]:
@@ -638,6 +758,10 @@ class Session:
 
         self._set_estado("EMITIDA")
         self.actions.append({"type": "poliza", "data": {**self.poliza, "entrega": entrega}})
+        # Pago aprobado: el paquete completo (perfil + propensión + contrato +
+        # pago + póliza) queda en la bandeja del asesor, listo para tramitar
+        # la emisión oficial con la aseguradora.
+        self._enviar_a_asesor("pagada")
         return self.poliza
 
 

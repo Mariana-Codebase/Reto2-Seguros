@@ -39,6 +39,16 @@ CREATE TABLE IF NOT EXISTS audit_log (
     at          TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_audit_session ON audit_log(session_id);
+CREATE TABLE IF NOT EXISTS solicitudes (
+    id          TEXT PRIMARY KEY,        -- SOL-... (misma referencia del contrato)
+    session_id  TEXT NOT NULL,
+    tipo        TEXT NOT NULL,           -- vinculacion | escalamiento
+    producto    TEXT,
+    estado      TEXT NOT NULL,           -- pendiente_pago | pagada | enviada_aseguradora | emitida_aseguradora | cerrada
+    payload     TEXT NOT NULL,           -- JSON: perfil, propension, datos, contrato, pago, poliza
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);
 """
 
 
@@ -111,8 +121,57 @@ def purge_old_sessions(ttl_hours: int | None = None) -> int:
     return cur.rowcount
 
 
+# --------------------------------------------------------------------------
+# Solicitudes: la bandeja del asesor / aseguradora.
+# Colsubsidio no emite pólizas: Clara empaqueta cada vinculación y la
+# transmite aquí para que el asesor la gestione con la aseguradora.
+# --------------------------------------------------------------------------
+def upsert_solicitud(solicitud_id: str, session_id: str, tipo: str, producto: str | None,
+                     estado: str, payload: dict[str, Any]) -> None:
+    body = json.dumps(payload, ensure_ascii=False)
+    with _lock:
+        _conn.execute(
+            """INSERT INTO solicitudes (id, session_id, tipo, producto, estado, payload, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                 estado = excluded.estado,
+                 payload = excluded.payload,
+                 updated_at = excluded.updated_at""",
+            (solicitud_id, session_id, tipo, producto, estado, body, _now(), _now()),
+        )
+        _conn.commit()
+
+
+def list_solicitudes() -> list[dict[str, Any]]:
+    with _lock:
+        rows = _conn.execute(
+            "SELECT id, session_id, tipo, producto, estado, payload, created_at, updated_at "
+            "FROM solicitudes ORDER BY updated_at DESC"
+        ).fetchall()
+    out = []
+    for r in rows:
+        try:
+            payload = json.loads(r[5])
+        except json.JSONDecodeError:
+            payload = {}
+        out.append({"id": r[0], "session_id": r[1], "tipo": r[2], "producto": r[3],
+                    "estado": r[4], "payload": payload, "created_at": r[6], "updated_at": r[7]})
+    return out
+
+
+def set_estado_solicitud(solicitud_id: str, estado: str) -> bool:
+    with _lock:
+        cur = _conn.execute(
+            "UPDATE solicitudes SET estado = ?, updated_at = ? WHERE id = ?",
+            (estado, _now(), solicitud_id),
+        )
+        _conn.commit()
+    return cur.rowcount > 0
+
+
 def stats() -> dict[str, int]:
     with _lock:
         sesiones = _conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
         eventos = _conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
-    return {"sesiones": sesiones, "eventos_auditoria": eventos}
+        solicitudes = _conn.execute("SELECT COUNT(*) FROM solicitudes").fetchone()[0]
+    return {"sesiones": sesiones, "eventos_auditoria": eventos, "solicitudes_asesor": solicitudes}

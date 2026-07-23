@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel del asesor — Clara | Colsubsidio × 30X</title>
+<meta name="description" content="Bandeja de vinculaciones: Clara vende de forma autónoma y transmite cada solicitud empaquetada al asesor, que la gestiona con la aseguradora.">
+<script>
+  (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<link rel="stylesheet" href="/static/css/styles.css">
+<style>
+  .as-wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+  .as-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .as-head h1{margin:0;font-size:26px}
+  .as-head p{margin:6px 0 0;color:var(--muted);max-width:640px}
+  .as-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+  .as-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
+  .as-kpi b{font-size:20px;color:var(--primary-d)}
+  [data-theme="dark"] .as-kpi b{color:var(--primary)}
+  .as-kpi span{display:block;font-size:12px;color:var(--muted)}
+  .sol{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+  .sol-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .sol-top h3{margin:0;font-size:15.5px}
+  .sol-top .mono{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
+  .badge.pendiente_pago{background:var(--warn-soft);color:var(--warn)}
+  .badge.pagada{background:var(--info-soft);color:var(--info)}
+  .badge.enviada_aseguradora{background:var(--primary-soft);color:var(--primary-d)}
+  .badge.emitida_aseguradora{background:var(--primary);color:#fff}
+  .badge.cerrada{background:var(--line);color:var(--muted)}
+  .badge.nueva{background:var(--warn-soft);color:var(--warn)}
+  .sol-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+  .sol-sec{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px}
+  .sol-sec h4{margin:0 0 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  .sol-sec .kv{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+  .sol-sec .kv .k{color:var(--muted)}
+  .sol-sec ul{margin:4px 0 0;padding-left:16px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
+  .sol-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .sol-actions button,.sol-actions a{font:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none}
+  .sol-actions button:hover,.sol-actions a:hover{border-color:var(--primary);color:var(--primary-d)}
+  .sol-actions .adv{background:var(--primary);border-color:var(--primary);color:#fff}
+  .sol-actions .adv:hover{background:var(--primary-d);color:#fff}
+  .as-empty{border:1px dashed var(--line-2);border-radius:14px;padding:40px;text-align:center;color:var(--muted)}
+  .aff-tag{font-size:11px;background:var(--info-soft);color:var(--info);border-radius:6px;padding:2px 7px;font-weight:700}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brandlock">
+      <span class="cobrand" aria-label="Colsubsidio por 30X">
+        <img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio">
+        <span class="xsign">×</span>
+        <img class="logo-30x" src="/static/img/30x.png" alt="30X">
+      </span>
+      <span class="vdiv"></span>
+      <div class="product">
+        <div class="mark">C</div>
+        <div><b>Panel del asesor</b><span>Gestión con aseguradoras</span></div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <button onclick="location.href='/'">Volver a Clara</button>
+    </nav>
+  </div>
+</header>
+
+<div class="as-wrap">
+  <div class="as-head">
+    <div>
+      <h1>Bandeja de vinculaciones</h1>
+      <p>Colsubsidio distribuye seguros, no los emite. Clara cierra la venta de forma 100% autónoma y
+        transmite aquí cada solicitud empaquetada — perfil, propensión explicada, contrato firmado y pago —
+        para que el asesor la gestione con la aseguradora correspondiente.</p>
+    </div>
+    <button class="btn ghost" onclick="cargar()">Actualizar</button>
+  </div>
+
+  <div class="as-kpis" id="kpis"></div>
+  <div id="lista"><div class="as-empty">Cargando solicitudes…</div></div>
+</div>
+
+<script>
+"use strict";
+const ESTADOS_SIGUIENTE = {
+  pendiente_pago: null,                       // avanza sola cuando el afiliado paga
+  pagada: ["enviada_aseguradora", "Enviar a la aseguradora"],
+  enviada_aseguradora: ["emitida_aseguradora", "Marcar emitida por la aseguradora"],
+  emitida_aseguradora: ["cerrada", "Cerrar solicitud"],
+  nueva: ["cerrada", "Marcar gestionado"],
+  cerrada: null
+};
+const ESTADO_LABEL = {
+  pendiente_pago: "Pendiente de pago", pagada: "Pagada · lista para aseguradora",
+  enviada_aseguradora: "Enviada a aseguradora", emitida_aseguradora: "Emitida por aseguradora",
+  cerrada: "Cerrada", nueva: "Nueva"
+};
+
+function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function kv(k, v){ return '<div class="kv"><span class="k">' + esc(k) + '</span><span>' + esc(v || "—") + '</span></div>'; }
+
+function afiliadoSec(af, seg){
+  if (!af) return '<div class="sol-sec"><h4>Afiliado</h4><div class="kv"><span class="k">Origen</span><span>Visitante sin registro en la base</span></div></div>';
+  seg = seg || {};
+  const marcas = Object.entries(af.marcas || {}).filter(([,v]) => v).map(([k]) => k).join(", ") || "ninguna";
+  return '<div class="sol-sec"><h4>Afiliado (base Colsubsidio, por SERIE)</h4>' +
+    kv("Serie", af.serie) + kv("Edad", af.rango_edad) + kv("Rango salarial", af.rango_salarial) +
+    kv("Grupo familiar", seg.segmento_familiar || af.segmento_familiar) +
+    kv("Pirámide", seg.piramide || af.piramide) +
+    kv("Ciudad", af.ciudad) + kv("Marcas de consumo", marcas) + '</div>';
+}
+
+function propSec(prop){
+  if (!prop || !prop.productos || !prop.productos.length) return "";
+  const top = prop.productos[0];
+  const razones = (top.razones || []).slice(0, 3).map(r => "<li>" + esc(r.razon) + "</li>").join("");
+  return '<div class="sol-sec"><h4>Propensión (motor de reglas)</h4>' +
+    '<div class="kv"><span class="k">Producto top</span><span>' + esc(top.nombre) +
+    ' <span class="aff-tag">' + Math.round(top.afinidad) + '%</span></span></div>' +
+    '<ul>' + razones + '</ul></div>';
+}
+
+function contratoSec(s){
+  const c = (s.payload && s.payload.contrato) || {};
+  const datos = (s.payload && s.payload.datos_contratante) || {};
+  const pol = s.payload && s.payload.poliza;
+  return '<div class="sol-sec"><h4>Contratación</h4>' +
+    kv("Tomador", datos.nombre) + kv("Contacto", datos.correo || datos.telefono) +
+    kv("Solicitud", c.solicitud) + kv("Prima", c.precio_formateado ? c.precio_formateado + "/mes" : null) +
+    kv("Firmado", c.firmado ? "Sí · " + ((c.firma && c.firma.at) || "") : "No") +
+    (pol ? kv("Póliza (interna)", pol.numero) : "") + '</div>';
+}
+
+function card(s){
+  const div = document.createElement("div");
+  div.className = "sol";
+  const titulo = s.tipo === "escalamiento"
+    ? "Escalamiento a asesor humano"
+    : "Vinculación · " + ((s.payload && s.payload.contrato && s.payload.contrato.producto) || s.producto || "—");
+  let inner =
+    '<div class="sol-top"><div><h3>' + esc(titulo) + '</h3>' +
+    '<span class="mono">' + esc(s.id) + ' · sesión ' + esc(s.session_id) + ' · ' + esc(s.updated_at) + '</span></div>' +
+    '<span class="badge ' + esc(s.estado) + '">' + esc(ESTADO_LABEL[s.estado] || s.estado) + '</span></div>';
+  if (s.tipo === "escalamiento") {
+    inner += '<div class="sol-grid">' +
+      '<div class="sol-sec"><h4>Motivo</h4><div>' + esc((s.payload && s.payload.motivo) || "—") + '</div></div>' +
+      afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) + '</div>';
+  } else {
+    inner += '<div class="sol-grid">' +
+      afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) +
+      propSec(s.payload && s.payload.propension) + contratoSec(s) + '</div>';
+  }
+  div.innerHTML = inner;
+
+  const actions = document.createElement("div");
+  actions.className = "sol-actions";
+  const c = s.payload && s.payload.contrato;
+  if (c && c.url) {
+    const a = document.createElement("a");
+    a.href = c.url; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "Ver contrato (PDF)";
+    actions.appendChild(a);
+  }
+  const pol = s.payload && s.payload.poliza;
+  if (pol && pol.url) {
+    const a = document.createElement("a");
+    a.href = pol.url; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "Ver póliza (PDF)";
+    actions.appendChild(a);
+  }
+  const next = ESTADOS_SIGUIENTE[s.estado];
+  if (next) {
+    const b = document.createElement("button");
+    b.className = "adv";
+    b.textContent = next[1];
+    b.onclick = () => avanzar(s.id, next[0], b);
+    actions.appendChild(b);
+  }
+  if (actions.children.length) div.appendChild(actions);
+  return div;
+}
+
+async function avanzar(id, estado, btn){
+  btn.disabled = true;
+  try {
+    const r = await fetch("/api/asesor/solicitudes/" + encodeURIComponent(id) + "/estado", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ estado })
+    });
+    if (r.ok) cargar();
+  } catch (e) { btn.disabled = false; }
+}
+
+async function cargar(){
+  const lista = document.getElementById("lista");
+  const kpis = document.getElementById("kpis");
+  try {
+    const r = await fetch("/api/asesor/solicitudes");
+    const d = await r.json();
+    const sols = d.solicitudes || [];
+    const porEstado = {};
+    sols.forEach(s => { porEstado[s.estado] = (porEstado[s.estado] || 0) + 1; });
+    kpis.innerHTML =
+      '<div class="as-kpi"><b>' + sols.length + '</b><span>solicitudes totales</span></div>' +
+      '<div class="as-kpi"><b>' + (porEstado.pagada || 0) + '</b><span>pagadas por gestionar</span></div>' +
+      '<div class="as-kpi"><b>' + (porEstado.enviada_aseguradora || 0) + '</b><span>en la aseguradora</span></div>' +
+      '<div class="as-kpi"><b>' + ((porEstado.emitida_aseguradora || 0) + (porEstado.cerrada || 0)) + '</b><span>emitidas / cerradas</span></div>';
+    lista.innerHTML = "";
+    if (!sols.length) {
+      lista.innerHTML = '<div class="as-empty">Aún no hay solicitudes. Completa una venta con Clara en la <a href="/#demo">demo</a> y aparecerá aquí, empaquetada para la aseguradora.</div>';
+      return;
+    }
+    sols.forEach(s => lista.appendChild(card(s)));
+  } catch (e) {
+    lista.innerHTML = '<div class="as-empty">No pude cargar las solicitudes. ¿Está corriendo el servidor?</div>';
+  }
+}
+
+cargar();
+setInterval(cargar, 7000);
+</script>
+</body>
+</html>
