@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, agent, knowledge as kb, llm, payments, propension, store
+from . import __version__, afiliados_db, agent, knowledge as kb, llm, payments, propension, store
 from .config import settings
 
 logger = logging.getLogger("clara.api")
@@ -96,6 +96,38 @@ class FirmaReq(BaseModel):
     producto: str
 
 
+class AfiliadoCrearReq(BaseModel):
+    """Datos con los que Clara (o el equipo) registra un afiliado nuevo. Todos
+    opcionales salvo lo mínimo para personalizar; la SERIE la asigna la base."""
+    genero: str | None = Field(default=None, pattern="^[FM]$")
+    rango_edad: str | None = None
+    rango_salarial: str | None = None
+    categoria: str | None = None
+    segmento_familiar: str | None = None
+    segmento_poblacional: str | None = None
+    piramide: str | None = None
+    empresa: str | None = None
+    ciudad: str | None = None
+    marcas: dict[str, bool] | None = None
+    vivienda: dict[str, object] | None = None
+    credito: dict[str, object] | None = None
+
+
+class AfiliadoActualizarReq(BaseModel):
+    """Actualización parcial: solo se aplican los campos editables presentes."""
+    genero: str | None = Field(default=None, pattern="^[FM]$")
+    rango_edad: str | None = None
+    rango_salarial: str | None = None
+    categoria: str | None = None
+    segmento_familiar: str | None = None
+    segmento_poblacional: str | None = None
+    piramide: str | None = None
+    empresa: str | None = None
+    ciudad: str | None = None
+    marcas: dict[str, bool] | None = None
+    afiliado_activo: bool | None = None
+
+
 @app.on_event("startup")
 def _startup():
     purged = store.purge_old_sessions()
@@ -153,9 +185,14 @@ def crear_sesion(req: SessionReq):
 
     saludo = SALUDO
     if req.serie:
-        af = propension.buscar_demo(req.serie)
+        # Primero la base real (500k afiliados en Mongo); si no está, se cae al
+        # comportamiento demo anterior (muestra precalculada en data/).
+        af = afiliados_db.existe_afiliado(req.serie)
         if af is None:
-            raise HTTPException(status_code=404, detail=f"Afiliado SERIE {req.serie} no está en la muestra demo.")
+            af = propension.buscar_demo(req.serie)
+        if af is None:
+            raise HTTPException(status_code=404,
+                                detail=f"Afiliado SERIE {req.serie} no está en la base ni en la muestra demo.")
         s.set_afiliado(af)
         top = s.propension["productos"][0] if s.propension.get("productos") else None
         gancho = ""
@@ -187,6 +224,45 @@ def chat(req: ChatReq):
         logger.error("Turno fallido en sesión %s: %s", s.id, e)
         raise HTTPException(status_code=503, detail=str(e))
     return JSONResponse(out)
+
+
+# --------------------------------------------------------------------------
+# Afiliados (base real en Mongo): perfil 360, alta, actualización y ofertas.
+# Sirven para validar el flujo y para el uso del equipo.
+# --------------------------------------------------------------------------
+@app.get("/api/afiliados/{serie}")
+def afiliado_perfil(serie: str):
+    perfil = afiliados_db.perfil_360(serie)
+    if perfil is None:
+        raise HTTPException(status_code=404, detail=f"Afiliado SERIE {serie} no encontrado.")
+    return perfil
+
+
+@app.post("/api/afiliados")
+def afiliado_crear(req: AfiliadoCrearReq):
+    datos = req.model_dump(exclude_none=True)
+    doc = afiliados_db.crear_afiliado(datos)
+    return {"ok": True, "afiliado": doc}
+
+
+@app.patch("/api/afiliados/{serie}")
+def afiliado_actualizar(serie: str, req: AfiliadoActualizarReq):
+    campos = req.model_dump(exclude_none=True)
+    if not campos:
+        raise HTTPException(status_code=400, detail="No se indicó ningún campo para actualizar.")
+    doc = afiliados_db.actualizar_afiliado(serie, campos)
+    if doc is None:
+        raise HTTPException(status_code=404, detail=f"Afiliado SERIE {serie} no encontrado.")
+    return {"ok": True, "afiliado": doc}
+
+
+@app.get("/api/afiliados/{serie}/ofertas")
+def afiliado_ofertas(serie: str):
+    if afiliados_db.existe_afiliado(serie) is None:
+        raise HTTPException(status_code=404, detail=f"Afiliado SERIE {serie} no encontrado.")
+    return {"serie": serie,
+            "ofertas": afiliados_db.ofertas_para(serie),
+            "alertas": afiliados_db.alertas_pendientes(serie)}
 
 
 # --------------------------------------------------------------------------

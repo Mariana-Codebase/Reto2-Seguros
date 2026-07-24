@@ -21,7 +21,7 @@ import logging
 import uuid
 from typing import Any
 
-from . import extraction, knowledge as kb, llm, notify, payments, pdfgen, propension, store
+from . import afiliados_db, extraction, knowledge as kb, llm, notify, payments, pdfgen, propension, store
 from .config import settings
 
 logger = logging.getLogger("clara.agent")
@@ -83,6 +83,15 @@ FASE 0 · APERTURA (tu primer mensaje ya la hizo)
   - Si dice que YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
   - Si dice que NO sabe o quiere que la ayudes a elegir → entra a la FASE 1 · DIAGNÓSTICO con preguntas abiertas.
 - NO empieces preguntando "¿con quién vives?". Primero respeta lo que respondió a esa bifurcación.
+
+FASE 0B · AFILIACIÓN COLSUBSIDIO (verificación en la base real)
+- Si la sesión NO llega ya anclada a un perfil de la base (no viste el mensaje [PERFIL DE LA BASE DE AFILIADOS]), en un momento natural y temprano de la charla pregunta con calidez si es afiliado a Colsubsidio y, de serlo, pídele su número de SERIE para reconocerlo. Una sola pregunta, sin interrogar.
+- Cuando te dé la SERIE, llama a verificar_afiliado. Según el resultado:
+  - Si existe y está activo → la sesión queda anclada a su perfil real (vivienda, créditos, propensión). Salúdalo reconociendo su relación con Colsubsidio y personaliza; NO recites los datos.
+  - Si no existe → dile con naturalidad que no lo encuentras en la base y ofrécele registrarlo para personalizar su asesoría. Si acepta, ve pidiendo con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio: si prefiere no registrarse, continúa la asesoría igual.
+  - Si existe pero está inactivo → coméntale que su afiliación figura inactiva y ofrécele orientación para reactivarla, sin frenar la asesoría.
+- Si la persona no es afiliada o no quiere dar la SERIE, no insistas: continúa con el diagnóstico o el atajo con normalidad.
+- Durante la charla, cuando el afiliado corrija o aporte un dato de su perfil (ciudad, rango salarial, etc.), usa actualizar_afiliado para dejarlo registrado. Para mostrar promociones o novedades de su relación con Colsubsidio usa consultar_ofertas y consultar_alertas.
 
 ATAJO · PETICIÓN DIRECTA (muy importante)
 - Si la persona dice de entrada qué seguro quiere ("solo quiero un seguro de viaje", "quiero asegurar mi moto"), NO la interrogues con el diagnóstico completo. Reconoce su necesidad y ve directo a ese producto: llama a recomendar con ese producto en `productos` (o cotizar + consultar_coberturas), explícalo con claridad, resuelve dudas y avanza a datos y contrato. Pide solo los datos mínimos para cotizar.
@@ -259,6 +268,95 @@ TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "verificar_afiliado",
+            "description": ("Verifica en la base real de Colsubsidio si una SERIE corresponde a un afiliado. "
+                            "Úsala cuando la persona te dé su número de SERIE. Si existe y está activo, ancla la "
+                            "sesión a su perfil real (vivienda, créditos y propensión) para personalizar. Si no "
+                            "existe, te lo indica para que ofrezcas crearlo."),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "serie": {"type": "string", "description": "Número de SERIE del afiliado (entero)."},
+                },
+                "required": ["serie"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crear_afiliado",
+            "description": ("Registra un afiliado nuevo en la base cuando la SERIE no existe y la persona acepta "
+                            "registrarse. Envía solo los datos que la persona haya dado explícitamente. Se asigna "
+                            "una SERIE nueva automáticamente y la sesión queda anclada al nuevo perfil."),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "genero": {"type": "string", "enum": ["F", "M"], "description": "Género (F o M)."},
+                    "rango_edad": {"type": "string", "enum": list(propension._RANGO_EDAD_COTIZADOR.keys()),
+                                   "description": "Rango de edad según las categorías de la base."},
+                    "rango_salarial": {"type": "string", "enum": list(propension._SALARIOS),
+                                       "description": "Rango salarial en SMLV según las categorías de la base."},
+                    "ciudad": {"type": "string", "description": "Ciudad del afiliado."},
+                    "empresa": {"type": "string", "description": "Empresa/aportante, si la menciona."},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "actualizar_afiliado",
+            "description": ("Actualiza datos del afiliado anclado (o de una SERIE) cuando la persona corrige o aporta "
+                            "información durante la charla. Envía solo los campos que cambian. Recalcula la propensión "
+                            "si el cambio afecta la recomendación."),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "serie": {"type": "string", "description": "SERIE a actualizar. Si se omite, usa el afiliado anclado."},
+                    "genero": {"type": "string", "enum": ["F", "M"]},
+                    "rango_edad": {"type": "string", "enum": list(propension._RANGO_EDAD_COTIZADOR.keys())},
+                    "rango_salarial": {"type": "string", "enum": list(propension._SALARIOS)},
+                    "ciudad": {"type": "string"},
+                    "empresa": {"type": "string"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_ofertas",
+            "description": ("Devuelve las promociones y ofertas explicables del afiliado según su perfil 360 "
+                            "(vivienda → hogar, crédito al día → vida deudor, etc.), junto con sus alertas. Úsala "
+                            "tras verificar al afiliado o cuando pida promociones o novedades. Usa la SERIE anclada "
+                            "si no envías una."),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "serie": {"type": "string", "description": "SERIE a consultar. Si se omite, usa el afiliado anclado."},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_alertas",
+            "description": ("Devuelve las alertas pendientes del afiliado (créditos en mora y eventos recientes). "
+                            "Úsala al inicio o si pregunta por novedades de su relación con Colsubsidio. Usa la SERIE "
+                            "anclada si no envías una."),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "serie": {"type": "string", "description": "SERIE a consultar. Si se omite, usa el afiliado anclado."},
+                },
+            },
+        },
+    },
 ]
 
 _SNAPSHOT_FIELDS = [
@@ -355,6 +453,112 @@ class Session:
         top_txt = ", ".join(f"{p['producto_id']}({int(p['afinidad'])}%)" for p in top)
         self._log("tool", "PROPENSION", f"Motor de reglas sobre SERIE {afiliado.get('serie')} → {top_txt}")
         self._log("db", "PROFILES", f"Sesión anclada al afiliado SERIE {afiliado.get('serie')} (base anonimizada)")
+
+    # ---- herramientas de afiliación (base real en Mongo) ----
+    # Variables del afiliado que alteran el ranking del motor de propensión.
+    _VARS_PROPENSION = {"rango_edad", "rango_salarial", "segmento_familiar",
+                        "segmento_poblacional", "piramide", "empresa", "marcas"}
+
+    def _serie_actual(self, a: dict[str, Any]) -> Any:
+        """SERIE del argumento o, si falta, la del afiliado anclado a la sesión."""
+        serie = a.get("serie")
+        if serie in (None, ""):
+            serie = (self.afiliado or {}).get("serie")
+        return serie
+
+    def _tool_verificar_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
+        serie = a.get("serie")
+        doc = afiliados_db.existe_afiliado(serie)
+        if doc is None:
+            self._log("db", "AFILIADOS", f"verificar_afiliado(SERIE {serie}) → no existe")
+            return {
+                "existe": False, "serie": serie,
+                "mensaje": ("No hay ningún afiliado con esa SERIE en la base. Si la persona quiere, ofrécele "
+                            "registrarlo con crear_afiliado (pide género, rango de edad, rango salarial y ciudad)."),
+            }
+        if not doc.get("afiliado_activo", True):
+            self._log("db", "AFILIADOS", f"verificar_afiliado(SERIE {serie}) → inactivo")
+            return {
+                "existe": True, "activo": False, "serie": doc.get("serie"),
+                "mensaje": ("El afiliado existe pero figura INACTIVO. Coméntalo con tacto y ofrece orientación "
+                            "para reactivar la afiliación; no frenes la asesoría."),
+            }
+        self.set_afiliado(doc)
+        ofertas = afiliados_db.ofertas_para(serie)
+        alertas = afiliados_db.alertas_pendientes(serie)
+        afiliados_db.registrar_evento(doc.get("serie"), "afiliados", "verificado",
+                                      {"session": self.id, "canal": self.canal})
+        self._log("db", "AFILIADOS", f"verificar_afiliado(SERIE {doc.get('serie')}) → activo · "
+                                     f"{len(ofertas)} oferta(s), {len(alertas)} alerta(s)")
+        return {
+            "existe": True, "activo": True, "serie": doc.get("serie"),
+            "ofertas": ofertas, "alertas": alertas,
+            "mensaje": ("Afiliado verificado y anclado. Salúdalo reconociendo su relación con Colsubsidio y "
+                        "personaliza con naturalidad; NO recites los datos ni menciones 'la base'."),
+        }
+
+    def _tool_crear_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
+        datos: dict[str, Any] = {}
+        for c in ("genero", "rango_edad", "rango_salarial", "ciudad", "empresa",
+                  "categoria", "segmento_familiar", "segmento_poblacional", "piramide"):
+            v = a.get(c)
+            if v not in (None, ""):
+                datos[c] = v
+        if isinstance(a.get("marcas"), dict):
+            datos["marcas"] = a["marcas"]
+        for extra in ("vivienda", "credito"):
+            if isinstance(a.get(extra), dict):
+                datos[extra] = a[extra]
+        doc = afiliados_db.crear_afiliado(datos)
+        self.set_afiliado(doc)
+        self._log("db", "AFILIADOS", f"crear_afiliado() → SERIE {doc.get('serie')} creada y anclada")
+        return {
+            "ok": True, "serie": doc.get("serie"),
+            "mensaje": (f"Afiliado creado con la SERIE {doc.get('serie')}. Comunícasela a la persona, dale la "
+                        "bienvenida y continúa personalizando la asesoría."),
+        }
+
+    def _tool_actualizar_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
+        serie = self._serie_actual(a)
+        if serie in (None, ""):
+            return {"error": "No hay afiliado anclado ni SERIE indicada para actualizar."}
+        campos = {k: v for k, v in a.items()
+                  if k != "serie" and k in afiliados_db.CAMPOS_EDITABLES and v not in (None, "")}
+        if not campos:
+            return {"error": "No se indicó ningún campo editable para actualizar."}
+        doc = afiliados_db.actualizar_afiliado(serie, campos)
+        if doc is None:
+            return {"error": f"No existe un afiliado con la SERIE {serie}."}
+        recalculado = False
+        # Si la sesión está anclada a esta serie, refresca el perfil y, cuando el
+        # cambio afecta la propensión, recalcula el ranking reutilizando el motor.
+        if self.afiliado and str(self.afiliado.get("serie")) == str(doc.get("serie")):
+            self.afiliado = doc
+            if self._VARS_PROPENSION & set(campos):
+                self.propension = propension.perfilar(doc)
+                recalculado = True
+                self._log("tool", "PROPENSION", f"Propensión recalculada por cambios en SERIE {doc.get('serie')}")
+        self._log("db", "AFILIADOS", f"actualizar_afiliado(SERIE {doc.get('serie')}) → {', '.join(campos)}")
+        return {"ok": True, "serie": doc.get("serie"), "campos_actualizados": list(campos),
+                "propension_recalculada": recalculado}
+
+    def _tool_consultar_ofertas(self, a: dict[str, Any]) -> dict[str, Any]:
+        serie = self._serie_actual(a)
+        if serie in (None, ""):
+            return {"error": "No hay afiliado anclado ni SERIE indicada para consultar ofertas."}
+        ofertas = afiliados_db.ofertas_para(serie)
+        alertas = afiliados_db.alertas_pendientes(serie)
+        self._log("tool", "TOOL", f"consultar_ofertas(SERIE {serie}) → "
+                                  f"{len(ofertas)} oferta(s), {len(alertas)} alerta(s)")
+        return {"serie": serie, "ofertas": ofertas, "alertas": alertas}
+
+    def _tool_consultar_alertas(self, a: dict[str, Any]) -> dict[str, Any]:
+        serie = self._serie_actual(a)
+        if serie in (None, ""):
+            return {"error": "No hay afiliado anclado ni SERIE indicada para consultar alertas."}
+        alertas = afiliados_db.alertas_pendientes(serie)
+        self._log("tool", "TOOL", f"consultar_alertas(SERIE {serie}) → {len(alertas)} alerta(s)")
+        return {"serie": serie, "alertas": alertas}
 
     # ---- utilidades de reporte ----
     def _log(self, kind: str, tag: str, desc: str):
@@ -457,6 +661,14 @@ class Session:
                 "producto_id": o["producto_id"], "producto": o["nombre"],
                 "precio_mensual": o["precio_mensual"], "precio_formateado": o["precio_formateado"],
             }
+        # Con afiliado anclado, suma las ofertas explicables del perfil 360
+        # (vivienda/crédito) para que la recomendación aproveche su relación real
+        # con Colsubsidio, no solo el diagnóstico conversacional.
+        if self.afiliado:
+            ofertas = afiliados_db.ofertas_para(self.afiliado.get("serie"))
+            if ofertas:
+                res["ofertas_afiliado"] = ofertas
+                self._log("tool", "TOOL", f"recomendar() enriquecido con {len(ofertas)} oferta(s) del perfil 360")
         self._log("tool", "TOOL", f"recomendar() → {len(res.get('opciones', []))} opciones (RAG + motor)")
         self._set_estado("RECOMENDACION")
         self.actions.append({"type": "recomendacion", "data": res})

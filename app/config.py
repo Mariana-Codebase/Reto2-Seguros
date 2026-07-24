@@ -127,6 +127,10 @@ class Settings:
             return f"https://{space_host}".rstrip("/")
         return f"http://localhost:{self.PORT}"
 
+    # --- MongoDB (afiliados, sesiones, solicitudes) ---
+    MONGODB_URI: str = _env("MONGODB_URI", "mongodb://localhost:27017")
+    MONGODB_DB: str = _env("MONGODB_DB", "colsubsidio")
+
     # --- Rutas ---
     VAR_DIR: pathlib.Path = BASE_DIR / "var"
     DOCS_DIR: pathlib.Path = BASE_DIR / "var" / "docs"
