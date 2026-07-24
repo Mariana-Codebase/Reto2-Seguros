@@ -1,13 +1,17 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Panel del asesor — Clara | Colsubsidio × 30X</title>
 <meta name="description" content="Bandeja de vinculaciones: Clara vende de forma autónoma y transmite cada solicitud empaquetada al asesor, que la gestiona con la aseguradora.">
+<meta name="theme-color" content="#ffd000">
 <script>
-  (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+  (function(){try{var t=localStorage.getItem("clara-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/styles.css">
 <style>
   .as-wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
@@ -16,8 +20,8 @@
   .as-head p{margin:6px 0 0;color:var(--muted);max-width:640px}
   .as-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
   .as-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
-  .as-kpi b{font-size:20px;color:var(--primary-d)}
-  [data-theme="dark"] .as-kpi b{color:var(--primary)}
+  .as-kpi b{font-size:20px;color:var(--accent-d)}
+  [data-theme="dark"] .as-kpi b{color:var(--accent)}
   .as-kpi span{display:block;font-size:12px;color:var(--muted)}
   .sol{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
   .sol-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -26,8 +30,8 @@
   .badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
   .badge.pendiente_pago{background:var(--warn-soft);color:var(--warn)}
   .badge.pagada{background:var(--info-soft);color:var(--info)}
-  .badge.enviada_aseguradora{background:var(--primary-soft);color:var(--primary-d)}
-  .badge.emitida_aseguradora{background:var(--primary);color:#fff}
+  .badge.enviada_aseguradora{background:var(--accent-soft);color:var(--accent-d)}
+  .badge.emitida_aseguradora{background:var(--accent);color:#fff}
   .badge.cerrada{background:var(--line);color:var(--muted)}
   .badge.nueva{background:var(--warn-soft);color:var(--warn)}
   .sol-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
@@ -38,9 +42,9 @@
   .sol-sec ul{margin:4px 0 0;padding-left:16px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
   .sol-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .sol-actions button,.sol-actions a{font:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none}
-  .sol-actions button:hover,.sol-actions a:hover{border-color:var(--primary);color:var(--primary-d)}
-  .sol-actions .adv{background:var(--primary);border-color:var(--primary);color:#fff}
-  .sol-actions .adv:hover{background:var(--primary-d);color:#fff}
+  .sol-actions button:hover,.sol-actions a:hover{border-color:var(--accent);color:var(--accent-d)}
+  .sol-actions .adv{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+  .sol-actions .adv:hover{background:var(--brand-strong);color:var(--brand-ink)}
   .as-empty{border:1px dashed var(--line-2);border-radius:14px;padding:40px;text-align:center;color:var(--muted)}
   .aff-tag{font-size:11px;background:var(--info-soft);color:var(--info);border-radius:6px;padding:2px 7px;font-weight:700}
 </style>

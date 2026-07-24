@@ -511,6 +511,23 @@ async function resetDemo() {
 }
 document.getElementById("resetDemo").addEventListener("click", resetDemo);
 
+/* ---------- Reveal por scroll ---------- */
+(function initReveal() {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const targets = document.querySelectorAll("[data-reveal]");
+  if (!targets.length) return;
+  if (reduce || !("IntersectionObserver" in window)) {
+    targets.forEach(el => el.classList.add("in"));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  targets.forEach(el => io.observe(el));
+})();
+
 /* ---------- Tema (claro / oscuro) ---------- */
 const THEME_KEY = "clara-theme";
 document.getElementById("themeToggle").addEventListener("click", () => {
