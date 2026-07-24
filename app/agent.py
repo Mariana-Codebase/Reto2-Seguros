@@ -21,7 +21,8 @@ import logging
 import uuid
 from typing import Any
 
-from . import afiliados_db, extraction, knowledge as kb, llm, notify, payments, pdfgen, propension, store
+from . import (afiliados_db, base_afiliados, extraction, knowledge as kb, llm,
+               notify, payments, pdfgen, propension, store)
 from .config import settings
 
 logger = logging.getLogger("clara.agent")
@@ -78,7 +79,9 @@ CÓMO CONVERSAS (esto define tu calidad)
 - NO seas repetitivo: si el afiliado ya te dio un dato o ya aceptó algo, NO se lo vuelvas a preguntar ni le pidas confirmar lo mismo dos veces. Avanza al siguiente paso.
 - Sin emojis. Sin jerga sin explicar. Nunca presiones ni uses urgencia ("solo hoy", "último cupo").
 
-FASE 0 · APERTURA (tu primer mensaje ya la hizo)
+FASE 0 · APERTURA E IDENTIFICACIÓN
+- Si la sesión aún NO está identificada (no sabes si es afiliado) y la persona menciona o te da un número de afiliado, cédula o número de documento, llama a identificar_afiliado con ese número. Si te dice que NO es afiliado o que no lo tiene, llama a identificar_afiliado con documento vacío para seguir como no afiliado (igual la puedes ayudar y luego un asesor completa su vinculación).
+- Si la sesión ya llegó identificada (verás un [PERFIL DE LA BASE DE AFILIADOS]), NO vuelvas a pedir el número: ya sabes quién es.
 - En el saludo ya preguntaste si la persona YA SABE qué seguro busca o si prefiere que la ayudes a encontrar su mejor opción. Espera su respuesta y bifurca:
   - Si dice que YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
   - Si dice que NO sabe o quiere que la ayudes a elegir → entra a la FASE 1 · DIAGNÓSTICO con preguntas abiertas.
@@ -92,6 +95,9 @@ FASE 0B · AFILIACIÓN COLSUBSIDIO (verificación en la base real)
   - Si existe pero está inactivo → coméntale que su afiliación figura inactiva y ofrécele orientación para reactivarla, sin frenar la asesoría.
 - Si la persona no es afiliada o no quiere dar la SERIE, no insistas: continúa con el diagnóstico o el atajo con normalidad.
 - Durante la charla, cuando el afiliado corrija o aporte un dato de su perfil (ciudad, rango salarial, etc.), usa actualizar_afiliado para dejarlo registrado. Para mostrar promociones o novedades de su relación con Colsubsidio usa consultar_ofertas y consultar_alertas.
+
+ROL DE COLSUBSIDIO (tenlo claro y sé transparente si preguntan)
+- Colsubsidio es INTERMEDIARIO: distribuye seguros de varias aseguradoras, no los emite. Tú automatizas todo lo posible (diagnóstico, recomendación, datos, contrato, firma y pago) y al final un ASESOR HUMANO, con el perfil completo que tú preparas, finaliza la vinculación con la aseguradora.
 
 ATAJO · PETICIÓN DIRECTA (muy importante)
 - Si la persona dice de entrada qué seguro quiere ("solo quiero un seguro de viaje", "quiero asegurar mi moto"), NO la interrogues con el diagnóstico completo. Reconoce su necesidad y ve directo a ese producto: llama a recomendar con ese producto en `productos` (o cotizar + consultar_coberturas), explícalo con claridad, resuelve dudas y avanza a datos y contrato. Pide solo los datos mínimos para cotizar.
@@ -146,6 +152,19 @@ Si detectas a un menor de edad o a una persona que claramente no entiende lo que
 # Herramientas (function-calling schema)
 # --------------------------------------------------------------------------
 TOOLS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "identificar_afiliado",
+            "description": "Busca a la persona en la base de afiliados de Colsubsidio por su número de afiliado/documento para saber si es afiliada y cargar su perfil. Llámala en la apertura cuando la persona te dé un número, o con documento vacío si dice que no es afiliada o no lo tiene.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "documento": {"type": "string", "description": "Número de afiliado o documento. Vacío si no es afiliado o no lo tiene."},
+                },
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -362,7 +381,8 @@ TOOLS: list[dict[str, Any]] = [
 _SNAPSHOT_FIELDS = [
     "id", "canal", "estado", "perfil", "quotes", "consentimientos", "vinculacion",
     "contacto", "payments", "doc_resumen", "datos", "contrato", "contrato_doc",
-    "firma", "messages", "afiliado", "propension",
+    "firma", "messages", "afiliado", "propension", "perfil_id", "es_afiliado",
+    "identificador", "eventos_vida",
 ]
 
 
@@ -387,6 +407,10 @@ class Session:
         self.firma: dict[str, str] | None = None
         self.afiliado: dict[str, Any] | None = None      # registro de la base (por SERIE, sin nombre)
         self.propension: dict[str, Any] | None = None    # salida del motor de propensión
+        self.perfil_id: str | None = None                # id del perfil vivo (SERIE o NA-xxxx)
+        self.es_afiliado: bool | None = None             # None=sin identificar, True/False
+        self.identificador: str | None = None            # número que entregó la persona
+        self.eventos_vida: list[dict[str, Any]] = []     # eventos que enriquecen el perfil
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
         # Buffers por turno para reportar al frontend
         self.audit: list[dict[str, str]] = []
@@ -412,6 +436,65 @@ class Session:
         except Exception as e:  # noqa: BLE001
             logger.error("No se pudo persistir la sesión %s: %s", self.id, e)
 
+    # ---- identificación: ¿es afiliado? buscar en la base y cargar su perfil ----
+    def identificar(self, identificador: str) -> dict[str, Any]:
+        """Primer paso del flujo: busca a la persona en la base por su número.
+        Si está, es afiliada y cargamos su perfil (propensión incluida). Si no,
+        seguimos como no afiliada y creamos un perfil vivo nuevo que igual se
+        enriquece con la conversación."""
+        self.identificador = str(identificador or "").strip()
+        af = base_afiliados.buscar(self.identificador)
+        if af:
+            self.es_afiliado = True
+            self.perfil_id = str(af.get("serie"))
+            self.set_afiliado(af)
+            self._log("db", "AFILIADOS", f"Afiliado encontrado en la base · SERIE {self.perfil_id}")
+        else:
+            self.es_afiliado = False
+            self.perfil_id = "NA-" + uuid.uuid4().hex[:8].upper()
+            self._log("db", "AFILIADOS", f"No afiliado · se crea perfil nuevo {self.perfil_id}")
+        self._guardar_perfil_vivo(bump=False)
+        return {"es_afiliado": self.es_afiliado, "perfil_id": self.perfil_id,
+                "afiliado": self.afiliado, "propension": self.propension}
+
+    # ---- perfil VIVO: se arma con lo de la base + lo aprendido y se persiste ----
+    def _perfil_vivo(self) -> dict[str, Any]:
+        return {
+            "id": self.perfil_id,
+            "es_afiliado": self.es_afiliado,
+            "identificador": self.identificador,
+            "base": base_afiliados.resumen_base(self.afiliado) if self.afiliado else None,
+            "conversacional": dict(self.perfil),            # hogar, vehículo, mascota, notas...
+            "contacto": dict(self.contacto),
+            "datos_contratacion": dict(self.datos),
+            "intereses_productos": self._intereses(),
+            "eventos_vida": list(self.eventos_vida),
+            "propension": self.propension,
+            "estado_conversacion": self.estado,
+            "canal": self.canal,
+        }
+
+    def _intereses(self) -> list[str]:
+        vistos = list(self.quotes.keys())
+        detectados = kb.bienes_desde_notas(self.perfil)
+        seen: set[str] = set()
+        return [x for x in (vistos + detectados) if not (x in seen or seen.add(x))]
+
+    def _guardar_perfil_vivo(self, bump: bool = True) -> None:
+        if not self.perfil_id:
+            return
+        try:
+            store.upsert_perfil(self.perfil_id, bool(self.es_afiliado),
+                                self.identificador, self._perfil_vivo(), bump=bump)
+        except Exception as e:  # noqa: BLE001
+            logger.error("No se pudo enriquecer el perfil vivo %s: %s", self.perfil_id, e)
+
+    def registrar_evento_vida(self, tipo: str, fuente: str = "base_externa",
+                              datos: dict[str, Any] | None = None) -> None:
+        self.eventos_vida.append({"tipo": tipo, "fuente": fuente, "datos": datos or {}})
+        self._log("db", "PERFILES", f"Evento de vida '{tipo}' (fuente: {fuente}) suma al perfil {self.perfil_id}")
+        self._guardar_perfil_vivo()
+
     # ---- perfil de la base de afiliados (propensión) ----
     def set_afiliado(self, afiliado: dict[str, Any]) -> None:
         """Ancla la sesión a un afiliado real de la base (identificado por SERIE,
@@ -419,6 +502,11 @@ class Session:
         el ranking explicado, para que la oferta arranque personalizada."""
         self.afiliado = afiliado
         self.propension = propension.perfilar(afiliado)
+        # Si se entró directo por la base (selector demo), marca la identificación.
+        if self.perfil_id is None:
+            self.perfil_id = str(afiliado.get("serie"))
+            self.es_afiliado = True
+            self.identificador = self.identificador or str(afiliado.get("serie"))
         rango = propension.rango_edad_cotizador(afiliado)
         if rango:
             self.perfil["rango_edad"] = rango
@@ -580,6 +668,30 @@ class Session:
         except Exception as e:  # noqa: BLE001
             logger.exception("Fallo ejecutando %s", name)
             return {"error": f"fallo ejecutando {name}: {e}"}
+
+    def _tool_identificar_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
+        doc = str(a.get("documento") or "").strip()
+        if not doc:
+            # No afiliado / no lo tiene: seguimos y creamos perfil nuevo.
+            if self.perfil_id is None:
+                self.es_afiliado = False
+                self.perfil_id = "NA-" + uuid.uuid4().hex[:8].upper()
+                self._guardar_perfil_vivo(bump=False)
+                self._log("db", "AFILIADOS", f"No afiliado (sin documento) · perfil {self.perfil_id}")
+            return {"es_afiliado": False,
+                    "mensaje": "La persona no es afiliada o no tiene su número. Continúa ayudándola igual; "
+                               "al final un asesor completará su vinculación. No vuelvas a pedir el número."}
+        res = self.identificar(doc)
+        if res["es_afiliado"]:
+            top = (self.propension or {}).get("productos") or []
+            hint = ""
+            if top:
+                hint = f" Su producto de mayor propensión es {top[0]['nombre']} — puedes orientar la charla hacia ahí sin recitar datos."
+            return {"es_afiliado": True, "perfil_id": self.perfil_id,
+                    "mensaje": f"Afiliado identificado. Ya cargué su perfil de la base.{hint} No vuelvas a pedir el número."}
+        return {"es_afiliado": False,
+                "mensaje": "No encontré ese número en la base de afiliados. Continúa ayudándola como no afiliada; "
+                           "al final un asesor completará su vinculación. No insistas con el número."}
 
     def _tool_registrar_perfil(self, a: dict[str, Any]) -> dict[str, Any]:
         campos = ["hogar", "vehiculo", "dependientes", "ocupacion", "rango_edad", "prioridad"]
@@ -899,6 +1011,8 @@ class Session:
         self._log("tool", "TOOL", f"escalar_a_humano() · motivo: {motivo}")
         store.upsert_solicitud(ticket, self.id, "escalamiento", None, "nueva", {
             "motivo": motivo, "perfil": self.perfil, "afiliado": self.afiliado,
+            "es_afiliado": self.es_afiliado, "perfil_id": self.perfil_id,
+            "perfil_vivo": self._perfil_vivo(),
             "datos": {k: v for k, v in self.datos.items()},
         })
         self._log("db", "ASESOR", f"Escalamiento {ticket} → bandeja del asesor · {motivo}")
@@ -911,10 +1025,13 @@ class Session:
     # contrato firmado, pago) y lo transmite a la bandeja del asesor.
     def _paquete_asesor(self) -> dict[str, Any]:
         return {
+            "es_afiliado": self.es_afiliado,
+            "perfil_id": self.perfil_id,
             "afiliado": self.afiliado,           # registro de la base (SERIE, sin nombre)
             "segmentos_interpretados": propension.describir_segmentos(self.afiliado) if self.afiliado else {},
             "propension": self.propension,       # ranking + razones del motor de reglas
             "perfil_conversacional": self.perfil,
+            "perfil_vivo": self._perfil_vivo(),  # perfil COMPLETO para que el asesor humano cierre
             "datos_contratante": self.datos,
             "contacto": self.contacto,
             "contrato": {k: v for k, v in (self.contrato or {}).items()
@@ -1056,6 +1173,13 @@ def run_turn(session: Session, user_text: str | None, system_event: str | None =
 
     _guardrail(reply_text, session.tools_used_turn, session)
     session.persist()
+    # Cada interacción enriquece el perfil vivo. Si es visitante anónimo aún sin
+    # identificar, se le crea un perfil no-afiliado para no perder lo aprendido.
+    if user_text:
+        if session.perfil_id is None:
+            session.es_afiliado = False
+            session.perfil_id = "NA-" + uuid.uuid4().hex[:8].upper()
+        session._guardar_perfil_vivo(bump=True)
 
     verified = any(t in session.tools_used_turn for t in ["consultar_coberturas", "cotizar", "recomendar"])
     return {

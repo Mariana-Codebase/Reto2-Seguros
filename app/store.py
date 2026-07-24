@@ -46,6 +46,8 @@ def _db() -> Database:
             db["audit_log"].create_index([("session_id", ASCENDING)])
             db["sessions"].create_index([("updated_at", ASCENDING)])
             db["solicitudes"].create_index([("estado", ASCENDING)])
+            db["perfiles"].create_index([("updated_at", DESCENDING)])
+            db["ofertas"].create_index([("updated_at", DESCENDING)])
             _indexes_ok = True
         except PyMongoError:
             # Sin Mongo disponible los índices se reintentan en el próximo
@@ -147,10 +149,105 @@ def set_estado_solicitud(solicitud_id: str, estado: str) -> bool:
     return result.matched_count > 0
 
 
+# --------------------------------------------------------------------------
+# Perfil vivo: la base que se enriquece con cada interacción.
+# --------------------------------------------------------------------------
+def get_perfil(perfil_id: str) -> dict[str, Any] | None:
+    doc = _db()["perfiles"].find_one({"_id": perfil_id})
+    if not doc:
+        return None
+    try:
+        perfil = json.loads(doc.get("perfil") or "{}")
+    except json.JSONDecodeError:
+        perfil = {}
+    return {"id": doc["_id"], "es_afiliado": bool(doc.get("es_afiliado")),
+            "identificador": doc.get("identificador"), "perfil": perfil,
+            "interacciones": doc.get("interacciones", 0),
+            "created_at": doc.get("created_at"), "updated_at": doc.get("updated_at")}
+
+
+def upsert_perfil(perfil_id: str, es_afiliado: bool, identificador: str | None,
+                  perfil: dict[str, Any], bump: bool = True) -> None:
+    body = json.dumps(perfil, ensure_ascii=False)
+    now = _now()
+    set_fields = {"es_afiliado": bool(es_afiliado), "perfil": body, "updated_at": now}
+    # identificador: solo se sobrescribe si viene uno nuevo (COALESCE del SQL).
+    if identificador is not None:
+        set_fields["identificador"] = identificador
+    _db()["perfiles"].update_one(
+        {"_id": perfil_id},
+        {
+            "$set": set_fields,
+            "$setOnInsert": {"id": perfil_id, "created_at": now},
+            "$inc": {"interacciones": 1 if bump else 0},
+        },
+        upsert=True,
+    )
+
+
+def list_perfiles(limit: int = 100) -> list[dict[str, Any]]:
+    out = []
+    for doc in _db()["perfiles"].find({}).sort("updated_at", DESCENDING).limit(limit):
+        try:
+            perfil = json.loads(doc.get("perfil") or "{}")
+        except json.JSONDecodeError:
+            perfil = {}
+        out.append({"id": doc["_id"], "es_afiliado": bool(doc.get("es_afiliado")),
+                    "identificador": doc.get("identificador"), "perfil": perfil,
+                    "interacciones": doc.get("interacciones", 0),
+                    "updated_at": doc.get("updated_at")})
+    return out
+
+
+# --------------------------------------------------------------------------
+# Bandeja del agente de ofertas (segundo agente, saliente).
+# --------------------------------------------------------------------------
+def insert_oferta(oferta_id: str, perfil_id: str | None, evento: str, tipo: str,
+                  producto: str | None, canal: str | None, estado: str,
+                  payload: dict[str, Any]) -> None:
+    body = json.dumps(payload, ensure_ascii=False)
+    now = _now()
+    _db()["ofertas"].update_one(
+        {"_id": oferta_id},
+        {
+            "$set": {"estado": estado, "payload": body, "updated_at": now},
+            "$setOnInsert": {"id": oferta_id, "perfil_id": perfil_id, "evento": evento,
+                             "tipo": tipo, "producto": producto, "canal": canal,
+                             "created_at": now},
+        },
+        upsert=True,
+    )
+
+
+def list_ofertas(limit: int = 100) -> list[dict[str, Any]]:
+    out = []
+    for doc in _db()["ofertas"].find({}).sort("updated_at", DESCENDING).limit(limit):
+        try:
+            payload = json.loads(doc.get("payload") or "{}")
+        except json.JSONDecodeError:
+            payload = {}
+        out.append({"id": doc["_id"], "perfil_id": doc.get("perfil_id"),
+                    "evento": doc.get("evento"), "tipo": doc.get("tipo"),
+                    "producto": doc.get("producto"), "canal": doc.get("canal"),
+                    "estado": doc.get("estado"), "payload": payload,
+                    "created_at": doc.get("created_at"), "updated_at": doc.get("updated_at")})
+    return out
+
+
+def set_estado_oferta(oferta_id: str, estado: str) -> bool:
+    result = _db()["ofertas"].update_one(
+        {"_id": oferta_id},
+        {"$set": {"estado": estado, "updated_at": _now()}},
+    )
+    return result.matched_count > 0
+
+
 def stats() -> dict[str, int]:
     db = _db()
     return {
         "sesiones": db["sessions"].count_documents({}),
         "eventos_auditoria": db["audit_log"].count_documents({}),
         "solicitudes_asesor": db["solicitudes"].count_documents({}),
+        "perfiles_vivos": db["perfiles"].count_documents({}),
+        "ofertas_salientes": db["ofertas"].count_documents({}),
     }
