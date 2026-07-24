@@ -133,6 +133,22 @@ function contratoSec(s){
     (vinc ? kv("Vinculación radicada", vinc.radicado) : "") + '</div>';
 }
 
+function perfilVivoSec(pv, esAfiliado){
+  if (!pv) return "";
+  const conv = pv.conversacional || {};
+  const intereses = (pv.intereses_productos || []).join(", ") || "—";
+  const eventos = (pv.eventos_vida || []).map(e => e.tipo).join(", ") || "—";
+  const datosConv = Object.entries(conv).filter(([k,v]) => v && k!=="notas" && (!Array.isArray(v)||v.length))
+    .map(([k,v]) => k+": "+(Array.isArray(v)?v.join("/"):v)).join(" · ") || "—";
+  const notas = (conv.notas || []).join(" · ") || "—";
+  return '<div class="sol-sec"><h4>Perfil completo (para cerrar la venta)</h4>' +
+    kv("Tipo", esAfiliado ? "Afiliado" : "No afiliado") +
+    kv("Lo que contó", datosConv) +
+    kv("Notas", notas) +
+    kv("Productos de interés", intereses) +
+    kv("Eventos de vida", eventos) + '</div>';
+}
+
 function card(s){
   const div = document.createElement("div");
   div.className = "sol";
@@ -150,7 +166,8 @@ function card(s){
   } else {
     inner += '<div class="sol-grid">' +
       afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) +
-      propSec(s.payload && s.payload.propension) + contratoSec(s) + '</div>';
+      propSec(s.payload && s.payload.propension) + contratoSec(s) +
+      perfilVivoSec(s.payload && s.payload.perfil_vivo, s.payload && s.payload.es_afiliado) + '</div>';
   }
   div.innerHTML = inner;
 

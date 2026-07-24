@@ -12,8 +12,22 @@ Solución al **Reto 2 · Seguros** · Hackathon [Colsubsidio × 30X](https://inn
 necesito"* hasta *"ya quedé asegurado"*, sin intervención humana: identifica la
 propensión desde la base real de afiliados, personaliza la oferta, explica cada
 recomendación, cierra la vinculación y — como Colsubsidio distribuye pólizas, no
-las emite — entrega cada venta empaquetada a la bandeja del asesor para su gestión
-con la aseguradora.
+las emite — entrega al asesor humano un **perfil completo** para que finalice la
+compra con la aseguradora.
+
+## Dos agentes que trabajan juntos
+
+| | Agente 1 · **Clara** (conversacional) | Agente 2 · **Ofertas** (proactivo) |
+|---|---|---|
+| **Cuándo actúa** | Cuando la persona llega y escribe | Solo, ante eventos de las bases de Colsubsidio |
+| **Qué hace** | Identifica si es afiliado, diagnostica, recomienda, cotiza, contrata, firma, cobra y radica la vinculación | Detecta un cambio (crédito desembolsado, alza de ingreso, cumpleaños, inactividad) y envía la oferta pertinente |
+| **Salida** | Perfil completo al asesor humano para cerrar con la aseguradora | Oferta de seguro **o** crédito por el canal correcto |
+| **Aprendizaje** | Cada interacción **enriquece el perfil vivo** del usuario | Cada evento suma al mismo perfil, que se vuelve más claro |
+
+Ambos comparten una **base viva**: la base de afiliados es la semilla, y cada
+conversación y cada evento la enriquecen, de modo que Colsubsidio entiende cada
+vez mejor a su gente. El agente 2 se orquesta con **n8n** (webhook →
+`/api/eventos`); la inteligencia vive en la app.
 
 ---
 
@@ -27,6 +41,11 @@ python server.py              # → http://localhost:8000
 
 ## Recorrido de la demo
 
+0. **Identificación** — Al iniciar, Clara puede reconocer si la persona es afiliada:
+   busca su número en la base y, si existe, carga su perfil y propensión; si no,
+   sigue como no afiliada (y un asesor completará la vinculación). En la demo, el
+   selector *"Perfil de la base de afiliados"* hace esa identificación; la opción
+   *"Visitante anónimo"* recorre el camino de no afiliado.
 1. En **Demo interactiva**, el selector *"Perfil de la base de afiliados"* carga
    perfiles reales (identificados por SERIE). Clara saluda personalizada según el
    perfil y el panel **"Propensión · por qué esta oferta"** muestra las razones
@@ -116,7 +135,37 @@ pendiente_pago → pagada → enviada a aseguradora → emitida → cerrada
 
 Cada avance **notifica a la sesión del afiliado**: si pregunta por su solicitud,
 Clara responde con el estado real. Los escalamientos a humano también llegan a la
-bandeja como tickets.
+bandeja como tickets. El asesor recibe un **perfil completo** del usuario (lo de la
+base + lo que contó + intereses + eventos de vida) para cerrar con contexto.
+
+---
+
+## Agente de ofertas (`/ofertas`) — el segundo agente
+
+Mientras Clara atiende a quien llega, el **agente de ofertas** actúa por su cuenta.
+Escucha **eventos** de las bases de Colsubsidio y, para cada uno, decide la oferta
+más pertinente con una **regla explicable** (nada aleatorio) y la envía por el mejor
+canal. Cruza dos portafolios: **seguros** y **créditos** (colsubsidio.com/creditos).
+
+| Evento (otra base) | Oferta | Por qué |
+|---|---|---|
+| `credito_vivienda_desembolsado` | **Seguro de Hogar** (+ cross Vida) | Protege el patrimonio recién financiado |
+| `credito_vehiculo_desembolsado` | Seguro de Autos | Cubre el vehículo financiado |
+| `credito_libre_inversion_desembolsado` | Seguro de Vida | Protege del saldo pendiente |
+| `nacimiento_hijo` | Seguro de Vida (+ Salud) | Un nuevo integrante cambia la prioridad |
+| `alza_ingreso` | Crédito de Libre Inversión (+ Vida y Ahorro) | Más capacidad de pago |
+| `consulta_vivienda` | Crédito de Vivienda (+ Hogar) | Interés detectado |
+| *(cualquier otro)* | Mejor seguro por propensión | Re-enganche con base en el perfil |
+
+La **inteligencia vive en la app** ([`app/ofertas.py`](app/ofertas.py)) y se dispara
+con `POST /api/eventos`; **n8n** solo orquesta (webhook y envío). Así funciona sola
+para el jurado y se integra con n8n en producción. En `/ofertas` puedes **simular un
+evento** y ver la decisión. El workflow importable está en
+[`n8n/agente-ofertas.workflow.json`](n8n/agente-ofertas.workflow.json).
+
+> **Ejemplo insignia:** otra base marca que el afiliado adquirió un crédito de
+> vivienda → el agente le ofrece el **seguro de hogar** citando ese evento como
+> motivo, y suma un cross-sell de vida. Todo queda en el perfil vivo.
 
 ---
 
@@ -159,8 +208,10 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 ```
 ├── server.py              # Punto de entrada (python server.py)
 ├── app/
-│   ├── main.py            # API FastAPI + checkout + panel del asesor
-│   ├── agent.py           # Sesión, herramientas, bucle del agente y guardrail
+│   ├── main.py            # API FastAPI + checkout + paneles + webhooks de eventos
+│   ├── agent.py           # Agente 1 (Clara): sesión, herramientas, guardrail, perfil vivo
+│   ├── ofertas.py         # Agente 2: reglas evento → oferta (seguros + créditos)
+│   ├── base_afiliados.py  # Lookup en la base: ¿es afiliado? carga su perfil
 │   ├── propension.py      # Motor de propensión: 34 reglas explicables
 │   ├── knowledge.py       # Catálogo de 14 productos, coberturas y cotizador
 │   ├── llm.py             # Cliente Gemini (AI Studio / Vertex) + respaldo automático
@@ -168,14 +219,26 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 │   ├── payments.py        # Pasarela simulada (tarjetas de prueba, Luhn)
 │   ├── pdfgen.py          # PDFs de resumen, contrato y vinculación
 │   ├── notify.py          # Correo / WhatsApp (opcional; sin credenciales, simula)
-│   ├── store.py           # SQLite: sesiones, auditoría y bandeja del asesor
+│   ├── store.py           # SQLite: sesiones, auditoría, bandeja, perfil vivo, ofertas
 │   └── config.py          # Configuración central (.env)
 ├── scripts/
 │   └── perfilar_base.py   # Procesa la base (.xlsx/.csv) → mapa + stats + demo
-├── static/                # Frontend: chat, paneles y panel del asesor
+├── static/                # Frontend: chat (index) + asesor + ofertas
 ├── data/                  # Mapa de segmentos, estadísticas y muestra demo (anonimizados)
+├── n8n/                   # Workflow importable del agente de ofertas + guía
 └── Dockerfile · requirements.txt · .env.example
 ```
+
+### API principal
+
+| Endpoint | Qué hace |
+|---|---|
+| `POST /api/session` · `POST /api/chat` | Conversación con Clara (agente 1) |
+| `POST /api/identificar` | ¿Es afiliado? busca en la base y carga su perfil |
+| `GET /api/perfil/{id}` · `GET /api/perfiles` | Perfil vivo (la base que se enriquece) |
+| `POST /api/eventos` | **Agente de ofertas**: evento → oferta (lo llama n8n) |
+| `GET /api/ofertas/salientes` · `/catalogo` | Ofertas generadas y catálogo de eventos/créditos |
+| `GET /api/asesor/solicitudes` | Bandeja del asesor con el perfil completo |
 
 **Privacidad:** la base completa de afiliados **nunca se versiona** (protegida en
 `.gitignore`). En `data/` solo hay agregados estadísticos, el mapa documentado y
@@ -210,11 +273,15 @@ El flujo principal se recorre completo de inicio a fin. Componentes y su estado:
 
 | Área | Estado | Notas |
 |---|---|---|
+| Identificación de afiliado | ✅ Funcional | Busca en la base; afiliado carga perfil, no afiliado sigue con perfil nuevo. |
 | Motor de propensión | ✅ Funcional | 34 reglas sobre la base real de 500k; oferta y saludo cambian por perfil. |
+| Perfil vivo (base que crece) | ✅ Funcional | Cada interacción y cada evento enriquecen el perfil en SQLite. |
 | Conversación (Gemini) | ✅ Funcional | Function-calling, escucha activa, atajos por petición directa. |
-| Flujo end-to-end | ✅ Funcional | Diagnóstico → recomendación → contrato → firma → pago → emisión. |
-| Panel del asesor | ✅ Funcional | Bandeja con paquete completo, estados y notificación al afiliado. |
+| Flujo end-to-end | ✅ Funcional | Identificación → diagnóstico → recomendación → contrato → firma → pago → vinculación. |
+| Agente de ofertas (2.º) | ✅ Funcional | Evento → oferta explicable (seguro/crédito); disparable por n8n. |
+| Panel del asesor | ✅ Funcional | Bandeja con **perfil completo**, estados y notificación al afiliado. |
 | PDFs y persistencia | ✅ Funcional | Contrato y resumen de vinculación reales (fpdf2); SQLite sobrevive reinicios. |
+| Orquestación n8n | 🟡 Listo para importar | Workflow cableado a los webhooks; requiere `CLARA_BASE_URL`. |
 | Pago (estilo Wompi) | 🟡 Sandbox | Checkout con tarjetas de prueba y validación Luhn. |
 | Correo / WhatsApp | 🟡 Simulado | Con credenciales SMTP/Twilio envía de verdad. |
 

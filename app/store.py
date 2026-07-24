@@ -45,7 +45,31 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     tipo        TEXT NOT NULL,           -- vinculacion | escalamiento
     producto    TEXT,
     estado      TEXT NOT NULL,           -- pendiente_pago | pagada | enviada_aseguradora | emitida_aseguradora | cerrada
-    payload     TEXT NOT NULL,           -- JSON: perfil, propension, datos, contrato, pago, poliza
+    payload     TEXT NOT NULL,           -- JSON: perfil, propension, datos, contrato, pago, vinculacion
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);
+-- Perfil VIVO: la base semilla se enriquece con cada interacción. Es lo que
+-- convierte a Colsubsidio en dueño de un perfil claro y creciente por persona.
+CREATE TABLE IF NOT EXISTS perfiles (
+    id           TEXT PRIMARY KEY,       -- SERIE del afiliado, o NA-xxxx si no afiliado
+    es_afiliado  INTEGER NOT NULL,       -- 1 / 0
+    identificador TEXT,                  -- lo que la persona entregó (documento/serie)
+    perfil       TEXT NOT NULL,          -- JSON: base + conversacional + intereses + eventos + propension
+    interacciones INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL
+);
+-- Bandeja del AGENTE DE OFERTAS (segundo agente, proactivo/saliente).
+CREATE TABLE IF NOT EXISTS ofertas (
+    id          TEXT PRIMARY KEY,
+    perfil_id   TEXT,
+    evento      TEXT NOT NULL,           -- disparador (credito_vivienda, sin_interaccion_30d, ...)
+    tipo        TEXT NOT NULL,           -- seguro | credito
+    producto    TEXT,
+    canal       TEXT,
+    estado      TEXT NOT NULL,           -- generada | enviada | aceptada | descartada
+    payload     TEXT NOT NULL,           -- JSON de la oferta (mensaje, razon, url, ...)
     created_at  TEXT NOT NULL,
     updated_at  TEXT NOT NULL
 );
@@ -169,9 +193,110 @@ def set_estado_solicitud(solicitud_id: str, estado: str) -> bool:
     return cur.rowcount > 0
 
 
+# --------------------------------------------------------------------------
+# Perfil vivo: la base que se enriquece con cada interacción.
+# --------------------------------------------------------------------------
+def get_perfil(perfil_id: str) -> dict[str, Any] | None:
+    with _lock:
+        row = _conn.execute(
+            "SELECT id, es_afiliado, identificador, perfil, interacciones, created_at, updated_at "
+            "FROM perfiles WHERE id = ?", (perfil_id,)
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        perfil = json.loads(row[3])
+    except json.JSONDecodeError:
+        perfil = {}
+    return {"id": row[0], "es_afiliado": bool(row[1]), "identificador": row[2],
+            "perfil": perfil, "interacciones": row[4], "created_at": row[5], "updated_at": row[6]}
+
+
+def upsert_perfil(perfil_id: str, es_afiliado: bool, identificador: str | None,
+                  perfil: dict[str, Any], bump: bool = True) -> None:
+    body = json.dumps(perfil, ensure_ascii=False)
+    inc = 1 if bump else 0
+    with _lock:
+        _conn.execute(
+            """INSERT INTO perfiles (id, es_afiliado, identificador, perfil, interacciones, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                 es_afiliado = excluded.es_afiliado,
+                 identificador = COALESCE(excluded.identificador, perfiles.identificador),
+                 perfil = excluded.perfil,
+                 interacciones = perfiles.interacciones + ?,
+                 updated_at = excluded.updated_at""",
+            (perfil_id, 1 if es_afiliado else 0, identificador, body, inc, _now(), _now(), inc),
+        )
+        _conn.commit()
+
+
+def list_perfiles(limit: int = 100) -> list[dict[str, Any]]:
+    with _lock:
+        rows = _conn.execute(
+            "SELECT id, es_afiliado, identificador, perfil, interacciones, updated_at "
+            "FROM perfiles ORDER BY updated_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+    out = []
+    for r in rows:
+        try:
+            perfil = json.loads(r[3])
+        except json.JSONDecodeError:
+            perfil = {}
+        out.append({"id": r[0], "es_afiliado": bool(r[1]), "identificador": r[2],
+                    "perfil": perfil, "interacciones": r[4], "updated_at": r[5]})
+    return out
+
+
+# --------------------------------------------------------------------------
+# Bandeja del agente de ofertas (segundo agente, saliente).
+# --------------------------------------------------------------------------
+def insert_oferta(oferta_id: str, perfil_id: str | None, evento: str, tipo: str,
+                  producto: str | None, canal: str | None, estado: str,
+                  payload: dict[str, Any]) -> None:
+    body = json.dumps(payload, ensure_ascii=False)
+    with _lock:
+        _conn.execute(
+            """INSERT INTO ofertas (id, perfil_id, evento, tipo, producto, canal, estado, payload, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                 estado = excluded.estado, payload = excluded.payload, updated_at = excluded.updated_at""",
+            (oferta_id, perfil_id, evento, tipo, producto, canal, estado, body, _now(), _now()),
+        )
+        _conn.commit()
+
+
+def list_ofertas(limit: int = 100) -> list[dict[str, Any]]:
+    with _lock:
+        rows = _conn.execute(
+            "SELECT id, perfil_id, evento, tipo, producto, canal, estado, payload, created_at, updated_at "
+            "FROM ofertas ORDER BY updated_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+    out = []
+    for r in rows:
+        try:
+            payload = json.loads(r[7])
+        except json.JSONDecodeError:
+            payload = {}
+        out.append({"id": r[0], "perfil_id": r[1], "evento": r[2], "tipo": r[3], "producto": r[4],
+                    "canal": r[5], "estado": r[6], "payload": payload, "created_at": r[8], "updated_at": r[9]})
+    return out
+
+
+def set_estado_oferta(oferta_id: str, estado: str) -> bool:
+    with _lock:
+        cur = _conn.execute(
+            "UPDATE ofertas SET estado = ?, updated_at = ? WHERE id = ?", (estado, _now(), oferta_id))
+        _conn.commit()
+    return cur.rowcount > 0
+
+
 def stats() -> dict[str, int]:
     with _lock:
         sesiones = _conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
         eventos = _conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
         solicitudes = _conn.execute("SELECT COUNT(*) FROM solicitudes").fetchone()[0]
-    return {"sesiones": sesiones, "eventos_auditoria": eventos, "solicitudes_asesor": solicitudes}
+        perfiles = _conn.execute("SELECT COUNT(*) FROM perfiles").fetchone()[0]
+        ofertas = _conn.execute("SELECT COUNT(*) FROM ofertas").fetchone()[0]
+    return {"sesiones": sesiones, "eventos_auditoria": eventos, "solicitudes_asesor": solicitudes,
+            "perfiles_vivos": perfiles, "ofertas_salientes": ofertas}

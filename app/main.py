@@ -26,7 +26,8 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, agent, knowledge as kb, llm, payments, propension, store
+from . import (__version__, agent, base_afiliados, knowledge as kb, llm,
+               notify, ofertas, payments, propension, store)
 from .config import settings
 
 logger = logging.getLogger("clara.api")
@@ -79,6 +80,24 @@ class SessionReq(BaseModel):
 
 class EstadoSolicitudReq(BaseModel):
     estado: str = Field(pattern="^(nueva|pendiente_pago|pagada|enviada_aseguradora|emitida_aseguradora|cerrada)$")
+
+
+class IdentificarReq(BaseModel):
+    session_id: str
+    documento: str = ""   # número de afiliado / documento; vacío = no afiliado
+
+
+class EventoReq(BaseModel):
+    """Entrada del agente de ofertas. La dispara n8n (u otra base de Colsubsidio)."""
+    serie: str | None = None          # id del afiliado en la base
+    perfil_id: str | None = None      # o el id del perfil vivo (NA-...)
+    evento: str                       # p. ej. credito_vivienda_desembolsado
+    datos: dict | None = None
+    enviar: bool = True               # simular envío por el canal del perfil
+
+
+class EstadoOfertaReq(BaseModel):
+    estado: str = Field(pattern="^(generada|enviada|aceptada|descartada)$")
 
 
 class ChatReq(BaseModel):
@@ -189,6 +208,18 @@ def chat(req: ChatReq):
     return JSONResponse(out)
 
 
+@app.post("/api/identificar")
+def identificar(req: IdentificarReq):
+    """Identifica a la persona: busca su número en la base. Si es afiliada,
+    carga su perfil y propensión; si no, sigue como no afiliada. En ambos casos
+    queda un perfil vivo que la conversación seguirá enriqueciendo."""
+    s = _get_session(req.session_id)
+    res = s.identificar(req.documento)
+    s.persist()
+    return {"es_afiliado": res["es_afiliado"], "perfil_id": res["perfil_id"],
+            "afiliado": s.afiliado, "propension": s.propension}
+
+
 # --------------------------------------------------------------------------
 # Propensión: perfiles demo de la base, reglas documentadas y estadísticas
 # --------------------------------------------------------------------------
@@ -250,6 +281,105 @@ def asesor_cambiar_estado(solicitud_id: str, req: EstadoSolicitudReq):
         except HTTPException:
             pass  # sesión expirada: el estado queda igualmente en la bandeja
     return {"ok": True, "id": solicitud_id, "estado": req.estado}
+
+
+# --------------------------------------------------------------------------
+# Perfil vivo: la base que se enriquece con cada interacción.
+# --------------------------------------------------------------------------
+@app.get("/api/perfil/{perfil_id}")
+def perfil_vivo(perfil_id: str):
+    p = store.get_perfil(perfil_id)
+    if p is None:
+        raise HTTPException(status_code=404, detail="Perfil no encontrado.")
+    return p
+
+
+@app.get("/api/perfiles")
+def perfiles():
+    return {"perfiles": store.list_perfiles()}
+
+
+# --------------------------------------------------------------------------
+# AGENTE DE OFERTAS (segundo agente). Lo dispara n8n u otra base de Colsubsidio
+# vía POST /api/eventos. La inteligencia (evento -> oferta) vive en ofertas.py.
+# --------------------------------------------------------------------------
+@app.get("/ofertas", include_in_schema=False)
+def ofertas_panel():
+    return FileResponse(settings.STATIC_DIR / "ofertas.html")
+
+
+@app.get("/api/ofertas/catalogo")
+def ofertas_catalogo():
+    """Eventos que el agente sabe atender y portafolio de crédito (para UI/n8n)."""
+    return {"eventos": ofertas.eventos_soportados(), "creditos": ofertas.CREDITOS}
+
+
+@app.get("/api/ofertas/salientes")
+def ofertas_salientes():
+    return {"ofertas": store.list_ofertas()}
+
+
+@app.post("/api/ofertas/{oferta_id}/estado")
+def ofertas_estado(oferta_id: str, req: EstadoOfertaReq):
+    if not store.set_estado_oferta(oferta_id, req.estado):
+        raise HTTPException(status_code=404, detail="Oferta no encontrada.")
+    return {"ok": True, "id": oferta_id, "estado": req.estado}
+
+
+def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str, dict]:
+    """Consigue el perfil vivo para el agente de ofertas. Si la persona nunca
+    chateó pero está en la base (evento desde otra base), lo construye al vuelo."""
+    pid = perfil_id or serie
+    guardado = store.get_perfil(pid) if pid else None
+    if guardado:
+        return guardado["id"], guardado["perfil"]
+    if serie:
+        af = base_afiliados.buscar(serie)
+        if af:
+            perfil = {"id": str(serie), "es_afiliado": True,
+                      "base": base_afiliados.resumen_base(af),
+                      "propension": propension.perfilar(af),
+                      "contacto": {}, "eventos_vida": []}
+            return str(serie), perfil
+    # Perfil mínimo desconocido.
+    return (pid or "NA-DESCONOCIDO"), {"id": pid, "es_afiliado": False, "eventos_vida": []}
+
+
+@app.post("/api/eventos")
+def recibir_evento(req: EventoReq):
+    """Webhook del agente de ofertas. Un evento de otra base de Colsubsidio
+    (crédito desembolsado, alza de ingreso, cumpleaños, inactividad…) entra aquí:
+    enriquece el perfil, decide la mejor oferta y la deja lista (y la envía por
+    el canal, simulado). Ejemplo: crédito de vivienda -> seguro de hogar."""
+    pid, perfil = _perfil_para_ofertas(req.serie, req.perfil_id)
+
+    # 1) El evento enriquece el perfil vivo (la base sigue creciendo).
+    perfil.setdefault("eventos_vida", []).append(
+        {"tipo": req.evento, "fuente": "base_externa", "datos": req.datos or {}})
+    store.upsert_perfil(pid, bool(perfil.get("es_afiliado")), None, perfil, bump=True)
+
+    # 2) El agente decide la oferta (regla evento -> producto, explicable).
+    res = ofertas.generar_oferta(perfil, req.evento, req.datos)
+    oferta = res.get("oferta")
+    if not oferta:
+        return {"ok": True, "perfil_id": pid, "oferta": None, "motivo": res.get("motivo")}
+
+    # 3) Se registra y (si aplica) se envía por el canal del perfil.
+    estado = "generada"
+    entrega = {"simulado": True, "detalle": "no enviada"}
+    contacto = (perfil.get("contacto") or {})
+    destino = contacto.get("destino") or contacto.get("correo") or contacto.get("telefono")
+    if req.enviar and destino:
+        if oferta["canal"] == "correo":
+            entrega = notify.send_email(destino, "Una recomendación de Colsubsidio para ti", oferta["mensaje"])
+        else:
+            entrega = notify.send_whatsapp(destino, oferta["mensaje"])
+        estado = "enviada"
+    store.insert_oferta(oferta["id"], pid, req.evento, oferta["tipo"], oferta["producto_id"],
+                        oferta["canal"], estado, {**oferta, "entrega": entrega})
+    logger.info("Agente de ofertas · evento=%s perfil=%s -> %s (%s)",
+                req.evento, pid, oferta["nombre"], estado)
+    return {"ok": True, "perfil_id": pid, "estado": estado, "oferta": oferta, "entrega": entrega}
 
 
 # --------------------------------------------------------------------------

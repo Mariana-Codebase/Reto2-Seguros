@@ -1,0 +1,100 @@
+{
+  "name": "Colsubsidio · Agente de ofertas (Clara)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Agente de ofertas de Colsubsidio\nDispara la oferta correcta cuando otra base marca un cambio en el cliente.\n\n**Cómo usarlo**\n1. Define la variable de entorno `CLARA_BASE_URL` (URL pública de la app; en local http://localhost:8000).\n2. Rama A — Webhook: otra base de Colsubsidio hace POST con `{serie, evento}` al webhook y el flujo llama a `/api/eventos`.\n3. Rama B — Programado: cada día busca inactivos y les manda una oferta de re-enganche.\n\nLa inteligencia (evento → oferta) vive en la app; n8n solo orquesta el disparo y el envío.",
+        "height": 260,
+        "width": 380
+      },
+      "id": "note1",
+      "name": "Cómo funciona",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 80]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "colsubsidio-evento",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh1",
+      "name": "Evento de otra base",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 400],
+      "webhookId": "colsubsidio-evento"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/eventos",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"serie\": \"{{ $json.body.serie }}\",\n  \"evento\": \"{{ $json.body.evento }}\",\n  \"datos\": {{ JSON.stringify($json.body.datos || {}) }},\n  \"enviar\": true\n}",
+        "options": {}
+      },
+      "id": "http1",
+      "name": "Agente de ofertas · /api/eventos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "resp1",
+      "name": "Responder a la base",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 400]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 9 * * *" }
+          ]
+        }
+      },
+      "id": "cron1",
+      "name": "Cada día 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 640]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/eventos",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"serie\": \"{{ $json.serie }}\",\n  \"evento\": \"sin_interaccion_30d\",\n  \"enviar\": true\n}",
+        "options": {}
+      },
+      "id": "http2",
+      "name": "Re-enganche por inactividad",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 640]
+    }
+  ],
+  "connections": {
+    "Evento de otra base": {
+      "main": [[{ "node": "Agente de ofertas · /api/eventos", "type": "main", "index": 0 }]]
+    },
+    "Agente de ofertas · /api/eventos": {
+      "main": [[{ "node": "Responder a la base", "type": "main", "index": 0 }]]
+    },
+    "Cada día 9:00": {
+      "main": [[{ "node": "Re-enganche por inactividad", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
