@@ -18,8 +18,11 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
+import re
 import uuid
 from typing import Any
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$")
 
 from . import (afiliados_db, base_afiliados, extraction, knowledge as kb, llm,
                notify, payments, pdfgen, propension, store)
@@ -79,6 +82,12 @@ CÓMO CONVERSAS (esto define tu calidad)
 - NO seas repetitivo: si el afiliado ya te dio un dato o ya aceptó algo, NO se lo vuelvas a preguntar ni le pidas confirmar lo mismo dos veces. Avanza al siguiente paso.
 - Sin emojis. Sin jerga sin explicar. Nunca presiones ni uses urgencia ("solo hoy", "último cupo").
 
+RESPONDE Y ACLARA — nunca repitas el prompt (esto te hace sonar humano, no un bot)
+- Si la persona te hace una PREGUNTA o comenta algo mientras avanzas, RESPÓNDELE primero en una o dos frases y solo después retoma con calidez el dato que necesitas. Jamás ignores lo que dijo para repetir tu pedido igual.
+- Si lo que responde NO encaja con lo que pediste (p. ej. escribe números cuando pediste su nombre, o letras/nombre cuando pediste un número), NO repitas el mismo mensaje: reconoce lo que escribió, acláralo con amabilidad y explica en concreto qué necesitas y para qué. Ej.: "Creo que me enviaste unos números; para armar tu perfil necesito tu nombre completo, ¿cómo te llamas?".
+- Si necesitas volver a pedir un dato, hazlo con OTRA redacción; nunca mandes dos veces el mismo texto.
+- Al pedir la identificación, ACLARA de qué se trata: pide su número de CÉDULA DE CIUDADANÍA (y si no la tiene, el documento con que se identifica: cédula de extranjería o pasaporte). Es distinto del número de afiliado/SERIE.
+
 FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
 - El saludo ya pregunta si la persona sabe qué busca o quiere ayuda. RESPETA su respuesta: empieza reconociendo su intención o necesidad en una frase cálida; no la ignores para lanzar una pregunta administrativa.
 - Antes de recomendar, cotizar o resolver detalles de cobertura, establece QUIÉN es la persona. Integra la identificación en la conversación sin perder el hilo: explica brevemente que te permite personalizar y evitar que repita información.
@@ -88,7 +97,8 @@ FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
      - Existe y activo → salúdalo reconociendo su relación con Colsubsidio y personaliza; NO recites los datos ni menciones "la base".
      - No existe → dile con naturalidad que no lo encuentras y ofrécele registrarlo. Si acepta, pide con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio.
      - Existe pero inactivo → coméntalo con tacto y ofrece orientación para reactivarlo, sin frenar la asesoría.
-  2) Dice que NO es afiliada, que no tiene el número o prefiere no darlo → llama a identificar_afiliado con documento vacío: así igual creamos un perfil vivo que se enriquece con la charla y que el asesor recibe al final. No insistas con el número.
+  2) Dice que NO es afiliada → llama a identificar_afiliado con documento vacío para crear su perfil vivo. Antes de continuar con diagnóstico, recomendación o cotización, registra su nombre completo y su número de identificación civil con registrar_datos. Pide primero el nombre y luego la identificación, UNA sola pregunta por mensaje, explicando que es para crear su perfil y no perder el proceso. No vuelvas a pedirle número de afiliado/SERIE: es distinto de su identificación civil.
+  3) Dice que no tiene la SERIE a mano o prefiere no darla, sin afirmar que no es afiliada → llama a identificar_afiliado con documento vacío y continúa sin insistir. No la marques como afiliada.
 - Conserva la respuesta que dio a la bifurcación del saludo; después de identificarla continúa directamente por esa ruta, sin volver a preguntarla:
   - Si YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
   - Si NO sabe o quiere que la ayudes a elegir → entra a FASE 1 · DIAGNÓSTICO con preguntas abiertas.
@@ -108,7 +118,8 @@ FASE 1 · DIAGNÓSTICO (cuando la persona NO sabe qué necesita)
 - Tu PRIMERA pregunta del diagnóstico debe ser abierta e invitar a contar. Solo después profundiza en detalles como con quién vive, si tiene carro/moto/mascota, etc.
 - A partir de lo que cuente, profundiza con naturalidad (máximo ~6 intercambios) en lo relevante: con quién vive, vehículo, mascotas, viajes, dependientes, ocupación y rango de edad (solo para cotizar). No fuerces temas que no aplican.
 - CADA VEZ que descubras un dato, llama a registrar_perfil. Guarda en `notas` cualquier detalle o interés que la persona mencione. NUNCA ignores lo que te comparte.
-- IMPORTANTE: en registrar_perfil envía SOLO lo que el afiliado haya dicho de forma explícita. NUNCA inventes ni infieras datos.
+- IMPORTANTE — NO INVENTES NI INFIERAS: en registrar_perfil envía SOLO lo que la persona dijo de forma EXPLÍCITA. Si no te dijo que tiene o no tiene carro, NO registres "vehiculo: no"; déjalo vacío hasta que lo diga. Lo mismo con dependientes, con quién vive, ocupación, etc. Nunca supongas un dato que la persona no expresó.
+- ¿PARA QUIÉN es el seguro? Si dice que es para OTRA persona (su pareja, un hijo, un familiar), el ASEGURADO es esa persona, no ella: pregunta por los datos del asegurado que el producto necesite (edad, relación, y lo pertinente) y no armes el perfil como si fuera para ella. Ella queda como tomador y contacto.
 - Cuando entiendas su necesidad principal y tengas algo de contexto, resume en tus palabras lo que escuchaste y confirma UNA sola vez.
 
 FASE 2 · RECOMENDACIÓN
@@ -127,7 +138,11 @@ FASE 4 · DATOS DE CONTACTO (para poder retomar y para tenerla en cuenta en ofer
 - Cuando la persona muestre interés real en un producto, pide con calidez TRES datos: nombre completo, número de identificación, y celular o correo.
 - Da la razón con naturalidad: "así, si se cae la conexión o algo pasa, podemos retomar la conversación y no perder tu solicitud". Esto además la deja registrada para tenerla en cuenta en futuras ofertas, aunque no sea afiliada.
 - Pide máximo 2 datos por mensaje. CADA VEZ que recibas datos, llama a registrar_datos (no vuelvas a preguntar lo que ya te dieron).
-- Datos del bien SOLO si el producto los necesita para la póliza: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fechas). El resto: con los datos de contacto basta; los detalles finos los completa el asesor.
+- VALIDA lo que te dan: si registrar_datos responde que un dato NO es válido (correo sin @, celular con muy pocos dígitos, identificación que no parece cédula, o un número en vez de nombre), NO sigas de largo: acláralo con amabilidad y pídelo de nuevo explicando el formato correcto. No aceptes datos mal formados.
+- INFORMACIÓN NECESARIA PARA EMITIR: antes de cerrar, reúne lo mínimo que el seguro necesita para poder cotizarse/emitirse:
+  · Rango de edad del asegurado (siempre, para cotizar) · con quién vive/número de dependientes para Vida, Vida y Ahorro y Salud (con registrar_perfil).
+  · Datos del bien SOLO si aplica: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fechas).
+  Pídelos con naturalidad, una o dos cosas por mensaje. Si el asegurado es otra persona, estos datos son de ESA persona.
 
 FASE 5 · CIERRE (cuando le gusta una póliza) — Lara NO cobra ni emite
 - Cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas, y ya tengas nombre + identificación + celular o correo, llama a solicitar_cierre con ese producto.
@@ -159,11 +174,11 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "identificar_afiliado",
-            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número: llámala con documento vacío para continuar como no afiliada (igual se crea un perfil vivo que el asesor recibe). Si la persona te da un número de afiliado/SERIE, usa verificar_afiliado en su lugar. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
+            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número de afiliado/SERIE: llámala con documento vacío para crear su perfil vivo. Si confirma que NO es afiliada, después debes recopilar nombre completo e identificación civil mediante registrar_datos, una pregunta por turno. No confundas identificación civil con SERIE. Si da una SERIE, usa verificar_afiliado. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "documento": {"type": "string", "description": "Número de afiliado o documento. Vacío si no es afiliado o no lo tiene."},
+                    "documento": {"type": "string", "description": "Número de afiliado/SERIE. Vacío si no es afiliado o no lo tiene. La identificación civil se registra después con registrar_datos."},
                 },
             },
         },
@@ -744,8 +759,9 @@ class Session:
                 self._guardar_perfil_vivo(bump=False)
                 self._log("db", "AFILIADOS", f"No afiliado (sin documento) · perfil {self.perfil_id}")
             return {"es_afiliado": False,
-                    "mensaje": "La persona no es afiliada o no tiene su número. Continúa ayudándola igual; "
-                               "al final un asesor completará su vinculación. No vuelvas a pedir el número."}
+                    "mensaje": "Perfil no afiliado creado. Antes de continuar, registra con registrar_datos "
+                               "su nombre completo y luego su identificación civil, una pregunta por mensaje. "
+                               "No vuelvas a pedir número de afiliado/SERIE."}
         # Con número: busca PRIMERO en la base real (Mongo) y ancla el perfil 360;
         # si no está ahí, cae a la muestra demo. Así el asesor recibe el expediente.
         doc_mongo = afiliados_db.existe_afiliado(doc)
@@ -895,12 +911,28 @@ class Session:
                      "viaje_destino", "viaje_inicio", "viaje_fin"]
 
     def _tool_registrar_datos(self, a: dict[str, Any]) -> dict[str, Any]:
-        cambios = {}
+        cambios: dict[str, str] = {}
+        invalidos: dict[str, str] = {}
         for c in self._DATOS_CAMPOS:
             v = a.get(c)
-            if v not in (None, ""):
-                self.datos[c] = str(v).strip()
-                cambios[c] = self.datos[c]
+            if v in (None, ""):
+                continue
+            val = str(v).strip()
+            # Validaciones básicas: no aceptar datos mal formados.
+            if c == "nombre" and re.fullmatch(r"[\d\s.\-]+", val):
+                invalidos["nombre"] = "Eso parece un número, no un nombre; pídele su nombre completo."
+                continue
+            if c == "correo" and not _EMAIL_RE.match(val):
+                invalidos["correo"] = "El correo no es válido: debe tener @ y un dominio, por ejemplo nombre@correo.com."
+                continue
+            if c == "telefono" and len(re.sub(r"\D", "", val)) < 7:
+                invalidos["telefono"] = "El celular no parece válido: debe tener al menos 7 dígitos."
+                continue
+            if c == "documento" and len(re.sub(r"\D", "", val)) < 5:
+                invalidos["documento"] = "El número de identificación no parece válido: deben ser solo dígitos (cédula de ciudadanía)."
+                continue
+            self.datos[c] = val
+            cambios[c] = val
         # El medio de contacto define el canal de entrega del contrato y la póliza.
         if self.datos.get("correo"):
             self.contacto = {"canal": "correo", "destino": self.datos["correo"]}
@@ -908,7 +940,12 @@ class Session:
             self.contacto = {"canal": "whatsapp", "destino": self.datos["telefono"]}
         if cambios:
             self._log("db", "CUSTOMERS", "UPSERT customers · " + ", ".join(f"{k}={v}" for k, v in cambios.items()))
-        return {"ok": True, "datos_actuales": self.datos}
+        res: dict[str, Any] = {"ok": not invalidos, "datos_actuales": self.datos}
+        if invalidos:
+            res["invalidos"] = invalidos
+            res["mensaje"] = ("NO guardé estos datos porque no son válidos. Pídelos de nuevo con amabilidad, "
+                              "explicando el formato correcto: " + " ".join(invalidos.values()))
+        return res
 
     def _faltantes_datos(self, producto: str) -> list[str]:
         faltan: list[str] = []
@@ -1082,6 +1119,7 @@ class Session:
             "motivo": motivo, "perfil": self.perfil, "afiliado": self.afiliado,
             "es_afiliado": self.es_afiliado, "perfil_id": self.perfil_id,
             "perfil_vivo": self._perfil_vivo(),
+            "conversacion": self._transcripcion(),
             "datos": {k: v for k, v in self.datos.items()},
         })
         self._log("db", "ASESOR", f"Escalamiento {ticket} → bandeja del asesor · {motivo}")
@@ -1147,6 +1185,20 @@ class Session:
     # Colsubsidio no fabrica las pólizas: las distribuye. Lara empaqueta todo
     # lo que la aseguradora necesita (perfil, propensión explicada, datos,
     # contrato firmado, pago) y lo transmite a la bandeja del asesor.
+    def _transcripcion(self, limite: int = 40) -> list[dict[str, str]]:
+        """Historia legible de la conversación (cliente ↔ Lara) para que el asesor
+        vea de qué hablaron. Solo turnos con texto real; sin system ni tools."""
+        out: list[dict[str, str]] = []
+        for m in self.messages:
+            rol = m.get("role")
+            if rol not in ("user", "assistant"):
+                continue
+            texto = (m.get("content") or "").strip()
+            if not texto or texto.startswith("[EVENTO DEL SISTEMA]") or texto.startswith("[PERFIL DE LA BASE"):
+                continue
+            out.append({"de": "cliente" if rol == "user" else "lara", "texto": texto})
+        return out[-limite:]
+
     def _paquete_asesor(self) -> dict[str, Any]:
         return {
             "es_afiliado": self.es_afiliado,
@@ -1156,6 +1208,7 @@ class Session:
             "propension": self.propension,       # ranking + razones del motor de reglas
             "perfil_conversacional": self.perfil,
             "perfil_vivo": self._perfil_vivo(),  # perfil COMPLETO para que el asesor humano cierre
+            "conversacion": self._transcripcion(),  # de qué habló con Lara (para el asesor)
             "datos_contratante": self.datos,
             "contacto": self.contacto,
             "contrato": {k: v for k, v in (self.contrato or {}).items()
@@ -1252,6 +1305,16 @@ def _capture_data(session: Session, user_text: str) -> None:
         data = extraction.extract_perfil(user_text)
         if data:
             session._tool_registrar_perfil(data)
+    # Un no afiliado debe quedar identificado desde el inicio, no solo al
+    # cierre. Esto reconoce respuestas naturales como "me llamo Ana Pérez".
+    if session.es_afiliado is False and (
+        not session.datos.get("nombre") or not session.datos.get("documento")
+    ):
+        data = extraction.extract_datos(user_text)
+        if data:
+            session._tool_registrar_datos({
+                k: v for k, v in data.items() if k in ("nombre", "documento")
+            })
     # Capa estructurada: datos de contratación durante el cierre.
     if session.estado == "CIERRE":
         data = extraction.extract_datos(user_text)
@@ -1294,6 +1357,21 @@ def run_turn(session: Session, user_text: str | None, system_event: str | None =
             continue  # dejar que el modelo redacte con los resultados
         reply_text = (msg.get("content") or "").strip()
         break
+
+    # Regla determinística: aunque el modelo intente avanzar, un no afiliado
+    # no pasa al diagnóstico sin nombre e identificación civil.
+    if session.es_afiliado is False:
+        if not session.datos.get("nombre"):
+            reply_text = (
+                "Claro, puedo ayudarte aunque no seas afiliado. Para crear tu perfil "
+                "y no perder el proceso, ¿cuál es tu nombre completo?"
+            )
+        elif not session.datos.get("documento"):
+            nombre = session.datos["nombre"].split()[0]
+            reply_text = (
+                f"Gracias, {nombre}. Para completar tu perfil, "
+                "¿cuál es tu número de identificación?"
+            )
 
     _guardrail(reply_text, session.tools_used_turn, session)
     session.persist()

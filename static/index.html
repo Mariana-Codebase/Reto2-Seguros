@@ -13,9 +13,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css?v=nav-maicol-cody">
+<link rel="stylesheet" href="/static/css/styles.css?v=system-flow-3">
 <link rel="stylesheet" href="/static/css/arch.css">
-<link rel="stylesheet" href="/static/css/agent-flow.css">
+<link rel="stylesheet" href="/static/css/agent-flow.css?v=parallel-flow-1">
 </head>
 <body>
 
@@ -41,9 +41,7 @@
     </button>
     <nav class="nav-links" id="mainNav" aria-label="Navegación principal">
       <button data-view="inicio" class="active">Inicio</button>
-      <button data-view="demo">Probar Lara</button>
       <button data-scroll="ecosistema">Cómo funciona</button>
-      <button data-view="arquitectura">Tecnología</button>
       <span class="nav-divider" aria-hidden="true"></span>
       <a class="nav-agent-link" href="/ofertas" title="Cody: agente proactivo orquestado por n8n">
         <span class="nav-agent-dot"></span>Cody
@@ -69,7 +67,7 @@
           clara, explicable y trazable.</p>
         <div class="hero-actions">
           <button class="btn primary" data-view="demo">Hablar con Lara</button>
-          <button class="btn ghost" data-scroll="ecosistema">Conocer el ecosistema</button>
+          <a class="btn ghost" href="/ofertas">Conoce a Cody</a>
         </div>
         <div class="hero-dev">
           <span class="hero-dev-label">Desarrollado por</span>
@@ -89,31 +87,90 @@
           </ul>
         </div>
       </div>
-      <div class="hero-card" aria-hidden="true">
+      <div class="hero-card" aria-label="Conversación demostrativa con Lara">
         <div class="hc-head">
           <div class="hc-avatar">C</div>
           <div><b>Lara</b><br><small><span class="live-dot"></span> <span id="heroLiveStatus">En línea · responde al instante</span></small></div>
           <span class="hero-live-badge" aria-hidden="true">EN VIVO</span>
         </div>
         <div class="hc-body" id="heroLiveChat"></div>
+        <div class="hc-tech" aria-label="Tecnología de la conversación">
+          <span>RAG verificable</span><i></i><span>Motor de reglas</span><i></i><span>Perfil vivo</span>
+        </div>
       </div>
     </div>
 
     <div class="container">
-      <div class="agent-flow" id="agentFlow" aria-label="Cómo trabaja el agente Lara"></div>
-    </div>
+      <section class="system-console" aria-labelledby="systemFlowTitle">
+        <div class="sf-toolbar">
+          <div class="sf-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="sf-trace">SYSTEM_TRACE · 0148</span>
+          <span class="sf-live"><i></i> Operación trazable</span>
+        </div>
+        <div class="sf-heading">
+          <div>
+            <span class="eyebrow">Dos agentes · dos rutas claras</span>
+            <h2 id="systemFlowTitle">Lara y Cody trabajan en paralelo.</h2>
+          </div>
+          <p>Lara atiende la conversación. Cody es un flujo independiente que funciona únicamente en n8n. Solo recibe contexto de Lara si la persona abandona y ya dejó un dato de contacto.</p>
+        </div>
 
-    <div class="container">
+        <div class="sf-canvas">
+          <div class="sf-flow" id="systemFlow" aria-label="Rutas independientes de Lara y Cody">
+            <section class="sf-lane sf-lane-lara" aria-labelledby="laraLaneTitle">
+              <header class="sf-lane-head">
+                <span>RUTA 01 · CONVERSACIÓN ACTIVA</span>
+                <strong id="laraLaneTitle"><i></i> Lara</strong>
+              </header>
+              <div class="sf-lane-track sf-lane-track-lara" role="list">
+                <button class="sf-node is-active" type="button" role="listitem" data-flow-node="afiliado" aria-pressed="true"><span class="sf-step">01</span><span class="sf-icon user">◎</span><strong>Afiliado</strong><small>Inicia el chat</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="lara" aria-pressed="false"><span class="sf-step">02</span><span class="sf-icon lara">L</span><strong>Lara entiende</strong><small>Conversa y coordina</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="coberturas" aria-pressed="false"><span class="sf-step">03</span><span class="sf-icon rag">▤</span><strong>Coberturas</strong><small>RAG documental</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="cotizar" aria-pressed="false"><span class="sf-step">04</span><span class="sf-icon quote">$</span><strong>Cotiza y responde</strong><small>Motor de reglas</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="asesor" aria-pressed="false"><span class="sf-step">05</span><span class="sf-icon advisor">✓</span><strong>Asesor</strong><small>Solo si quiere continuar</small></button>
+              </div>
+            </section>
+
+            <div class="sf-abandon-handoff" role="note">
+              <span class="sf-handoff-label">ÚNICO PUENTE ENTRE AGENTES</span>
+              <div><b>Conversación abandonada</b><i>+</i><b>correo o contacto disponible</b><span>→</span><strong>n8n entrega el contexto a Cody</strong></div>
+            </div>
+
+            <section class="sf-lane sf-lane-cody" aria-labelledby="codyLaneTitle">
+              <header class="sf-lane-head">
+                <span>RUTA 02 · WORKFLOW INDEPENDIENTE EN n8n</span>
+                <strong id="codyLaneTitle"><i></i> Cody · automático</strong>
+              </header>
+              <div class="sf-lane-track sf-lane-track-cody" role="list">
+                <button class="sf-node sf-node-n8n" type="button" role="listitem" data-flow-node="n8n" aria-pressed="false"><span class="sf-step">01</span><span class="sf-icon n8n">n8n</span><strong>Trigger n8n</strong><small>Evento o abandono válido</small></button>
+                <button class="sf-node sf-node-cody" type="button" role="listitem" data-flow-node="cody" aria-pressed="false"><span class="sf-step">02</span><span class="sf-icon cody">C</span><strong>Cody decide</strong><small>Guardrails + anti-spam</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="mensaje" aria-pressed="false"><span class="sf-step">03</span><span class="sf-icon message">➤</span><strong>Recordatorio</strong><small>Retoma y envía la oferta</small></button>
+              </div>
+            </section>
+          </div>
+
+          <div class="sf-detail" id="systemFlowDetail" aria-live="polite">
+            <span class="sf-detail-index">2×</span>
+            <div>
+              <strong>Dos rutas paralelas, no una cadena entre agentes.</strong>
+              <p>Lara atiende y puede escalar al asesor. Cody opera de forma independiente en n8n; solo recibe un abandono cuando ya existe información de contacto.</p>
+            </div>
+            <div class="sf-detail-tags"><span>Lara conversacional</span><span>Cody independiente</span></div>
+          </div>
+        </div>
+        <div class="sf-principle">
+          <span><b>Lara → asesor:</b> solo cuando la persona decide continuar</span>
+          <span class="sf-route-separator" aria-hidden="true"></span>
+          <span><b>Cody:</b> workflow independiente en n8n · sin conexión con el asesor</span>
+        </div>
+      </section>
+
       <div class="kpis">
         <div class="kpi" data-reveal><b>2</b><span>agentes especializados, una sola experiencia</span></div>
         <div class="kpi" data-reveal data-reveal-delay="1"><b>0</b><span>afirmaciones sin respaldo documental</span></div>
         <div class="kpi" data-reveal data-reveal-delay="2"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
         <div class="kpi" data-reveal data-reveal-delay="3"><b>&lt; 5 min</b><span>del primer mensaje a la vinculación confirmada</span></div>
       </div>
-    </div>
-
-    <div class="container">
-      <div class="agent-flow cody-flow" id="codyFlow" aria-label="Cerebro de Cody: evento, regla, envío y actualización"></div>
     </div>
   </section>
 
@@ -675,9 +732,8 @@
 </footer>
 
 <script src="/static/js/app.js?v=nav-maicol-cody"></script>
-<script src="/static/js/hero-live.js?v=lara-cody-merge"></script>
+<script src="/static/js/hero-live.js?v=system-flow-3"></script>
 <script src="/static/js/arch.js"></script>
-<script src="/static/js/agent-flow.js?v=lara-cody-merge"></script>
-<script src="/static/js/cody-flow.js?v=lara-cody-merge"></script>
+<script src="/static/js/agent-flow.js?v=parallel-flow-1"></script>
 </body>
 </html>

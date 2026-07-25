@@ -1,298 +1,271 @@
-# Lara — Venta automatizada de seguros
+<div align="center">
 
-Solución al **Reto 2 · Seguros** · Hackathon [Colsubsidio × 30X](https://innovacion.colsubsidio.com/) · Bogotá, julio de 2026
+# Lara & Cody · Venta automatizada de seguros
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
+**Reto 2 · Seguros** — Hackathon **[Colsubsidio × 30X](https://innovacion.colsubsidio.com/)** · Bogotá, julio de 2026
+
+Dos agentes de IA que llevan a cada afiliado desde *«no sé qué seguro necesito»* hasta *«ya quedé asegurado»* — de forma explicable, trazable y sin cajas negras.
+
+### ▶️ Demo en vivo — **https://clara-production-d3e5.up.railway.app**
+
+| [💬 Hablar con Lara](https://clara-production-d3e5.up.railway.app/) | [⚡ Panel de Cody](https://clara-production-d3e5.up.railway.app/ofertas) | [🗂️ Panel del asesor](https://clara-production-d3e5.up.railway.app/asesor) |
+|:--:|:--:|:--:|
+
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
-![Gemini](https://img.shields.io/badge/LLM-Gemini_2.0_Flash-4285F4?logo=google&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-trazabilidad_total-003B57?logo=sqlite&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-listo-2496ED?logo=docker&logoColor=white)
+![Gemini](https://img.shields.io/badge/LLM-Google_Gemini-4285F4?logo=googlegemini&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-perfil_vivo-47A248?logo=mongodb&logoColor=white)
+![n8n](https://img.shields.io/badge/n8n-orquestación-EA4B71?logo=n8n&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-deploy-0B0D0E?logo=railway&logoColor=white)
 
-**Lara** es una asesora digital que lleva a cada afiliado desde *"no sé qué seguro
-necesito"* hasta *"ya quedé asegurado"*, sin intervención humana: identifica la
-propensión desde la base real de afiliados, personaliza la oferta, explica cada
-recomendación, cierra la vinculación y — como Colsubsidio distribuye pólizas, no
-las emite — entrega al asesor humano un **perfil completo** para que finalice la
-compra con la aseguradora.
-
-## Dos agentes que trabajan juntos
-
-| | Agente 1 · **Lara** (conversacional) | Agente 2 · **Ofertas** (proactivo) |
-|---|---|---|
-| **Cuándo actúa** | Cuando la persona llega y escribe | Solo, ante eventos de las bases de Colsubsidio |
-| **Qué hace** | Identifica si es afiliado, diagnostica, recomienda, cotiza, contrata, firma, cobra y radica la vinculación | Detecta un cambio (crédito desembolsado, alza de ingreso, cumpleaños, inactividad) y envía la oferta pertinente |
-| **Salida** | Perfil completo al asesor humano para cerrar con la aseguradora | Oferta de seguro **o** crédito por el canal correcto |
-| **Aprendizaje** | Cada interacción **enriquece el perfil vivo** del usuario | Cada evento suma al mismo perfil, que se vuelve más claro |
-
-Ambos comparten una **base viva**: la base de afiliados es la semilla, y cada
-conversación y cada evento la enriquecen, de modo que Colsubsidio entiende cada
-vez mejor a su gente. El agente 2 se orquesta con **n8n** (webhook →
-`/api/eventos`); la inteligencia vive en la app.
+</div>
 
 ---
 
-## Ejecución en 2 minutos
+## 📖 Índice
 
+1. [El reto y nuestra solución](#-el-reto-y-nuestra-solución)
+2. [Los dos agentes](#-los-dos-agentes)
+3. [Arquitectura](#️-arquitectura)
+4. [Lara — la asesora conversacional](#-lara--la-asesora-conversacional)
+5. [Cody — el agente de ofertas proactivo](#-cody--el-agente-de-ofertas-proactivo)
+6. [Panel del asesor](#️-panel-del-asesor)
+7. [Orquestación con n8n](#-orquestación-con-n8n)
+8. [Stack técnico](#-stack-técnico)
+9. [Estructura del proyecto](#-estructura-del-proyecto)
+10. [API principal](#-api-principal)
+11. [Cómo ejecutarlo](#-cómo-ejecutarlo)
+12. [Datos, alcance y privacidad](#-datos-alcance-y-privacidad)
+13. [Equipo](#-equipo)
+
+---
+
+## 🎯 El reto y nuestra solución
+
+**El reto (Colsubsidio × 30X · Seguros):** automatizar la venta y el acompañamiento de seguros para los afiliados de Colsubsidio, de punta a punta.
+
+**Nuestra solución** son **dos agentes de IA que se complementan**, orquestados por **n8n**:
+
+- **Lara** atiende a quien llega a conversar: entiende su necesidad, lo identifica en la base de afiliados, recomienda con respaldo documental y prepara todo para el cierre.
+- **Cody** trabaja *solo*, sin esperar a nadie: reacciona a eventos de las bases de Colsubsidio (y a conversaciones que quedaron a medias) para enviar la oferta de seguro pertinente por el canal correcto.
+
+Un principio guía todo el sistema: **el modelo pone las palabras, las reglas ponen la verdad.** Ningún precio, cobertura ni recomendación sale de una alucinación del LLM — todo proviene de reglas auditables y de datos verificables.
+
+> **Colsubsidio distribuye seguros, no los emite.** Por eso los agentes **nunca cobran ni emiten pólizas**: preparan el caso completo y un **asesor humano** finaliza la vinculación con la aseguradora. Esa transparencia está incorporada en el flujo.
+
+---
+
+## 🤝 Los dos agentes
+
+|  | **Lara** · agente conversacional | **Cody** · agente proactivo |
+|---|---|---|
+| **Cuándo actúa** | Cuando la persona escribe | Solo, ante eventos o abandonos (vía n8n) |
+| **Qué hace** | Identifica al afiliado, diagnostica, recomienda con respaldo, arma el perfil y radica la solicitud | Detecta un cambio o una charla sin cerrar y envía la oferta de seguro pertinente |
+| **Enfoque** | Todo el portafolio de seguros, afiliado-first | **100 % seguros**, con reglas evento → seguro |
+| **Garantías** | No inventa precios ni coberturas; identifica antes de asesorar | No repite ofertas (anti-spam) ni molesta sin motivo |
+| **Salida** | Perfil + conversación para el asesor humano | Recordatorio/oferta por WhatsApp o correo |
+
+**La unión de los dos:** si alguien conversa con Lara, deja su contacto y **no cierra**, Cody lo detecta y le envía un recordatorio de *su* seguro — «aún puedes gestionarlo». Nadie empieza de cero y nadie recibe spam.
+
+---
+
+## 🏗️ Arquitectura
+
+```mermaid
+flowchart LR
+    U([Afiliado]) -->|chat| LARA[Lara<br/>agente conversacional]
+    LARA -->|herramientas| K[(Reglas + RAG<br/>coberturas y precios)]
+    LARA -->|perfil vivo| DB[(MongoDB)]
+    LARA -->|radica solicitud| ASE[Panel del asesor]
+    ASE -->|poliza + pago| ASEG([Aseguradora])
+
+    EV([Eventos de otras<br/>bases Colsubsidio]) --> N8N{{n8n}}
+    LARA -.abandono con contacto.-> N8N
+    N8N -->|"/api/eventos, /barrido, /reenganche"| CODY[Cody<br/>agente de ofertas]
+    CODY --> DB
+    CODY -->|WhatsApp / correo| U
+```
+
+- **Backend:** una sola app **FastAPI** expone a Lara, a Cody y al panel del asesor.
+- **Cerebro:** **Google Gemini** conversa y decide *qué herramienta* llamar; el backend ejecuta la lógica de forma determinística.
+- **Memoria:** **MongoDB** guarda el *perfil vivo* (lo que el sistema aprende de cada persona), las sesiones, las solicitudes y las ofertas.
+- **Orquestación:** **n8n** dispara a Cody por eventos, por un barrido programado y por el re-enganche de abandonos.
+- **Despliegue:** **Railway** (app + MongoDB), con el catálogo de demo sembrado automáticamente al arrancar.
+
+---
+
+## 🧠 Lara — la asesora conversacional
+
+Lara está diseñada para razonar en un orden claro y **explicable**:
+
+1. **Identificación primero (afiliado-first).** Antes de asesorar, Lara establece *quién es la persona*: pregunta si es afiliada, verifica su **SERIE** contra la base real (MongoDB) y ancla su **perfil 360** (vivienda, créditos, propensión). Si no es afiliada, la registra igual para no perder el contexto.
+2. **Diagnóstico o atajo.** Si la persona ya sabe qué quiere, va directo; si no, un diagnóstico con preguntas abiertas, una por turno.
+3. **Recomendación con respaldo.** Cada opción muestra su **aseguradora** (p. ej. Seguros Bolívar, Sura), qué cubre, qué no, y el precio **siempre como «desde $X/mes»** (referencial; el valor final lo fija el asesor con la aseguradora).
+4. **Cierre sin emitir.** Cuando a la persona le gusta una póliza, Lara genera un **PDF informativo**, pide nombre + identificación + contacto y **radica el caso al asesor**. No cobra, no firma, no emite.
+
+**Barreras contra la alucinación (las reglas de oro):**
+- Las coberturas salen de **RAG documental** — Lara no inventa amparos.
+- Los precios salen de un **motor de reglas** determinístico — el modelo nunca calcula un precio.
+- El motor de **propensión** rankea los productos por afinidad al perfil, con razones explicables.
+- Cada decisión y cada llamada a herramienta quedan **auditadas**.
+
+---
+
+## ⚡ Cody — el agente de ofertas proactivo
+
+Cody es un agente **100 % de seguros** que no espera al cliente. Su lógica es una regla `evento → seguro`, siempre con una razón explicable:
+
+| Disparador | Ejemplo | Oferta |
+|---|---|---|
+| **Evento de otra base** | Crédito de vivienda desembolsado | Seguro de Hogar (+ Vida como cross-sell) |
+| **Barrido autónomo** | Recorre una muestra de la base | El mejor seguro por **propensión** |
+| **Abandono con contacto** | Habló con Lara y no cerró | **Recordatorio** de su seguro |
+
+Con dos guardrails que protegen la experiencia:
+
+- 🔁 **Anti-spam:** no repite el mismo seguro al mismo perfil en 15 días.
+- 🎯 **Pertinencia:** cada oferta se elige por regla o propensión, nunca al azar.
+
+El **panel de Cody** (`/ofertas`) permite verlo trabajar en vivo: ejecutar un barrido sobre la base, activar la *demo automática*, simular un evento puntual y ver cómo razona (contadores de *oferta pertinente*, *retomar a Lara* y *repetición evitada*).
+
+---
+
+## 🗂️ Panel del asesor
+
+Como Colsubsidio distribuye pero no emite, el cierre lo hace un **asesor humano**. El panel (`/asesor`) le entrega, por cada solicitud:
+
+- La **conversación completa** que la persona tuvo con Lara (en burbujas de chat).
+- Sus **datos de contacto**, el **seguro que busca** y las **aseguradoras** disponibles.
+- Un **filtro** por estado y **búsqueda** por nombre.
+- La acción para **enviar la póliza y el link de pago** y avanzar el estado hasta el cierre con la aseguradora.
+
+---
+
+## 🔗 Orquestación con n8n
+
+Tres workflows conectan el ecosistema (todos llaman a la app vía la variable `CLARA_BASE_URL`):
+
+| Workflow | Disparador | Qué hace |
+|---|---|---|
+| `agente-ofertas` | Webhook / cron diario | Evento → `POST /api/eventos`; barrido → `POST /api/ofertas/barrido` |
+| `agente-reenganche` | Cron (cada 30 min) | Re-engancha abandonos → `POST /api/ofertas/reenganche` |
+| `agente-actualizacion` | Webhook | Actualiza el afiliado en Mongo y re-evalúa sus ofertas |
+
+Los JSON de los workflows están en [`n8n/`](n8n/) listos para importar. La inteligencia vive en la app; n8n solo agenda y transporta.
+
+---
+
+## 🧰 Stack técnico
+
+| Capa | Tecnología |
+|---|---|
+| **API / backend** | FastAPI 0.115 · Uvicorn · Pydantic 2 |
+| **LLM** | Google Gemini (AI Studio, `gemini-flash-latest`) con function-calling |
+| **Base de datos** | MongoDB (perfil vivo, sesiones, solicitudes, ofertas) · driver PyMongo 4 |
+| **Orquestación** | n8n (workflows por evento, cron y webhook) |
+| **Documentos** | fpdf2 (PDF informativo de la póliza) |
+| **Datos base** | openpyxl (ETL de la base de afiliados) |
+| **Despliegue** | Docker · Railway (app + MongoDB gestionado) |
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+app/
+  main.py            API FastAPI: Lara, Cody, asesor, pagos
+  agent.py           Cerebro conversacional de Lara (herramientas + guardrails)
+  ofertas.py         Cody: reglas evento -> seguro (100% seguros)
+  knowledge.py       Catálogo de seguros, coberturas, precios y aseguradoras
+  propension.py      Motor de propensión explicable (afinidad por perfil)
+  afiliados_db.py    Acceso a la base real de afiliados (perfil 360) en Mongo
+  store.py           Persistencia en Mongo: sesiones, perfil vivo, solicitudes, ofertas
+  seed.py            Siembra automática de la muestra demo
+  llm.py             Cliente Gemini/Anthropic (con respaldo)
+  pdfgen.py          Generación de PDFs
+  config.py          Configuración por variables de entorno
+static/              Interfaces: Lara (/), Cody (/ofertas), asesor (/asesor)
+n8n/                 Workflows de orquestación (importables)
+scripts/             ETL de la base de afiliados a Mongo (cargar_mongo.py)
+Dockerfile           Imagen de producción
+```
+
+---
+
+## 🔌 API principal
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/api/session` · `/api/chat` | Conversación con Lara |
+| `GET` | `/api/afiliados/{serie}` | Perfil 360 del afiliado |
+| `PATCH` | `/api/afiliados/{serie}` | Actualiza el afiliado (usado por n8n) |
+| `POST` | `/api/eventos` | Dispara a Cody con un evento |
+| `POST` | `/api/ofertas/barrido` | Barrido autónomo sobre la base |
+| `POST` | `/api/ofertas/reenganche` | Re-enganche de abandonos |
+| `GET` | `/api/asesor/solicitudes` | Bandeja del asesor |
+| `GET` | `/api/health` | Estado del servicio y del LLM |
+
+Con la app corriendo en local, la documentación interactiva está en `/api/docs`.
+
+---
+
+## 🚀 Cómo ejecutarlo
+
+### Requisitos
+- Python 3.12+ y un **MongoDB** accesible.
+- Una **API key de Google Gemini** (AI Studio).
+
+### Local
 ```bash
+# 1. Dependencias
 pip install -r requirements.txt
-copy .env.example .env        # pegar GEMINI_API_KEY (aistudio.google.com/apikey)
-python server.py              # → http://localhost:8000
+
+# 2. Configuración — crea un archivo .env con:
+#    GEMINI_API_KEY=tu_clave_de_ai_studio
+#    LLM_PROVIDER=aistudio
+#    GEMINI_MODEL=gemini-flash-latest
+#    MONGODB_URI=mongodb://localhost:27017
+#    MONGODB_DB=colsubsidio
+
+# 3. Ejecutar
+python server.py          # o: uvicorn app.main:app --reload
+# App en http://localhost:8000
 ```
 
-## Recorrido de la demo
+Al arrancar, si la base está vacía, la app **siembra automáticamente** una muestra de demo (afiliados, abandonos y solicitudes con conversación) para que todo funcione al instante.
 
-0. **Identificación** — Al iniciar, Lara puede reconocer si la persona es afiliada:
-   busca su número en la base y, si existe, carga su perfil y propensión; si no,
-   sigue como no afiliada (y un asesor completará la vinculación). En la demo, el
-   selector *"Perfil de la base de afiliados"* hace esa identificación; la opción
-   *"Visitante anónimo"* recorre el camino de no afiliado.
-1. En **Demo interactiva**, el selector *"Perfil de la base de afiliados"* carga
-   perfiles reales (identificados por SERIE). Lara saluda personalizada según el
-   perfil y el panel **"Propensión · por qué esta oferta"** muestra las razones
-   exactas de la recomendación. Al cambiar de perfil, **la oferta cambia**:
-   monoparental → Vida · joven sin grupo familiar → Accidentes · compra viajes →
-   Asistencia en Viajes · usó el servicio de vivienda → Hogar · pensionado → Exequial.
-2. El flujo también funciona para un **visitante anónimo**: ante *"no sé qué seguro
-   necesito"*, Lara diagnostica con preguntas abiertas y adapta la recomendación a
-   lo que la persona cuenta (mascotas, vehículo, viajes, dependientes…).
-3. Elegido un producto, Lara reúne los datos, genera el **contrato en PDF**, captura
-   la **firma electrónica** y entrega el enlace de **pago** (sandbox: la tarjeta
-   `4242 4242 4242 4242` aprueba; la `4111…` simula rechazo).
-4. Con el pago aprobado, la **vinculación queda confirmada y radicada** y se genera
-   su **resumen en PDF**. Colsubsidio distribuye —no emite pólizas—, así que la
-   solicitud se transmite a la aseguradora, que expide la póliza. Cada decisión
-   queda registrada en el panel de auditoría, en vivo junto al chat.
-5. En el **Panel del asesor** (`/asesor`) la vinculación llega empaquetada — perfil,
-   propensión explicada, contrato firmado y pago — y avanza por estados hasta la
-   emisión oficial en la aseguradora. Cada avance notifica a la sesión del afiliado.
+> Para cargar la base real de afiliados a Mongo:
+> `python scripts/cargar_mongo.py "ruta/al/archivo.xlsx" --reset` (opcional `--limit=N` para una muestra menor).
+
+### Producción
+Imagen **Docker** lista (`Dockerfile`). El despliegue de la demo corre en **Railway** con MongoDB gestionado y el modelo de Gemini como variable secreta.
 
 ---
 
-## Propensión explicable desde la base real de afiliados
+## 🔒 Datos, alcance y privacidad
 
-El insumo es la base real de afiliados (`Usos_Productos_Afiliados_SIN_ID.xlsx`,
-**500.000 registros** identificados por **SERIE** — sin nombres ni cédulas). La
-pregunta central — *¿por qué a esta persona este seguro y no otro?* — se responde
-con una **tabla de reglas auditable** ([`app/propension.py`](app/propension.py)),
-sin cajas negras:
-
-| Variable de la base | Ejemplo de regla | Producto | Fundamento |
-|---|---|---|---|
-| Segmento familiar | Familia monoparental | Vida (+30) | Hijos que dependen de un solo ingreso |
-| Segmento familiar | Sin grupo familiar | Accidentes (+18) | Su mayor riesgo es su propia incapacidad |
-| Marca VIVIENDA | Usó el servicio de vivienda | Hogar (+40) | Estrena patrimonio que proteger |
-| Marca AGENCIAS / HOTELES | Compra viajes u hoteles | Viajes (+35/30) | Ya viaja: se protege lo que ya hace |
-| Marca DROGUERÍA | Gasto recurrente en droguería | Salud (+15) | Necesidad de salud activa (17.6% de la base) |
-| Rango salarial | Más de 4 SMLV | Vida y Ahorro (+10) | Capacidad real de proteger y ahorrar |
-| Rango de edad | Mayor de 55 años | Exequial (+20) | Anticipar evita cargas a la familia |
-| Pirámide | Independiente | Accidentes (+10) | Sin ARL de empleador |
-
-- **34 reglas** en total. El puntaje de un producto es la **suma de las reglas que
-  aplican**, y el desglose completo (variable → puntos → razón) acompaña cada
-  recomendación en la interfaz, la auditoría y el panel del asesor. Las reglas se
-  consultan en vivo en `GET /api/propension/reglas`.
-- El **comportamiento observado pesa más que la demografía**: una marca de consumo
-  activa es evidencia directa de la necesidad, no una inferencia.
-- **Momento y canal**: el motor sugiere además *cuándo* y *por dónde* contactar
-  (tras la compra en droguería, al confirmar una reserva, al desembolso de
-  vivienda, con la mesada pensional…).
-- **La conversación prevalece**: la propensión es el punto de partida; lo que la
-  persona expresa en el diálogo siempre tiene prioridad sobre la base.
-
-### Etiquetas anonimizadas, correspondencia documentada
-
-Las clasificaciones internas de la base (categoría, segmentos, pirámide) llegan
-anonimizadas con letras griegas (SIGMA, LAMBDA, RHO…). Su interpretación está
-documentada en [`data/mapa_segmentos.json`](data/mapa_segmentos.json), construida
-por coincidencia de participaciones con la distribución pública del insumo del
-reto y **validada con evidencia interna de la propia base**:
-
-| Etiqueta | Interpretación | Evidencia de validación |
-|---|---|---|
-| SIGMA | Categoría A | El **99.2%** gana ≤ 2 SMLV (definición legal de la categoría A) |
-| KAPPA | Pensionado | El **95.5%** es mayor de 55 años |
-| ETA (poblacional) | Segmento Joven | El **83.2%** tiene 20–35 años |
-| EMP_000002 | Empresa foco | 18.3% de la base ≈ 16.8% de la referencia pública |
-
-El mapa es un archivo **editable**: con el diccionario oficial de Colsubsidio se
-corrige ahí, sin tocar el motor. Para regenerar mapa, estadísticas y muestra demo:
-`python scripts/perfilar_base.py <ruta a la base .xlsx o .csv>`.
+- **Prototipo demostrativo.** El catálogo de productos, las **aseguradoras**, los **planes** y los **precios** son **simulados/ilustrativos** para el reto — no son datos oficiales de Colsubsidio ni de las aseguradoras. La cotización y la póliza reales las confirma un asesor.
+- **Base de afiliados.** La base real anonimizada tiene ~500.000 registros (identificados solo por SERIE, sin nombres ni cédulas). El despliegue de la demo usa una **muestra sintética sembrada** para no exponer datos reales.
+- **Precios referenciales.** Siempre se presentan como *«desde $X/mes»*; el valor final lo define el asesor con la aseguradora.
+- **Colsubsidio distribuye, no emite.** Los agentes nunca cobran ni emiten pólizas.
+- **Habeas data.** Los datos se tratan conforme a la **Ley 1581 de 2012**; el aviso de tratamiento se da al inicio de cada conversación.
 
 ---
 
-## Panel del asesor (`/asesor`)
+## 👥 Equipo
 
-Colsubsidio **no fabrica pólizas: las distribuye**. Por eso la venta autónoma
-termina en una **bandeja de vinculaciones**: al firmarse el contrato, Lara
-transmite la solicitud empaquetada — perfil de la base con segmentos
-interpretados, propensión con razones, datos del tomador, contrato PDF, estado del
-pago y resumen de vinculación — y el asesor la avanza por estados hasta que la
-aseguradora emite la póliza:
+> ## 🏴‍☠️ Equipo **BusterCall**
 
-```
-pendiente_pago → pagada → enviada a aseguradora → emitida → cerrada
-```
-
-Cada avance **notifica a la sesión del afiliado**: si pregunta por su solicitud,
-Lara responde con el estado real. Los escalamientos a humano también llegan a la
-bandeja como tickets. El asesor recibe un **perfil completo** del usuario (lo de la
-base + lo que contó + intereses + eventos de vida) para cerrar con contexto.
-
----
-
-## Agente de ofertas (`/ofertas`) — el segundo agente
-
-Mientras Lara atiende a quien llega, el **agente de ofertas** actúa por su cuenta.
-Escucha **eventos** de las bases de Colsubsidio y, para cada uno, decide la oferta
-más pertinente con una **regla explicable** (nada aleatorio) y la envía por el mejor
-canal. Cruza dos portafolios: **seguros** y **créditos** (colsubsidio.com/creditos).
-
-| Evento (otra base) | Oferta | Por qué |
-|---|---|---|
-| `credito_vivienda_desembolsado` | **Seguro de Hogar** (+ cross Vida) | Protege el patrimonio recién financiado |
-| `credito_vehiculo_desembolsado` | Seguro de Autos | Cubre el vehículo financiado |
-| `credito_libre_inversion_desembolsado` | Seguro de Vida | Protege del saldo pendiente |
-| `nacimiento_hijo` | Seguro de Vida (+ Salud) | Un nuevo integrante cambia la prioridad |
-| `alza_ingreso` | Crédito de Libre Inversión (+ Vida y Ahorro) | Más capacidad de pago |
-| `consulta_vivienda` | Crédito de Vivienda (+ Hogar) | Interés detectado |
-| *(cualquier otro)* | Mejor seguro por propensión | Re-enganche con base en el perfil |
-
-La **inteligencia vive en la app** ([`app/ofertas.py`](app/ofertas.py)) y se dispara
-con `POST /api/eventos`; **n8n** solo orquesta (webhook y envío). Así funciona sola
-para el jurado y se integra con n8n en producción. En `/ofertas` puedes **simular un
-evento** y ver la decisión. El workflow importable está en
-[`n8n/agente-ofertas.workflow.json`](n8n/agente-ofertas.workflow.json).
-
-> **Ejemplo insignia:** otra base marca que el afiliado adquirió un crédito de
-> vivienda → el agente le ofrece el **seguro de hogar** citando ese evento como
-> motivo, y suma un cross-sell de vida. Todo queda en el perfil vivo.
-
----
-
-## Arquitectura: el modelo pone las palabras, el sistema pone la verdad
-
-Vender seguros con un LLM tiene un riesgo crítico: que el modelo invente una
-cobertura, un precio o una condición. Lara está diseñada para que no pueda pasar:
-
-| Principio | Cómo se garantiza |
+| Integrante | GitHub |
 |---|---|
-| **El LLM solo conversa** | Gemini nunca calcula ni inventa: dialoga y **llama herramientas** (function-calling). La lógica dura vive en el backend. |
-| **Coberturas ⇒ base de conocimiento** | Cada afirmación sale de `consultar_coberturas`, **con cita de la fuente**. |
-| **Precios ⇒ motor determinístico** | Ninguna cifra la produce el modelo: salen de `cotizar`, con factores auditables. |
-| **Propensión ⇒ reglas explicables** | 34 reglas documentadas sobre variables reales; nada de puntajes opacos. |
-| **Cierre ⇒ backend** | Contrato, firma, pago y radicación de la vinculación los ejecuta código determinístico; la póliza la emite la aseguradora, no Colsubsidio. |
-| **Guardrail de salida** | Cada respuesta se verifica: cobertura o precio sin respaldo queda marcado en auditoría. |
-| **Cumplimiento por diseño** | Aviso de tratamiento de datos (Ley 1581 de 2012) desde el saludo; alcance restringido; resistencia a manipulación del prompt. |
-| **Trazabilidad total** | Perfil, cotización, contrato, pago y vinculación quedan en SQLite y a la vista en la interfaz. |
+| **Mariana Sinisterra** | [@MarianaCodebase](https://github.com/MarianaCodebase) |
+| **Michael Daniel** | [@MaicolD0930](https://github.com/MaicolD0930) |
+| **Jorge Martínez** | [@JorgeAMS](https://github.com/GeorgeAMS) |
 
-```
-  Afiliado           Lara (Gemini)            Backend determinístico        Asesor
-     │  "no sé qué       │                              │                      │
-     │   necesito"       │                              │                      │
-     ├──────────────────▶│ propensión (base 500k) +     │                      │
-     │                   │ diagnóstico conversacional   │                      │
-     │◀── oferta por     ├─ recomendar ────────────────▶│ reglas + coberturas  │
-     │    perfil, con    │                              │                      │
-     │    el porqué      ├─ generar_contrato ──────────▶│ PDF + firma          │
-     │  [firma y pago] ──┼─────────────────────────────▶│ checkout + webhook   │
-     │◀── "ya quedaste   │◀─ vinculación radicada ──────┤ resumen PDF          │
-     │     asegurado"    │                              ├─ paquete completo ──▶│ bandeja
-     │                   │                              │      la aseguradora emite la póliza ▲
-     │◀── estado de su solicitud ◀──────────────────────┴── avances ───────────┤
-```
+<div align="center">
 
----
+Hecho para el **Hackathon Colsubsidio × 30X** · Bogotá, julio de 2026
 
-## Estructura del proyecto
+**[▶️ Probar la demo](https://clara-production-d3e5.up.railway.app)**
 
-```
-├── server.py              # Punto de entrada (python server.py)
-├── app/
-│   ├── main.py            # API FastAPI + checkout + paneles + webhooks de eventos
-│   ├── agent.py           # Agente 1 (Lara): sesión, herramientas, guardrail, perfil vivo
-│   ├── ofertas.py         # Agente 2: reglas evento → oferta (seguros + créditos)
-│   ├── base_afiliados.py  # Lookup en la base: ¿es afiliado? carga su perfil
-│   ├── propension.py      # Motor de propensión: 34 reglas explicables
-│   ├── knowledge.py       # Catálogo de 14 productos, coberturas y cotizador
-│   ├── llm.py             # Cliente Gemini (AI Studio / Vertex) + respaldo automático
-│   ├── extraction.py      # Captura de datos: regex + salida estructurada
-│   ├── payments.py        # Pasarela simulada (tarjetas de prueba, Luhn)
-│   ├── pdfgen.py          # PDFs de resumen, contrato y vinculación
-│   ├── notify.py          # Correo / WhatsApp (opcional; sin credenciales, simula)
-│   ├── store.py           # SQLite: sesiones, auditoría, bandeja, perfil vivo, ofertas
-│   └── config.py          # Configuración central (.env)
-├── scripts/
-│   └── perfilar_base.py   # Procesa la base (.xlsx/.csv) → mapa + stats + demo
-├── static/                # Frontend: chat (index) + asesor + ofertas
-├── data/                  # Mapa de segmentos, estadísticas y muestra demo (anonimizados)
-├── n8n/                   # Workflow importable del agente de ofertas + guía
-└── Dockerfile · requirements.txt · .env.example
-```
-
-### API principal
-
-| Endpoint | Qué hace |
-|---|---|
-| `POST /api/session` · `POST /api/chat` | Conversación con Lara (agente 1) |
-| `POST /api/identificar` | ¿Es afiliado? busca en la base y carga su perfil |
-| `GET /api/perfil/{id}` · `GET /api/perfiles` | Perfil vivo (la base que se enriquece) |
-| `POST /api/eventos` | **Agente de ofertas**: evento → oferta (lo llama n8n) |
-| `GET /api/ofertas/salientes` · `/catalogo` | Ofertas generadas y catálogo de eventos/créditos |
-| `GET /api/asesor/solicitudes` | Bandeja del asesor con el perfil completo |
-
-**Privacidad:** la base completa de afiliados **nunca se versiona** (protegida en
-`.gitignore`). En `data/` solo hay agregados estadísticos, el mapa documentado y
-una muestra identificada por SERIE.
-
----
-
-## Configuración
-
-| Variable | Por defecto | Descripción |
-|---|---|---|
-| `GEMINI_API_KEY` | — | **Obligatoria.** Clave de [AI Studio](https://aistudio.google.com/apikey) (`AIza…`) o Vertex Express (`AQ.…`). |
-| `GEMINI_MODEL` | `gemini-2.0-flash` | Modelo Gemini. |
-| `ANTHROPIC_API_KEY` | — | Opcional. Con ella, Claude es primario y Gemini queda de respaldo automático. |
-| `APP_ENV` | `development` | `production` desactiva docs y autoreload. |
-| `PORT` | `8000` (local) / `7860` (Docker) | Puerto HTTP. |
-| `PUBLIC_BASE_URL` | auto | Base para enlaces de pago y PDFs. |
-| `SMTP_*` / `TWILIO_*` | — | Entrega real por correo / WhatsApp (opcional; sin ellas, se simula). |
-
-**Docker:**
-
-```bash
-docker build -t clara .
-docker run -p 7860:7860 -e GEMINI_API_KEY=AIza... clara
-```
-
----
-
-## Alcance del prototipo
-
-El flujo principal se recorre completo de inicio a fin. Componentes y su estado:
-
-| Área | Estado | Notas |
-|---|---|---|
-| Identificación de afiliado | ✅ Funcional | Busca en la base; afiliado carga perfil, no afiliado sigue con perfil nuevo. |
-| Motor de propensión | ✅ Funcional | 34 reglas sobre la base real de 500k; oferta y saludo cambian por perfil. |
-| Perfil vivo (base que crece) | ✅ Funcional | Cada interacción y cada evento enriquecen el perfil en SQLite. |
-| Conversación (Gemini) | ✅ Funcional | Function-calling, escucha activa, atajos por petición directa. |
-| Flujo end-to-end | ✅ Funcional | Identificación → diagnóstico → recomendación → contrato → firma → pago → vinculación. |
-| Agente de ofertas (2.º) | ✅ Funcional | Evento → oferta explicable (seguro/crédito); disparable por n8n. |
-| Panel del asesor | ✅ Funcional | Bandeja con **perfil completo**, estados y notificación al afiliado. |
-| PDFs y persistencia | ✅ Funcional | Contrato y resumen de vinculación reales (fpdf2); SQLite sobrevive reinicios. |
-| Orquestación n8n | 🟡 Listo para importar | Workflow cableado a los webhooks; requiere `CLARA_BASE_URL`. |
-| Pago (estilo Wompi) | 🟡 Sandbox | Checkout con tarjetas de prueba y validación Luhn. |
-| Correo / WhatsApp | 🟡 Simulado | Con credenciales SMTP/Twilio envía de verdad. |
-
-Fuera de alcance por diseño del reto: integración real con aseguradoras, firma con
-validez legal, gestión de siniestros/renovaciones y pasarela de pago en producción.
-
----
-
-## Autora
-
-**Mariana Sinisterra** · [@MarianaCodebase](https://github.com/MarianaCodebase)
-
-Hackathon Colsubsidio × 30X · Bogotá, 23 de julio de 2026.
-Prototipo demostrativo. Datos tratados conforme a la Ley 1581 de 2012.
+</div>

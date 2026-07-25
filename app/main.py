@@ -171,9 +171,10 @@ def _startup():
         if sembrado:
             logger.info("Muestra demo sembrada: %s", sembrado)
         try:
-            seed.sembrar_abandonos_demo()  # perfiles de abandono para la demo de re-enganche
+            seed.sembrar_abandonos_demo()      # perfiles de abandono para la demo de re-enganche
+            seed.sembrar_solicitudes_demo()    # solicitudes con conversación para el panel del asesor
         except Exception as e:  # noqa: BLE001
-            logger.warning("No se pudieron sembrar los abandonos demo: %s", e)
+            logger.warning("No se pudieron sembrar los datos demo: %s", e)
     logger.info(
         "Lara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
         __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,
@@ -383,6 +384,43 @@ def asesor_cambiar_estado(solicitud_id: str, req: EstadoSolicitudReq):
     return {"ok": True, "id": solicitud_id, "estado": req.estado}
 
 
+@app.post("/api/asesor/solicitudes/{solicitud_id}/eliminar")
+def asesor_eliminar(solicitud_id: str):
+    """El asesor descarta una solicitud de la bandeja."""
+    if not store.eliminar_solicitud(solicitud_id):
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
+    return {"ok": True, "id": solicitud_id}
+
+
+@app.post("/api/asesor/solicitudes/{solicitud_id}/continuar")
+def asesor_continuar(solicitud_id: str):
+    """Simula que el asesor retoma la conversación: envía la póliza y el link de
+    pago al cliente, y el cliente responde. Deja el intercambio en la solicitud y
+    avanza el estado (demo del cierre del lado del asesor)."""
+    sol = store.get_solicitud(solicitud_id)
+    if sol is None:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
+    p = sol["payload"]
+    ss = p.get("seguro_solicitado") or {}
+    datos = p.get("datos_contratante") or {}
+    nombre = (datos.get("nombre") or "").split(" ")[0] or "hola"
+    aseg = ss.get("aseguradora_elegida") or ss.get("aseguradora") or "la aseguradora"
+    prod = ss.get("nombre") or "tu seguro"
+    ref = "PAGO-" + solicitud_id.split("-")[-1]
+    conv = list(p.get("conversacion") or [])
+    conv.append({"de": "asesor",
+                 "texto": (f"Hola {nombre}, soy tu asesor de Colsubsidio. Confirmé {prod} con {aseg}. "
+                           f"Te comparto tu póliza y el link de pago (referencia {ref}); cuando lo completes "
+                           "queda todo listo. Cualquier duda, con gusto te ayudo.")})
+    conv.append({"de": "cliente",
+                 "texto": "¡Perfecto, muchas gracias! Reviso la póliza y hago el pago ahora mismo."})
+    p["conversacion"] = conv
+    store.actualizar_payload_solicitud(solicitud_id, p)
+    store.set_estado_solicitud(solicitud_id, "enviada_aseguradora")
+    logger.info("Asesor continuó la solicitud %s (simulado) → enviada_aseguradora", solicitud_id)
+    return {"ok": True, "id": solicitud_id, "estado": "enviada_aseguradora"}
+
+
 # --------------------------------------------------------------------------
 # Perfil vivo: la base que se enriquece con cada interacción.
 # --------------------------------------------------------------------------
@@ -423,8 +461,17 @@ def ofertas_salientes():
 def ofertas_reset():
     """Vacía la bandeja de ofertas salientes para reiniciar la demo en limpio."""
     n = store.limpiar_ofertas()
+    seed.resembrar_abandonos_demo()  # deja los abandonos listos para re-enganchar de nuevo
     logger.info("Ofertas salientes reiniciadas (%d eliminadas)", n)
     return {"ok": True, "eliminadas": n}
+
+
+@app.post("/api/ofertas/demo/reset-abandonos")
+def ofertas_reset_abandonos():
+    """Reinicia los abandonos demo para que el re-enganche vuelva a mostrar
+    resultados (útil para repetir la demostración ante el jurado)."""
+    n = seed.resembrar_abandonos_demo()
+    return {"ok": True, "abandonos": n}
 
 
 @app.post("/api/ofertas/{oferta_id}/estado")
