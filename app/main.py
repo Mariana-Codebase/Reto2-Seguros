@@ -406,6 +406,14 @@ def ofertas_salientes():
     return {"ofertas": store.list_ofertas()}
 
 
+@app.post("/api/ofertas/reset")
+def ofertas_reset():
+    """Vacía la bandeja de ofertas salientes para reiniciar la demo en limpio."""
+    n = store.limpiar_ofertas()
+    logger.info("Ofertas salientes reiniciadas (%d eliminadas)", n)
+    return {"ok": True, "eliminadas": n}
+
+
 @app.post("/api/ofertas/{oferta_id}/estado")
 def ofertas_estado(oferta_id: str, req: EstadoOfertaReq):
     if not store.set_estado_oferta(oferta_id, req.estado):

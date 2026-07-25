@@ -148,6 +148,7 @@
         <input id="muestra" type="number" min="1" max="40" value="12">
         <button class="btn-run" id="barrido">Ejecutar barrido</button>
         <button class="btn-run sec" id="auto">▶ Demo automática (corre solo)</button>
+        <button class="btn-run sec" id="reset" style="margin-top:8px">🧹 Limpiar demo (empezar de cero)</button>
       </div>
       <div class="card" style="margin-top:14px">
         <h3>Simular un evento puntual</h3>
@@ -300,6 +301,16 @@ function setAuto(on){
   }
 }
 document.getElementById("auto").addEventListener("click",()=>setAuto(!autoTimer));
+
+document.getElementById("reset").addEventListener("click",async()=>{
+  if(autoTimer) setAuto(false);
+  const btn=document.getElementById("reset");btn.disabled=true;btn.textContent="Limpiando…";
+  try{
+    await fetch("/api/ofertas/reset",{method:"POST"});
+    acum.mora=acum.seguro=acum.credito=acum.dedup=acum.envio=0;
+    pintarFlujo(); await refrescar();
+  }finally{btn.disabled=false;btn.textContent="🧹 Limpiar demo (empezar de cero)";}
+});
 
 cargarControles().then(()=>{pintarFlujo();refrescar();});
 setInterval(()=>{ if(!autoTimer) refrescar(); }, 9000);

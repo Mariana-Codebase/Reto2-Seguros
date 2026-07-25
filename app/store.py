@@ -242,6 +242,12 @@ def set_estado_oferta(oferta_id: str, estado: str) -> bool:
     return result.matched_count > 0
 
 
+def limpiar_ofertas() -> int:
+    """Borra la bandeja de ofertas salientes (para reiniciar la demo). Devuelve
+    cuántas se eliminaron."""
+    return _db()["ofertas"].delete_many({}).deleted_count
+
+
 def oferta_reciente(perfil_id: str, producto_id: str, dias: int = 15) -> bool:
     """True si ya se generó una oferta del mismo producto para el mismo perfil
     dentro de los últimos `dias` (para no repetir/spamear al cliente)."""
