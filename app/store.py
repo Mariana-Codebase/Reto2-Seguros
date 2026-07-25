@@ -61,7 +61,7 @@ def _now() -> str:
 
 
 def save_session(session_id: str, canal: str, estado: str, snapshot: dict[str, Any]) -> None:
-    payload = json.dumps(snapshot, ensure_ascii=False)
+    payload = json.dumps(snapshot, ensure_ascii=False, default=str)
     now = _now()
     _db()["sessions"].update_one(
         {"_id": session_id},
@@ -112,7 +112,7 @@ def purge_old_sessions(ttl_hours: int | None = None) -> int:
 # --------------------------------------------------------------------------
 def upsert_solicitud(solicitud_id: str, session_id: str, tipo: str, producto: str | None,
                      estado: str, payload: dict[str, Any]) -> None:
-    body = json.dumps(payload, ensure_ascii=False)
+    body = json.dumps(payload, ensure_ascii=False, default=str)
     now = _now()
     _db()["solicitudes"].update_one(
         {"_id": solicitud_id},
@@ -168,7 +168,7 @@ def get_perfil(perfil_id: str) -> dict[str, Any] | None:
 
 def upsert_perfil(perfil_id: str, es_afiliado: bool, identificador: str | None,
                   perfil: dict[str, Any], bump: bool = True) -> None:
-    body = json.dumps(perfil, ensure_ascii=False)
+    body = json.dumps(perfil, ensure_ascii=False, default=str)
     now = _now()
     set_fields = {"es_afiliado": bool(es_afiliado), "perfil": body, "updated_at": now}
     # identificador: solo se sobrescribe si viene uno nuevo (COALESCE del SQL).
@@ -205,7 +205,7 @@ def list_perfiles(limit: int = 100) -> list[dict[str, Any]]:
 def insert_oferta(oferta_id: str, perfil_id: str | None, evento: str, tipo: str,
                   producto: str | None, canal: str | None, estado: str,
                   payload: dict[str, Any]) -> None:
-    body = json.dumps(payload, ensure_ascii=False)
+    body = json.dumps(payload, ensure_ascii=False, default=str)
     now = _now()
     _db()["ofertas"].update_one(
         {"_id": oferta_id},

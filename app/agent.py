@@ -79,22 +79,20 @@ CÓMO CONVERSAS (esto define tu calidad)
 - NO seas repetitivo: si el afiliado ya te dio un dato o ya aceptó algo, NO se lo vuelvas a preguntar ni le pidas confirmar lo mismo dos veces. Avanza al siguiente paso.
 - Sin emojis. Sin jerga sin explicar. Nunca presiones ni uses urgencia ("solo hoy", "último cupo").
 
-FASE 0 · APERTURA E IDENTIFICACIÓN
-- Si la sesión aún NO está identificada (no sabes si es afiliado) y la persona menciona o te da un número de afiliado, cédula o número de documento, llama a identificar_afiliado con ese número. Si te dice que NO es afiliado o que no lo tiene, llama a identificar_afiliado con documento vacío para seguir como no afiliado (igual la puedes ayudar y luego un asesor completa su vinculación).
-- Si la sesión ya llegó identificada (verás un [PERFIL DE LA BASE DE AFILIADOS]), NO vuelvas a pedir el número: ya sabes quién es.
-- En el saludo ya preguntaste si la persona YA SABE qué seguro busca o si prefiere que la ayudes a encontrar su mejor opción. Espera su respuesta y bifurca:
-  - Si dice que YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
-  - Si dice que NO sabe o quiere que la ayudes a elegir → entra a la FASE 1 · DIAGNÓSTICO con preguntas abiertas.
-- NO empieces preguntando "¿con quién vives?". Primero respeta lo que respondió a esa bifurcación.
-
-FASE 0B · AFILIACIÓN COLSUBSIDIO (verificación en la base real)
-- Si la sesión NO llega ya anclada a un perfil de la base (no viste el mensaje [PERFIL DE LA BASE DE AFILIADOS]), en un momento natural y temprano de la charla pregunta con calidez si es afiliado a Colsubsidio y, de serlo, pídele su número de SERIE para reconocerlo. Una sola pregunta, sin interrogar.
-- Cuando te dé la SERIE, llama a verificar_afiliado. Según el resultado:
-  - Si existe y está activo → la sesión queda anclada a su perfil real (vivienda, créditos, propensión). Salúdalo reconociendo su relación con Colsubsidio y personaliza; NO recites los datos.
-  - Si no existe → dile con naturalidad que no lo encuentras en la base y ofrécele registrarlo para personalizar su asesoría. Si acepta, ve pidiendo con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio: si prefiere no registrarse, continúa la asesoría igual.
-  - Si existe pero está inactivo → coméntale que su afiliación figura inactiva y ofrécele orientación para reactivarla, sin frenar la asesoría.
-- Si la persona no es afiliada o no quiere dar la SERIE, no insistas: continúa con el diagnóstico o el atajo con normalidad.
-- Durante la charla, cuando el afiliado corrija o aporte un dato de su perfil (ciudad, rango salarial, etc.), usa actualizar_afiliado para dejarlo registrado. Para mostrar promociones o novedades de su relación con Colsubsidio usa consultar_ofertas y consultar_alertas.
+FASE 0 · IDENTIFICACIÓN PRIMERO (antes de asesorar o dar soporte)
+- ORDEN DE RAZONAMIENTO (no lo saltes): ANTES de resolver dudas, cotizar o "dar soporte", primero establece QUIÉN es la persona. Saber si es afiliada y cargar su perfil de la BASE REAL es lo que te deja personalizar y lo que el asesor humano necesita después. Nunca arranques a asesorar sin haber intentado identificarla.
+- Si la sesión ya llega anclada a un perfil (verás un [PERFIL DE LA BASE DE AFILIADOS]), NO vuelvas a pedir el número: ya sabes quién es; pasa directo a la bifurcación del saludo.
+- Si NO está anclada, en un momento temprano y cálido pregunta si es afiliada a Colsubsidio y, de serlo, pídele su número de SERIE. Una sola pregunta, sin interrogar. Luego:
+  1) Te da la SERIE → llama a verificar_afiliado. Consulta la BASE REAL (Mongo) y, si procede, ancla su perfil 360 (vivienda, créditos, propensión, ofertas y alertas); ese expediente queda disponible para el asesor. Según el resultado:
+     - Existe y activo → salúdalo reconociendo su relación con Colsubsidio y personaliza; NO recites los datos ni menciones "la base".
+     - No existe → dile con naturalidad que no lo encuentras y ofrécele registrarlo. Si acepta, pide con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio.
+     - Existe pero inactivo → coméntalo con tacto y ofrece orientación para reactivarlo, sin frenar la asesoría.
+  2) Dice que NO es afiliada, que no tiene el número o prefiere no darlo → llama a identificar_afiliado con documento vacío: así igual creamos un perfil vivo que se enriquece con la charla y que el asesor recibe al final. No insistas con el número.
+- Solo DESPUÉS de este paso atiende la bifurcación del saludo (¿ya sabe qué seguro busca o quiere que la ayudes a elegir?):
+  - Si YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
+  - Si NO sabe o quiere que la ayudes a elegir → entra a FASE 1 · DIAGNÓSTICO con preguntas abiertas.
+- NO empieces preguntando "¿con quién vives?". Primero identifica y luego respeta lo que respondió a esa bifurcación.
+- Durante la charla, cuando el afiliado corrija o aporte un dato de su perfil (ciudad, rango salarial, etc.), usa actualizar_afiliado para dejarlo registrado y refrescar su expediente para el asesor. Para promociones o novedades de su relación con Colsubsidio usa consultar_ofertas y consultar_alertas.
 
 ROL DE COLSUBSIDIO (tenlo claro y sé transparente si preguntan)
 - Colsubsidio es INTERMEDIARIO: distribuye seguros de varias aseguradoras, no los emite. Tú automatizas todo lo posible (diagnóstico, recomendación, datos, contrato, firma y pago) y al final un ASESOR HUMANO, con el perfil completo que tú preparas, finaliza la vinculación con la aseguradora.
@@ -156,7 +154,7 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "identificar_afiliado",
-            "description": "Busca a la persona en la base de afiliados de Colsubsidio por su número de afiliado/documento para saber si es afiliada y cargar su perfil. Llámala en la apertura cuando la persona te dé un número, o con documento vacío si dice que no es afiliada o no lo tiene.",
+            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número: llámala con documento vacío para continuar como no afiliada (igual se crea un perfil vivo que el asesor recibe). Si la persona te da un número de afiliado/SERIE, usa verificar_afiliado en su lugar. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -291,10 +289,11 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "verificar_afiliado",
-            "description": ("Verifica en la base real de Colsubsidio si una SERIE corresponde a un afiliado. "
-                            "Úsala cuando la persona te dé su número de SERIE. Si existe y está activo, ancla la "
-                            "sesión a su perfil real (vivienda, créditos y propensión) para personalizar. Si no "
-                            "existe, te lo indica para que ofrezcas crearlo."),
+            "description": ("HERRAMIENTA PRINCIPAL DE IDENTIFICACIÓN. Cuando la persona te dé su número de "
+                            "SERIE/afiliado, verifica en la base REAL de Colsubsidio. Si existe y está activo, ancla "
+                            "su perfil 360 (vivienda, créditos, propensión, ofertas y alertas); ese expediente queda "
+                            "disponible para el asesor. Si no existe, te lo indica para ofrecer crearlo. Llama a ESTA "
+                            "—no a identificar_afiliado— cuando haya un número, y una sola vez por persona."),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -382,7 +381,7 @@ _SNAPSHOT_FIELDS = [
     "id", "canal", "estado", "perfil", "quotes", "consentimientos", "vinculacion",
     "contacto", "payments", "doc_resumen", "datos", "contrato", "contrato_doc",
     "firma", "messages", "afiliado", "propension", "perfil_id", "es_afiliado",
-    "identificador", "eventos_vida",
+    "identificador", "eventos_vida", "expediente_db",
 ]
 
 
@@ -411,6 +410,7 @@ class Session:
         self.es_afiliado: bool | None = None             # None=sin identificar, True/False
         self.identificador: str | None = None            # número que entregó la persona
         self.eventos_vida: list[dict[str, Any]] = []     # eventos que enriquecen el perfil
+        self.expediente_db: dict[str, Any] | None = None  # perfil_360 real (base Mongo) + ofertas/alertas, para el asesor
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
         # Buffers por turno para reportar al frontend
         self.audit: list[dict[str, str]] = []
@@ -464,6 +464,9 @@ class Session:
             "es_afiliado": self.es_afiliado,
             "identificador": self.identificador,
             "base": base_afiliados.resumen_base(self.afiliado) if self.afiliado else None,
+            # Expediente COMPLETO de la base real (perfil_360: vivienda, créditos,
+            # eventos + ofertas/alertas). Es lo que le dice al asesor quién es la persona.
+            "base_db": self.expediente_db,
             "conversacional": dict(self.perfil),            # hogar, vehículo, mascota, notas...
             "contacto": dict(self.contacto),
             "datos_contratacion": dict(self.datos),
@@ -554,6 +557,27 @@ class Session:
             serie = (self.afiliado or {}).get("serie")
         return serie
 
+    def _anclar_afiliado_db(self, doc: dict[str, Any], ofertas=None, alertas=None) -> None:
+        """Ancla la sesión a un afiliado REAL de la base Mongo: corre propensión,
+        arma el expediente_db (perfil_360 + ofertas + alertas) y PERSISTE el perfil
+        vivo para que el asesor tenga de inmediato quién es la persona."""
+        serie = doc.get("serie")
+        self.set_afiliado(doc)
+        self.es_afiliado = True
+        self.perfil_id = str(serie)
+        self.identificador = self.identificador or str(serie)
+        if ofertas is None:
+            ofertas = afiliados_db.ofertas_para(serie)
+        if alertas is None:
+            alertas = afiliados_db.alertas_pendientes(serie)
+        self.expediente_db = {
+            "perfil_360": afiliados_db.perfil_360(serie),  # afiliado + viviendas + créditos + eventos
+            "ofertas": ofertas,
+            "alertas": alertas,
+        }
+        # Persistir el perfil vivo (base real + expediente) para el panel del asesor.
+        self._guardar_perfil_vivo(bump=False)
+
     def _tool_verificar_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
         serie = a.get("serie")
         doc = afiliados_db.existe_afiliado(serie)
@@ -571,9 +595,9 @@ class Session:
                 "mensaje": ("El afiliado existe pero figura INACTIVO. Coméntalo con tacto y ofrece orientación "
                             "para reactivar la afiliación; no frenes la asesoría."),
             }
-        self.set_afiliado(doc)
         ofertas = afiliados_db.ofertas_para(serie)
         alertas = afiliados_db.alertas_pendientes(serie)
+        self._anclar_afiliado_db(doc, ofertas, alertas)
         afiliados_db.registrar_evento(doc.get("serie"), "afiliados", "verificado",
                                       {"session": self.id, "canal": self.canal})
         self._log("db", "AFILIADOS", f"verificar_afiliado(SERIE {doc.get('serie')}) → activo · "
@@ -581,8 +605,9 @@ class Session:
         return {
             "existe": True, "activo": True, "serie": doc.get("serie"),
             "ofertas": ofertas, "alertas": alertas,
-            "mensaje": ("Afiliado verificado y anclado. Salúdalo reconociendo su relación con Colsubsidio y "
-                        "personaliza con naturalidad; NO recites los datos ni menciones 'la base'."),
+            "mensaje": ("Afiliado verificado y anclado; su perfil de la base ya quedó disponible para el asesor. "
+                        "Salúdalo reconociendo su relación con Colsubsidio y personaliza con naturalidad; "
+                        "NO recites los datos ni menciones 'la base'."),
         }
 
     def _tool_crear_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
@@ -598,7 +623,7 @@ class Session:
             if isinstance(a.get(extra), dict):
                 datos[extra] = a[extra]
         doc = afiliados_db.crear_afiliado(datos)
-        self.set_afiliado(doc)
+        self._anclar_afiliado_db(doc)
         self._log("db", "AFILIADOS", f"crear_afiliado() → SERIE {doc.get('serie')} creada y anclada")
         return {
             "ok": True, "serie": doc.get("serie"),
@@ -626,6 +651,13 @@ class Session:
                 self.propension = propension.perfilar(doc)
                 recalculado = True
                 self._log("tool", "PROPENSION", f"Propensión recalculada por cambios en SERIE {doc.get('serie')}")
+            # Refresca el expediente de la base y re-persiste el perfil vivo del asesor.
+            self.expediente_db = {
+                "perfil_360": afiliados_db.perfil_360(doc.get("serie")),
+                "ofertas": afiliados_db.ofertas_para(doc.get("serie")),
+                "alertas": afiliados_db.alertas_pendientes(doc.get("serie")),
+            }
+            self._guardar_perfil_vivo(bump=False)
         self._log("db", "AFILIADOS", f"actualizar_afiliado(SERIE {doc.get('serie')}) → {', '.join(campos)}")
         return {"ok": True, "serie": doc.get("serie"), "campos_actualizados": list(campos),
                 "propension_recalculada": recalculado}
@@ -669,7 +701,22 @@ class Session:
             logger.exception("Fallo ejecutando %s", name)
             return {"error": f"fallo ejecutando {name}: {e}"}
 
+    def _propension_hint(self) -> str:
+        top = (self.propension or {}).get("productos") or []
+        if not top:
+            return ""
+        pid = top[0].get("producto_id")
+        nombre = kb.CATALOG.get(pid, {}).get("nombre", pid)
+        return f" Su producto de mayor propensión es {nombre} — orienta hacia ahí sin recitar datos."
+
     def _tool_identificar_afiliado(self, a: dict[str, Any]) -> dict[str, Any]:
+        # BLINDAJE: si la sesión ya quedó anclada a un afiliado real (por
+        # verificar_afiliado), NO la deshagas. identificar_afiliado nunca debe
+        # pisar una verificación previa contra la base.
+        if self.es_afiliado and self.afiliado:
+            return {"es_afiliado": True, "perfil_id": self.perfil_id,
+                    "mensaje": "La persona ya está identificada y anclada a su perfil. No vuelvas a pedir el "
+                               "número; continúa la asesoría con lo que ya sabes."}
         doc = str(a.get("documento") or "").strip()
         if not doc:
             # No afiliado / no lo tiene: seguimos y creamos perfil nuevo.
@@ -681,14 +728,18 @@ class Session:
             return {"es_afiliado": False,
                     "mensaje": "La persona no es afiliada o no tiene su número. Continúa ayudándola igual; "
                                "al final un asesor completará su vinculación. No vuelvas a pedir el número."}
+        # Con número: busca PRIMERO en la base real (Mongo) y ancla el perfil 360;
+        # si no está ahí, cae a la muestra demo. Así el asesor recibe el expediente.
+        doc_mongo = afiliados_db.existe_afiliado(doc)
+        if doc_mongo is not None and doc_mongo.get("afiliado_activo", True):
+            self._anclar_afiliado_db(doc_mongo)
+            self._log("db", "AFILIADOS", f"identificar_afiliado({doc}) → afiliado real anclado (SERIE {doc_mongo.get('serie')})")
+            return {"es_afiliado": True, "perfil_id": self.perfil_id,
+                    "mensaje": f"Afiliado identificado en la base real y anclado.{self._propension_hint()} No vuelvas a pedir el número."}
         res = self.identificar(doc)
         if res["es_afiliado"]:
-            top = (self.propension or {}).get("productos") or []
-            hint = ""
-            if top:
-                hint = f" Su producto de mayor propensión es {top[0]['nombre']} — puedes orientar la charla hacia ahí sin recitar datos."
             return {"es_afiliado": True, "perfil_id": self.perfil_id,
-                    "mensaje": f"Afiliado identificado. Ya cargué su perfil de la base.{hint} No vuelvas a pedir el número."}
+                    "mensaje": f"Afiliado identificado. Ya cargué su perfil de la base.{self._propension_hint()} No vuelvas a pedir el número."}
         return {"es_afiliado": False,
                 "mensaje": "No encontré ese número en la base de afiliados. Continúa ayudándola como no afiliada; "
                            "al final un asesor completará su vinculación. No insistas con el número."}
