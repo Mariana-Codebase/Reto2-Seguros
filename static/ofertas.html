@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agente de ofertas — Lara | Colsubsidio × 30X</title>
-<meta name="description" content="Segundo agente: reacciona a eventos de las bases de Colsubsidio (crédito desembolsado, alza de ingreso, inactividad) y envía la oferta pertinente de seguro o crédito, respetando mora y sin repetir.">
+<title>Cody — Agente proactivo | Colsubsidio × 30X</title>
+<meta name="description" content="Cody detecta eventos y oportunidades, recibe contexto de Lara mediante n8n y activa ofertas de seguros pertinentes, explicables y sin spam.">
 <script>
   (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
 </script>
@@ -43,7 +43,8 @@
   .node.brain .ico{background:var(--primary);color:#fff}
   .node.mora .ico{background:var(--warn-soft);color:var(--warn)} .node.mora .cnt{background:var(--warn);color:#1a1200}
   .node.dedup .ico{background:var(--info-soft);color:var(--info)} .node.dedup .cnt{background:var(--info)}
-  .node.credito .ico{background:var(--info-soft);color:var(--info)}
+  .node.reeng .ico{background:var(--warn-soft);color:var(--warn)} .node.reeng .cnt{background:var(--warn);color:#1a1200}
+  .node.reeng.pulse{border-color:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
   .node.envio{border-color:var(--primary)} .node.envio .ico{background:var(--primary);color:#fff}
   .node.pulse{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);transform:translateY(-2px)}
   .node.mora.pulse{border-color:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
@@ -86,6 +87,58 @@
   .liveflag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warn)}
   .liveflag .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);animation:blink 1s infinite}
   @keyframes blink{50%{opacity:.25}}
+
+  /* ---- Cody · narrativa visual del flujo ---- */
+  .of-wrap{padding-top:42px}
+  .of-head{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:end;margin-bottom:26px}
+  .of-head .eyebrow{margin-bottom:15px}
+  .of-head h1{font-size:clamp(38px,5vw,62px);line-height:1;letter-spacing:-1.5px;max-width:650px}
+  .of-head h1 em{font-style:normal;color:var(--primary)}
+  .of-head p{font-size:16px;max-width:540px;margin:0}
+  .system-status{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .system-status span{display:inline-flex;align-items:center;gap:7px;font:600 10px var(--mono);padding:6px 9px;border:1px solid var(--line);background:var(--surface);border-radius:999px;color:var(--muted)}
+  .system-status i{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+  .flow{border-radius:24px;padding:26px;margin-top:0;background:linear-gradient(135deg,var(--surface),color-mix(in srgb,var(--surface) 86%,var(--primary-soft)));box-shadow:var(--shadow)}
+  .flow-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}
+  .flow-head h3{font-size:19px}
+  .flow-kicker{font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.45px;color:var(--primary)}
+  .flow-legend{display:flex;align-items:center;gap:7px;font:600 10px var(--mono);color:var(--muted);white-space:nowrap}
+  .flow-legend i{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:blink 1.5s infinite}
+  .cody-flow{display:grid;grid-template-columns:1fr 54px 1fr 54px 1.2fr 54px 1fr;align-items:center}
+  .flow-stage{position:relative;min-height:170px;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:18px;display:flex;flex-direction:column}
+  .flow-stage .stage-num{font:600 10px var(--mono);color:var(--muted);margin-bottom:24px}
+  .flow-stage .stage-icon{width:42px;height:42px;border-radius:13px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:18px;margin-bottom:13px}
+  .flow-stage b{font-size:14px}
+  .flow-stage small{display:block;color:var(--muted);font-size:11.5px;line-height:1.45;margin-top:5px}
+  .flow-stage.orchestrator{border-color:#ff8b7c;background:color-mix(in srgb,var(--surface) 92%,#ff6d5a)}
+  .flow-stage.orchestrator .stage-icon{background:#ff6d5a;color:white;font-weight:800;font-size:13px}
+  .flow-stage.cody{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .flow-stage.cody .stage-icon{background:var(--primary);color:#fff}
+  .flow-arrow{height:1px;background:var(--line-2);position:relative}
+  .flow-arrow::after{content:"";position:absolute;right:0;top:-4px;width:8px;height:8px;border-top:2px solid var(--muted);border-right:2px solid var(--muted);transform:rotate(45deg)}
+  .decision-stack{display:grid;gap:7px;margin-top:12px}
+  .decision-chip{position:relative;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:7px 29px 7px 9px;font-size:10.5px;color:var(--ink-2)}
+  .decision-chip .cnt{position:absolute;right:7px;top:6px;min-width:18px;height:18px;border-radius:6px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-weight:800}
+  .flow-stage.pulse,.decision-chip.pulse{border-color:var(--ok);box-shadow:0 0 0 4px var(--ok-soft);transform:translateY(-2px)}
+  .flow-caption{margin:18px 0 0;display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11.5px}
+  .flow-caption b{color:var(--ink)}
+  @media(max-width:960px){
+    .of-head{grid-template-columns:1fr;gap:16px}
+    .cody-flow{grid-template-columns:1fr;gap:10px}
+    .flow-arrow{width:1px;height:22px;justify-self:center}
+    .flow-arrow::after{right:-4px;top:auto;bottom:0;transform:rotate(135deg)}
+    .flow-stage{min-height:0}
+  }
+  @media(max-width:640px){
+    .nav-inner{height:auto;min-height:66px;padding:10px 18px;gap:10px;flex-wrap:wrap}
+    .nav .product{display:flex}.nav .product span{display:none}
+    .nav .nav-links{display:flex;position:static;width:100%;margin:0;gap:5px;overflow-x:auto}
+    .nav .nav-links button{font-size:11px;padding:7px 9px;white-space:nowrap;background:var(--surface-2);border:1px solid var(--line)}
+    .of-wrap{padding:28px 20px 48px}
+    .of-head h1{font-size:39px}
+    .flow{padding:22px 16px}
+    .flow-head{display:block}.flow-legend{margin-top:10px}
+  }
 </style>
 </head>
 <body>
@@ -94,10 +147,11 @@
     <div class="brandlock">
       <span class="cobrand"><img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio"><span class="xsign">×</span><img class="logo-30x" src="/static/img/30x.png" alt="30X"></span>
       <span class="vdiv"></span>
-      <div class="product"><div class="mark">L</div><div><b>Agente de ofertas</b><span>Segundo agente · proactivo</span></div></div>
+      <div class="product"><div class="mark">C</div><div><b>Cody</b><span>Agente proactivo de seguros</span></div></div>
     </div>
     <nav class="nav-links">
-      <button onclick="location.href='/'">Lara (agente 1)</button>
+      <button onclick="location.href='/'">Ecosistema</button>
+      <button onclick="location.href='/#demo'">Probar Lara</button>
       <button onclick="location.href='/asesor'">Panel del asesor</button>
     </nav>
   </div>
@@ -105,50 +159,84 @@
 
 <div class="of-wrap">
   <div class="of-head">
-    <h1>Agente de ofertas</h1>
-    <p>El segundo agente no espera a que el cliente llegue: escucha <b>eventos</b> de las bases de Colsubsidio
-      (o barre la base) y para cada persona decide la <b>oferta más pertinente</b> con una regla explicable —
-      respetando mora y sin repetir. Lo dispara <b>n8n</b>; abajo puedes verlo trabajar y entender su lógica.</p>
-  </div>
-
-  <!-- ================= DIAGRAMA DE FLUJO (estilo n8n) ================= -->
-  <div class="flow">
-    <h3>Cómo razona el agente</h3>
-    <p class="sub">Cada afiliado entra por un disparador y el agente lo enruta por una de estas ramas. Los contadores se llenan en vivo cuando ejecutas el barrido o un evento.</p>
-    <div class="fl">
-      <div class="fcol">
-        <div class="node" id="n-trigger"><div class="ntop"><span class="ico">⚡</span><b>Disparador</b></div><small>Evento de otra base o barrido diario (n8n)</small></div>
-      </div>
-      <div class="conn"><svg viewBox="0 0 40 22"><path d="M0 11 H34 M28 5 L34 11 L28 17" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
-      <div class="fcol">
-        <div class="node brain" id="n-brain"><div class="ntop"><span class="ico">🧠</span><b>Agente de ofertas</b></div><small>Regla evento→producto + propensión. Todo explicable.</small></div>
-      </div>
-      <div class="fanwrap">
-        <div class="fan"><svg viewBox="0 0 34 150" height="150"><path d="M0 75 H16 M16 75 V20 H30 M16 75 H30 M16 75 V130 H30 M16 110 H30" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
-      </div>
-      <div class="fcol branches">
-        <div class="node mora" id="n-mora"><span class="cnt" id="c-mora">0</span><div class="ntop"><span class="ico">⚠️</span><b>¿En mora?</b></div><small>No se empuja venta: ofrece <b>Compra de Cartera</b> (normalización).</small></div>
-        <div class="node seguro" id="n-seguro"><span class="cnt" id="c-seguro">0</span><div class="ntop"><span class="ico">🛡️</span><b>Propensión</b></div><small>Elige el <b>mejor seguro</b> por afinidad del perfil.</small></div>
-        <div class="node credito" id="n-credito"><span class="cnt" id="c-credito">0</span><div class="ntop"><span class="ico">💳</span><b>Evento de crédito</b></div><small>Cruza con el portafolio de <b>crédito</b> cuando aplica.</small></div>
-        <div class="node dedup" id="n-dedup"><span class="cnt" id="c-dedup">0</span><div class="ntop"><span class="ico">🔁</span><b>¿Ya ofrecido?</b></div><small><b>Anti-spam</b>: si se ofreció hace &lt;15 días, se suprime.</small></div>
-      </div>
-      <div class="conn"><svg viewBox="0 0 40 22"><path d="M0 11 H34 M28 5 L34 11 L28 17" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
-      <div class="fcol">
-        <div class="node envio" id="n-envio"><span class="cnt" id="c-envio">0</span><div class="ntop"><span class="ico">📤</span><b>Envío por canal</b></div><small>WhatsApp o correo del cliente (simulado en la demo).</small></div>
+    <div>
+      <span class="eyebrow">Agente 02 · Activación proactiva</span>
+      <h1>Cody convierte señales en <em>oportunidades.</em></h1>
+    </div>
+    <div>
+      <p>No espera a que el afiliado vuelva. Recibe eventos del ecosistema y contexto de Lara a través de
+        <b>n8n</b>, decide la acción pertinente y protege la experiencia con reglas anti-spam.</p>
+      <div class="system-status" aria-label="Estado del ecosistema">
+        <span><i></i>Lara conectada</span>
+        <span><i></i>n8n orquestando</span>
+        <span><i></i>Cody listo</span>
       </div>
     </div>
+  </div>
+
+  <!-- ================= RECORRIDO DEL EVENTO ================= -->
+  <div class="flow">
+    <div class="flow-head">
+      <div>
+        <span class="flow-kicker">El viaje de una señal</span>
+        <h3>Qué ocurre desde el evento hasta el mensaje</h3>
+        <p class="sub">Una secuencia fácil de explicar al jurado y auditable para el equipo.</p>
+      </div>
+      <span class="flow-legend"><i></i> Flujo operativo</span>
+    </div>
+    <div class="cody-flow">
+      <article class="flow-stage" id="n-trigger">
+        <span class="stage-num">01 · SEÑAL</span>
+        <span class="stage-icon">⚡</span>
+        <b>Algo cambia</b>
+        <small>Un evento de Colsubsidio, un barrido programado o una conversación pendiente de Lara.</small>
+      </article>
+      <span class="flow-arrow" aria-hidden="true"></span>
+      <article class="flow-stage orchestrator">
+        <span class="stage-num">02 · ORQUESTA</span>
+        <span class="stage-icon">n8n</span>
+        <b>n8n entrega el contexto</b>
+        <small>Normaliza el evento y llama al endpoint correcto sin tomar decisiones comerciales.</small>
+      </article>
+      <span class="flow-arrow" aria-hidden="true"></span>
+      <article class="flow-stage cody" id="n-brain">
+        <span class="stage-num">03 · DECIDE</span>
+        <span class="stage-icon">C</span>
+        <b>Cody evalúa la acción</b>
+        <small>Combina regla explicable, propensión y memoria anti-spam.</small>
+        <div class="decision-stack">
+          <span class="decision-chip" id="n-seguro">Oferta pertinente <b class="cnt" id="c-seguro">0</b></span>
+          <span class="decision-chip" id="n-reeng">Retomar a Lara <b class="cnt" id="c-reeng">0</b></span>
+          <span class="decision-chip" id="n-dedup">Suprimir repetición <b class="cnt" id="c-dedup">0</b></span>
+        </div>
+      </article>
+      <span class="flow-arrow" aria-hidden="true"></span>
+      <article class="flow-stage" id="n-envio">
+        <span class="stage-num">04 · ACTIVA</span>
+        <span class="stage-icon">↗</span>
+        <b>Mensaje por el canal correcto</b>
+        <small>WhatsApp o correo, con la razón de la recomendación y continuidad de contexto.</small>
+        <span class="cnt" id="c-envio" hidden>0</span>
+      </article>
+    </div>
+    <p class="flow-caption"><b>Principio clave:</b> Lara conversa, n8n transporta, Cody decide con reglas y el asesor finaliza cuando corresponde.</p>
   </div>
 
   <div class="of-cols">
     <div>
       <div class="card acc">
-        <h3>⚡ Barrido autónomo</h3>
-        <p class="hint">El agente recorre la base y decide una oferta por afiliado. Es lo que dispara el cron de n8n cada día.</p>
+        <h3>⚡ Explorar oportunidades</h3>
+        <p class="hint">Cody recorre una muestra y decide una acción por afiliado. Es la ruta que n8n activa cada día.</p>
         <label class="fld" for="muestra">Afiliados a recorrer</label>
         <input id="muestra" type="number" min="1" max="40" value="12">
         <button class="btn-run" id="barrido">Ejecutar barrido</button>
         <button class="btn-run sec" id="auto">▶ Demo automática (corre solo)</button>
         <button class="btn-run sec" id="reset" style="margin-top:8px">🧹 Limpiar demo (empezar de cero)</button>
+      </div>
+      <div class="card acc" style="margin-top:14px">
+        <h3>💬 Continuar con Lara</h3>
+        <p class="hint">Cody recibe el interés que Lara ya detectó y retoma la conversación sin pedirle al afiliado que empiece de cero.</p>
+        <button class="btn-run" id="reenganche">Re-enganchar abandonos</button>
       </div>
       <div class="card" style="margin-top:14px">
         <h3>Simular un evento puntual</h3>
@@ -156,22 +244,17 @@
         <label class="fld" for="serie">Afiliado (muestra demo)</label>
         <select id="serie"></select>
         <label class="fld" for="serieReal">…o una SERIE real de la base</label>
-        <input id="serieReal" type="text" inputmode="numeric" placeholder="p. ej. 1, o una en mora">
+        <input id="serieReal" type="text" inputmode="numeric" placeholder="p. ej. 1">
         <label class="fld" for="evento">Evento</label>
         <select id="evento"></select>
-        <button class="btn-run" id="run">Ejecutar agente de ofertas</button>
-      </div>
-      <div class="card" style="margin-top:14px">
-        <h3>Portafolio de crédito</h3>
-        <p class="hint">El agente lo cruza con los seguros según el evento.</p>
-        <div id="creditos"></div>
+        <button class="btn-run" id="run">Activar a Cody</button>
       </div>
     </div>
 
     <div>
       <div class="of-kpis" id="kpis"></div>
       <div class="listhead">
-        <h3>Ofertas salientes</h3>
+        <h3>Actividad de Cody</h3>
         <span id="liststat"></span>
       </div>
       <div id="lista"><div class="empty">Aún no hay ofertas. Dale a “Ejecutar barrido” o “Demo automática”.</div></div>
@@ -182,7 +265,7 @@
 <script>
 "use strict";
 const CAP = 15;                     // máximo de ofertas visibles (las demás se van)
-const acum = {mora:0, seguro:0, credito:0, dedup:0, envio:0};  // contadores del flujo
+const acum = {seguro:0, reeng:0, dedup:0, envio:0};  // contadores del flujo
 let autoTimer = null;
 
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
@@ -202,8 +285,6 @@ async function cargarControles(){
     const o=document.createElement("option");o.value=e.evento;
     o.textContent=e.evento+" → "+e.ofrece;evento.appendChild(o);
   });
-  document.getElementById("creditos").innerHTML=Object.values(cat.creditos).map(c=>
-    '<div style="font-size:12.5px;margin-bottom:7px"><b>'+esc(c.nombre)+'</b><br><span style="color:var(--muted)">'+esc(c.desc)+'</span></div>').join("");
 }
 
 /* ---- diagrama de flujo: contadores + pulso en las ramas activas ---- */
@@ -213,15 +294,14 @@ function pulse(nodeId){
   el.classList.add("pulse"); setTimeout(()=>el.classList.remove("pulse"),700);
 }
 function pintarFlujo(){
-  setCnt("c-mora",acum.mora); setCnt("c-seguro",acum.seguro);
-  setCnt("c-credito",acum.credito); setCnt("c-dedup",acum.dedup); setCnt("c-envio",acum.envio);
+  setCnt("c-seguro",acum.seguro); setCnt("c-reeng",acum.reeng);
+  setCnt("c-dedup",acum.dedup); setCnt("c-envio",acum.envio);
 }
 function registrarResultado(x){
   // suma al flujo según la rama que tomó cada afiliado
   pulse("n-brain");
   if(!x.oferta){ if(x.motivo&&/anti-spam/i.test(x.motivo)){acum.dedup++;pulse("n-dedup");} return; }
-  if(x.mora){ acum.mora++; pulse("n-mora"); }
-  else if(x.tipo==="credito"){ acum.credito++; pulse("n-credito"); }
+  if(x.reeng){ acum.reeng++; pulse("n-reeng"); }
   else { acum.seguro++; pulse("n-seguro"); }
   acum.envio++; pulse("n-envio");
 }
@@ -246,14 +326,14 @@ async function refrescar(){
   document.getElementById("kpis").innerHTML=
     '<div class="of-kpi"><b>'+todas.length+'</b><span>ofertas generadas</span></div>'+
     '<div class="of-kpi"><b>'+enviadas+'</b><span>enviadas al cliente</span></div>'+
-    '<div class="of-kpi"><b>'+seguros+'</b><span>de seguro</span></div>'+
-    '<div class="of-kpi"><b>'+(todas.length-seguros)+'</b><span>de crédito</span></div>';
+    '<div class="of-kpi"><b>'+seguros+'</b><span>recomendaciones</span></div>'+
+    '<div class="of-kpi"><b>'+acum.dedup+'</b><span>repeticiones evitadas</span></div>';
   // Cap de 15: solo las más recientes; las demás "se van".
   const vis=todas.slice(0,CAP);
   document.getElementById("liststat").textContent =
     todas.length>CAP ? ("mostrando 15 más recientes de "+todas.length) : (todas.length+" en total");
   document.getElementById("lista").innerHTML =
-    vis.length ? vis.map(ofertaCard).join("") : '<div class="empty">Aún no hay ofertas. Dale a “Ejecutar barrido” o “Demo automática”.</div>';
+    vis.length ? vis.map(ofertaCard).join("") : '<div class="empty">Cody está listo. Explora oportunidades o activa un evento para verlo decidir.</div>';
 }
 
 function serieElegida(){
@@ -269,7 +349,7 @@ document.getElementById("run").addEventListener("click",async()=>{
       body:JSON.stringify({serie:serieElegida(),evento:evento,enviar:true})}).then(r=>r.json());
     registrarResultado({serie:r.perfil_id,oferta:r.oferta&&r.oferta.nombre,tipo:r.oferta&&r.oferta.tipo,mora:r.mora_detectada,motivo:r.motivo});
     pintarFlujo(); await refrescar();
-  }finally{btn.disabled=false;btn.textContent="Ejecutar agente de ofertas";}
+  }finally{btn.disabled=false;btn.textContent="Activar a Cody";}
 });
 
 async function correrBarrido(muestra){

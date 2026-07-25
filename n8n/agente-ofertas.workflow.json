@@ -1,9 +1,9 @@
 {
-  "name": "Colsubsidio · Agente de ofertas (Lara)",
+  "name": "Colsubsidio · Cody · Activación proactiva",
   "nodes": [
     {
       "parameters": {
-        "content": "## Agente de ofertas de Colsubsidio\nDispara la oferta correcta cuando otra base marca un cambio en el cliente.\n\n**Cómo usarlo**\n1. Define la variable de entorno `CLARA_BASE_URL` (URL pública de la app; en local http://localhost:8000).\n2. Rama A — Webhook: otra base de Colsubsidio hace POST con `{serie, evento}` al webhook y el flujo llama a `/api/eventos`.\n3. Rama B — Programado: cada día busca inactivos y les manda una oferta de re-enganche.\n\nLa inteligencia (evento → oferta) vive en la app; n8n solo orquesta el disparo y el envío.",
+        "content": "## Cody · activación proactiva\nConecta eventos del ecosistema Colsubsidio con el agente Cody.\n\n**Contrato del flujo**\n1. El webhook recibe `{serie, evento, datos?}`.\n2. `Normalizar evento` crea un payload estable y un `trace_id` para seguir la ejecución.\n3. n8n llama a `POST /api/eventos`; Cody decide la acción con reglas, propensión y anti-spam.\n4. La respuesta devuelve la decisión y la misma trazabilidad al sistema de origen.\n\nLa inteligencia comercial vive en Cody. n8n transporta, agenda y hace observable la comunicación.",
         "height": 260,
         "width": 380
       },
@@ -29,30 +29,52 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "={{ $env.CLARA_BASE_URL }}/api/eventos",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"serie\": \"{{ $json.body.serie }}\",\n  \"evento\": \"{{ $json.body.evento }}\",\n  \"datos\": {{ JSON.stringify($json.body.datos || {}) }},\n  \"enviar\": true\n}",
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            { "id": "serie", "name": "serie", "value": "={{ $json.body?.serie ?? $json.serie ?? '' }}", "type": "string" },
+            { "id": "evento", "name": "evento", "value": "={{ $json.body?.evento ?? $json.evento ?? '' }}", "type": "string" },
+            { "id": "datos", "name": "datos", "value": "={{ $json.body?.datos ?? $json.datos ?? {} }}", "type": "object" },
+            { "id": "enviar", "name": "enviar", "value": true, "type": "boolean" },
+            { "id": "source", "name": "source", "value": "n8n", "type": "string" },
+            { "id": "trace-id", "name": "trace_id", "value": "={{ $json.headers?.['x-trace-id'] ?? $execution.id }}", "type": "string" }
+          ]
+        },
+        "includeOtherFields": false,
         "options": {}
       },
-      "id": "http1",
-      "name": "Agente de ofertas · /api/eventos",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [560, 400]
+      "id": "set-normalize",
+      "name": "Normalizar evento",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [520, 400]
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json) }}",
-        "options": {}
+        "method": "POST",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/eventos",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { serie: $json.serie, evento: $json.evento, datos: $json.datos, enviar: $json.enviar, source: $json.source, trace_id: $json.trace_id } }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "http1",
+      "name": "Cody · decidir acción",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": { "responseCode": 200 }
       },
       "id": "resp1",
       "name": "Responder a la base",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [860, 400]
+      "typeVersion": 1.5,
+      "position": [1080, 400]
     },
     {
       "parameters": {
@@ -63,9 +85,9 @@
         }
       },
       "id": "cron1",
-      "name": "Cada día 9:00",
+      "name": "Cada día · 09:00",
       "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
+      "typeVersion": 1.3,
       "position": [260, 640]
     },
     {
@@ -86,12 +108,15 @@
   ],
   "connections": {
     "Evento de otra base": {
-      "main": [[{ "node": "Agente de ofertas · /api/eventos", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Normalizar evento", "type": "main", "index": 0 }]]
     },
-    "Agente de ofertas · /api/eventos": {
+    "Normalizar evento": {
+      "main": [[{ "node": "Cody · decidir acción", "type": "main", "index": 0 }]]
+    },
+    "Cody · decidir acción": {
       "main": [[{ "node": "Responder a la base", "type": "main", "index": 0 }]]
     },
-    "Cada día 9:00": {
+    "Cada día · 09:00": {
       "main": [[{ "node": "Barrido autónomo de ofertas", "type": "main", "index": 0 }]]
     }
   },

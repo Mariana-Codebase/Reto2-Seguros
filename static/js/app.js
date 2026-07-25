@@ -30,6 +30,37 @@ document.querySelectorAll("[data-view]").forEach(b => {
   b.addEventListener("click", () => showView(b.dataset.view));
 });
 
+const menuToggle = document.getElementById("menuToggle");
+const mainNav = document.getElementById("mainNav");
+
+function closeMenu() {
+  if (!menuToggle || !mainNav) return;
+  menuToggle.setAttribute("aria-expanded", "false");
+  mainNav.classList.remove("open");
+}
+
+if (menuToggle && mainNav) {
+  menuToggle.addEventListener("click", () => {
+    const open = menuToggle.getAttribute("aria-expanded") === "true";
+    menuToggle.setAttribute("aria-expanded", String(!open));
+    mainNav.classList.toggle("open", !open);
+  });
+  mainNav.addEventListener("click", closeMenu);
+}
+
+document.querySelectorAll("[data-scroll]").forEach(b => {
+  b.addEventListener("click", () => {
+    const targetId = b.dataset.scroll;
+    const revealTarget = () => {
+      const target = document.getElementById(targetId);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    showView("inicio");
+    closeMenu();
+    requestAnimationFrame(revealTarget);
+  });
+});
+
 (function initViewFromHash() {
   const id = (location.hash || "").replace("#", "");
   if (id && document.getElementById(id)) showView(id);

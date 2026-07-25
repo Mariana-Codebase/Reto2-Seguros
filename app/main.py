@@ -18,6 +18,7 @@ Ejecuta:  python server.py   (o uvicorn app.main:app)
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import pathlib
 
@@ -88,12 +89,14 @@ class IdentificarReq(BaseModel):
 
 
 class EventoReq(BaseModel):
-    """Entrada del agente de ofertas. La dispara n8n (u otra base de Colsubsidio)."""
+    """Entrada de Cody. La dispara n8n (u otra base de Colsubsidio)."""
     serie: str | None = None          # id del afiliado en la base
     perfil_id: str | None = None      # o el id del perfil vivo (NA-...)
     evento: str                       # p. ej. credito_vivienda_desembolsado
     datos: dict | None = None
     enviar: bool = True               # simular envío por el canal del perfil
+    source: str = "api"
+    trace_id: str | None = None
 
 
 class EstadoOfertaReq(BaseModel):
@@ -103,6 +106,12 @@ class EstadoOfertaReq(BaseModel):
 class BarridoReq(BaseModel):
     """Barrido autónomo del agente de ofertas sobre una muestra de la base real."""
     muestra: int | None = 8           # cuántos afiliados de la base recorrer
+
+
+class ReengancheReq(BaseModel):
+    """Re-enganche de abandonos: minutos de inactividad tras los cuales se
+    considera abandonada una conversación con contacto dejado."""
+    minutos: int | None = 30
 
 
 class ChatReq(BaseModel):
@@ -161,6 +170,10 @@ def _startup():
         sembrado = seed.sembrar_si_vacia(settings.SEED_MUESTRA)
         if sembrado:
             logger.info("Muestra demo sembrada: %s", sembrado)
+        try:
+            seed.sembrar_abandonos_demo()  # perfiles de abandono para la demo de re-enganche
+        except Exception as e:  # noqa: BLE001
+            logger.warning("No se pudieron sembrar los abandonos demo: %s", e)
     logger.info(
         "Lara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
         __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,
@@ -397,8 +410,8 @@ def ofertas_panel():
 
 @app.get("/api/ofertas/catalogo")
 def ofertas_catalogo():
-    """Eventos que el agente sabe atender y portafolio de crédito (para UI/n8n)."""
-    return {"eventos": ofertas.eventos_soportados(), "creditos": ofertas.CREDITOS}
+    """Eventos que el agente de seguros sabe atender (para UI/n8n)."""
+    return {"eventos": ofertas.eventos_soportados(), "creditos": {}}
 
 
 @app.get("/api/ofertas/salientes")
@@ -452,21 +465,9 @@ def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str,
     return (pid or "NA-DESCONOCIDO"), {"id": pid, "es_afiliado": False, "eventos_vida": []}
 
 
-def _mora_activa(serie) -> bool:
-    """True si el afiliado real tiene al menos un crédito en mora. El agente de
-    ofertas NO empuja oferta comercial a quien está en mora (P2)."""
-    if serie in (None, ""):
-        return False
-    try:
-        return any(a.get("tipo") == "mora" for a in afiliados_db.alertas_pendientes(serie))
-    except Exception:  # noqa: BLE001
-        return False
-
-
 def _procesar_evento(serie, perfil_id, evento, datos, enviar) -> dict:
-    """Núcleo del agente de ofertas (reutilizado por /api/eventos y el barrido):
-    enriquece el perfil, aplica mora (P2) y dedup (P3), decide la oferta y la
-    registra/envía."""
+    """Núcleo del agente de ofertas (100% seguros): enriquece el perfil, aplica
+    dedup (anti-spam), decide el SEGURO más pertinente y lo registra/envía."""
     pid, perfil = _perfil_para_ofertas(serie, perfil_id)
 
     # 1) El evento enriquece el perfil vivo (la base sigue creciendo).
@@ -474,18 +475,13 @@ def _procesar_evento(serie, perfil_id, evento, datos, enviar) -> dict:
         {"tipo": evento, "fuente": "base_externa", "datos": datos or {}})
     store.upsert_perfil(pid, bool(perfil.get("es_afiliado")), None, perfil, bump=True)
 
-    # P2 · Mora: se sustituye cualquier oferta comercial por normalización.
-    serie_real = serie if serie not in (None, "") else (perfil.get("base") or {}).get("serie")
-    mora = evento != "en_mora_normalizacion" and _mora_activa(serie_real)
-    evento_efectivo = "en_mora_normalizacion" if mora else evento
-
-    # 2) El agente decide la oferta (regla evento -> producto, explicable).
-    res = ofertas.generar_oferta(perfil, evento_efectivo, datos)
+    # 2) El agente decide el seguro (regla evento -> seguro, explicable).
+    res = ofertas.generar_oferta(perfil, evento, datos)
     oferta = res.get("oferta")
     if not oferta:
         return {"ok": True, "perfil_id": pid, "oferta": None, "motivo": res.get("motivo")}
 
-    # P3 · Dedup / anti-spam: no repetir el mismo producto al perfil en 15 días.
+    # Anti-spam: no repetir el mismo seguro al perfil en 15 días.
     if store.oferta_reciente(pid, oferta["producto_id"], dias=15):
         return {"ok": True, "perfil_id": pid, "oferta": None, "suprimida": True,
                 "motivo": f"Ya se ofreció {oferta['nombre']} a este perfil hace poco (anti-spam, 15 días)."}
@@ -501,49 +497,85 @@ def _procesar_evento(serie, perfil_id, evento, datos, enviar) -> dict:
         else:
             entrega = notify.send_whatsapp(destino, oferta["mensaje"])
         estado = "enviada"
-    store.insert_oferta(oferta["id"], pid, evento_efectivo, oferta["tipo"], oferta["producto_id"],
+    store.insert_oferta(oferta["id"], pid, evento, oferta["tipo"], oferta["producto_id"],
                         oferta["canal"], estado, {**oferta, "entrega": entrega})
     logger.info("Agente de ofertas · evento=%s perfil=%s -> %s (%s)",
-                evento_efectivo, pid, oferta["nombre"], estado)
-    return {"ok": True, "perfil_id": pid, "estado": estado, "oferta": oferta,
-            "evento_efectivo": evento_efectivo, "mora_detectada": mora, "entrega": entrega}
+                evento, pid, oferta["nombre"], estado)
+    return {"ok": True, "perfil_id": pid, "estado": estado, "oferta": oferta, "entrega": entrega}
 
 
 @app.post("/api/eventos")
 def recibir_evento(req: EventoReq):
-    """Webhook del agente de ofertas. Un evento de otra base de Colsubsidio
-    (crédito desembolsado, alza de ingreso, cumpleaños, inactividad…) entra aquí:
-    enriquece el perfil, decide la mejor oferta y la deja lista (y la envía por
-    el canal, simulado). Ejemplo: crédito de vivienda -> seguro de hogar."""
-    return _procesar_evento(req.serie, req.perfil_id, req.evento, req.datos, req.enviar)
+    """Webhook del agente de ofertas. Un evento (crédito desembolsado en otra
+    base, alza de ingreso, nacimiento, inactividad…) entra aquí: enriquece el
+    perfil, decide el mejor SEGURO y lo deja listo. Ej.: crédito de vivienda ->
+    seguro de hogar."""
+    resultado = _procesar_evento(req.serie, req.perfil_id, req.evento, req.datos, req.enviar)
+    resultado["orquestacion"] = {
+        "source": req.source,
+        "trace_id": req.trace_id,
+        "agente": "Cody",
+    }
+    return resultado
 
 
 @app.post("/api/ofertas/barrido")
 def ofertas_barrido(req: BarridoReq):
-    """P1 · Barrido AUTÓNOMO: el agente no espera al cliente. Toma una muestra de
-    la base real (Mongo) y, para cada afiliado, decide y radica una oferta según
-    su perfil 360 — respetando mora (normalización) y sin repetir (dedup). Es lo
-    que el cron de n8n dispara cada día."""
+    """Barrido AUTÓNOMO: el agente no espera al cliente. Toma una muestra de la
+    base real (Mongo) y para cada afiliado decide y radica un SEGURO por
+    propensión, sin repetir (anti-spam). Es lo que el cron de n8n dispara."""
     n = max(1, min(int(req.muestra or 8), 40))
     series = afiliados_db.muestra_series(n)
-    generadas, suprimidas, normalizaciones, resultados = 0, 0, 0, []
+    generadas, suprimidas, resultados = 0, 0, []
     for serie in series:
         r = _procesar_evento(serie, None, "sin_interaccion_30d", {}, enviar=True)
         item = {"serie": serie}
         if r.get("oferta"):
             generadas += 1
-            if r.get("mora_detectada"):
-                normalizaciones += 1
             item.update({"oferta": r["oferta"]["nombre"], "tipo": r["oferta"]["tipo"],
-                         "razon": r["oferta"]["razon"], "mora": bool(r.get("mora_detectada"))})
+                         "razon": r["oferta"]["razon"]})
         else:
             suprimidas += 1
             item["motivo"] = r.get("motivo")
         resultados.append(item)
-    logger.info("Barrido autónomo · muestra=%d generadas=%d suprimidas=%d mora=%d",
-                len(series), generadas, suprimidas, normalizaciones)
+    logger.info("Barrido autónomo · muestra=%d generadas=%d suprimidas=%d",
+                len(series), generadas, suprimidas)
     return {"ok": True, "muestra": len(series), "generadas": generadas,
-            "suprimidas": suprimidas, "normalizaciones_mora": normalizaciones,
+            "suprimidas": suprimidas, "resultados": resultados}
+
+
+@app.post("/api/ofertas/reenganche")
+def ofertas_reenganche(req: ReengancheReq):
+    """UNIÓN DE LOS DOS AGENTES · Re-enganche de abandonos. Busca perfiles vivos
+    de gente que habló con Lara, dejó su contacto (celular/correo) y NO cerró la
+    compra; y para cada uno el agente de ofertas envía un RECORDATORIO de su
+    seguro ("aún puedes gestionarlo"). Es lo que el cron de n8n dispara."""
+    minutos = max(0, int(req.minutos if req.minutos is not None else 30))
+    corte = (dt.datetime.now() - dt.timedelta(minutes=minutos)).isoformat(timespec="seconds")
+    reenganchados, resultados = 0, []
+    for p in store.list_perfiles(limit=500):
+        perfil = p.get("perfil") or {}
+        contacto = perfil.get("contacto") or {}
+        datos = perfil.get("datos_contratacion") or {}
+        tiene_contacto = bool(contacto.get("destino") or datos.get("correo") or datos.get("telefono"))
+        interes = perfil.get("seguro_solicitado") or (perfil.get("intereses_productos") or [])
+        cerro = perfil.get("estado_conversacion") in ("CIERRE",) or perfil.get("vinculado")
+        # Elegible: dejó contacto, mostró interés, no cerró y está inactivo.
+        if not tiene_contacto or not interes or cerro:
+            continue
+        if (p.get("updated_at") or "") >= corte:
+            continue  # aún activo: darle tiempo
+        r = _procesar_evento(None, p["id"], "abandono_con_contacto", {}, enviar=True)
+        item = {"perfil_id": p["id"], "nombre": datos.get("nombre")}
+        if r.get("oferta"):
+            reenganchados += 1
+            item.update({"oferta": r["oferta"]["nombre"], "razon": r["oferta"]["razon"]})
+        else:
+            item["motivo"] = r.get("motivo")
+        resultados.append(item)
+    logger.info("Re-enganche de abandonos · reenganchados=%d de %d revisados",
+                reenganchados, len(resultados))
+    return {"ok": True, "reenganchados": reenganchados, "revisados": len(resultados),
             "resultados": resultados}
 
 

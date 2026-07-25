@@ -36,12 +36,19 @@
         </div>
       </div>
     </div>
-    <nav class="nav-links">
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav-links" id="mainNav" aria-label="Navegación principal">
       <button data-view="inicio" class="active">Inicio</button>
-      <button data-view="demo">Demo interactiva</button>
-      <button data-view="arquitectura">Arquitectura</button>
-      <button onclick="window.open('/asesor','_blank')" title="Bandeja de vinculaciones que Lara transmite al asesor">Panel del asesor</button>
-      <button onclick="window.open('/ofertas','_blank')" title="Segundo agente: ofertas proactivas por eventos">Agente de ofertas</button>
+      <button data-view="demo">Probar Lara</button>
+      <button data-scroll="ecosistema">Cómo funciona</button>
+      <button data-view="arquitectura">Tecnología</button>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a class="nav-agent-link" href="/ofertas" title="Cody: agente proactivo orquestado por n8n">
+        <span class="nav-agent-dot"></span>Cody
+      </a>
+      <a class="nav-secondary-link" href="/asesor">Panel asesor</a>
     </nav>
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
       <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -57,14 +64,13 @@
     <div class="container hero-grid">
       <div>
         <span class="eyebrow">Reto 2 · Venta automatizada de seguros · Colsubsidio × 30X</span>
-        <h1>Venta de seguros <em>automatizada</em>, de principio a fin.</h1>
-        <p class="lead">Lara acompaña al afiliado desde el "no sé qué necesito" hasta "ya quedé asegurado":
-          diagnóstico, recomendación con respaldo documental, contrato con firma electrónica, pago en línea y
-          confirmación de la vinculación, que pasa a la aseguradora para emitir la póliza. Sin intervención
-          humana y con trazabilidad total.</p>
+        <h1>El seguro correcto, en el <em>momento correcto.</em></h1>
+        <p class="lead">Lara entiende y asesora. Cody detecta oportunidades y recupera conversaciones.
+          n8n los conecta con el ecosistema Colsubsidio para que cada afiliado reciba una recomendación
+          clara, explicable y trazable.</p>
         <div class="hero-actions">
-          <button class="btn primary" data-view="demo">Iniciar conversación con Lara</button>
-          <button class="btn ghost" data-view="arquitectura">Ver la arquitectura</button>
+          <button class="btn primary" data-view="demo">Hablar con Lara</button>
+          <button class="btn ghost" data-scroll="ecosistema">Conocer el ecosistema</button>
         </div>
         <div class="hero-dev">
           <span class="hero-dev-label">Desarrollado por</span>
@@ -100,10 +106,75 @@
 
     <div class="container">
       <div class="kpis">
-        <div class="kpi" data-reveal><b>8</b><span>fases automatizadas de punta a punta</span></div>
+        <div class="kpi" data-reveal><b>2</b><span>agentes especializados, una sola experiencia</span></div>
         <div class="kpi" data-reveal data-reveal-delay="1"><b>0</b><span>afirmaciones sin respaldo documental</span></div>
         <div class="kpi" data-reveal data-reveal-delay="2"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
         <div class="kpi" data-reveal data-reveal-delay="3"><b>&lt; 5 min</b><span>del primer mensaje a la vinculación confirmada</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ecosystem-block" id="ecosistema">
+    <div class="container">
+      <div class="ecosystem-intro" data-reveal>
+        <div>
+          <span class="eyebrow">El ecosistema, sin cajas negras</span>
+          <h2>Dos agentes que se pasan el contexto, no al cliente.</h2>
+        </div>
+        <p>Lara atiende la intención del afiliado. n8n transporta eventos y activa automatizaciones.
+          Cody continúa cuando aparece una oportunidad o una conversación queda pendiente.</p>
+      </div>
+
+      <div class="agent-journey" aria-label="Flujo entre Lara, n8n y Cody">
+        <article class="journey-card lara-card" data-reveal>
+          <div class="journey-top">
+            <span class="agent-avatar">L</span>
+            <span class="agent-status"><i></i> Conversacional</span>
+          </div>
+          <span class="journey-step">01 · Escucha</span>
+          <h3>Lara entiende y asesora</h3>
+          <p>Identifica la necesidad, consulta coberturas verificadas y construye una recomendación explicable.</p>
+          <ul>
+            <li>Diagnóstico natural</li>
+            <li>Perfil vivo del afiliado</li>
+            <li>Derivación responsable</li>
+          </ul>
+        </article>
+
+        <div class="journey-bridge" data-reveal data-reveal-delay="1" aria-label="n8n orquesta la comunicación">
+          <span class="bridge-pulse"></span>
+          <b>n8n</b>
+          <small>Orquesta</small>
+          <div class="bridge-line"></div>
+          <span class="trace-pill">contexto + evento + trazabilidad</span>
+        </div>
+
+        <article class="journey-card cody-card" data-reveal data-reveal-delay="2">
+          <div class="journey-top">
+            <span class="agent-avatar">C</span>
+            <span class="agent-status cody"><i></i> Proactivo</span>
+          </div>
+          <span class="journey-step">02 · Activa</span>
+          <h3>Cody encuentra el momento</h3>
+          <p>Reacciona a eventos, prioriza la oferta adecuada y retoma oportunidades sin repetir mensajes.</p>
+          <ul>
+            <li>Eventos de otras bases</li>
+            <li>Reenganche de abandonos</li>
+            <li>Control anti-spam</li>
+          </ul>
+          <a class="journey-link" href="/ofertas">Ver a Cody en acción <span>→</span></a>
+        </article>
+      </div>
+
+      <div class="handoff-proof" data-reveal>
+        <span class="proof-label">Ejemplo real del traspaso</span>
+        <div class="proof-track">
+          <span><b>1</b> Lara detecta interés en hogar</span>
+          <i></i>
+          <span><b>2</b> n8n recibe abandono con contexto</span>
+          <i></i>
+          <span><b>3</b> Cody retoma con la misma necesidad</span>
+        </div>
       </div>
     </div>
   </section>
@@ -137,9 +208,9 @@
           <div class="ic" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           </div>
-          <h3>Cierre completo</h3>
-          <p>Contrato en PDF con firma electrónica, consentimiento registrado, pago en pasarela (sandbox Wompi) y
-            confirmación de la vinculación, que se transmite a la aseguradora. Todo sin un asesor humano.</p>
+          <h3>Automatiza sin perder responsabilidad</h3>
+          <p>Lara prepara el expediente y la recomendación; el asesor recibe el contexto completo para finalizar
+            la vinculación con la aseguradora, sin hacer repetir al afiliado.</p>
         </div>
       </div>
 
@@ -336,8 +407,8 @@
       <section class="arch-pipe" aria-label="Workflow automatizado">
         <div class="arch-sec-head">
           <span class="arch-kicker">Workflow</span>
-          <h3>De punta a punta, sin intervención humana</h3>
-          <p>Ocho estaciones. El pipeline avanza solo.</p>
+          <h3>De punta a punta, con automatización responsable</h3>
+          <p>Ocho estaciones automatizadas y una derivación humana con contexto cuando corresponde.</p>
         </div>
 
         <div class="pipe-stage" id="pipeStage">

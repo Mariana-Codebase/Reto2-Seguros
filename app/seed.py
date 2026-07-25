@@ -13,6 +13,7 @@ son datos reales de Colsubsidio.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
 import random
 
@@ -134,6 +135,48 @@ def sembrar_muestra(n: int = 250, semilla: int = 42) -> dict[str, int]:
     resumen = {"afiliados": len(afs), "viviendas": len(vis), "creditos": len(crs)}
     logger.info("Seed demo cargado: %s", resumen)
     return resumen
+
+
+# --------------------------------------------------------------------------
+# Abandonos de conversación (para la demo de la UNIÓN de los dos agentes):
+# gente que habló con Lara, dejó su contacto y NO cerró la compra.
+# --------------------------------------------------------------------------
+_ABANDONOS_DEMO = [
+    {"nombre": "Camila Ríos",     "canal": "whatsapp", "destino": "+57 301 555 0111", "seguro": "mascotas"},
+    {"nombre": "Andrés Muñoz",    "canal": "correo",   "destino": "andres@example.com", "seguro": "vida"},
+    {"nombre": "Valentina Peña",  "canal": "whatsapp", "destino": "+57 310 555 0148", "seguro": "moto"},
+    {"nombre": "Jorge Torres",    "canal": "correo",   "destino": "jorge@example.com", "seguro": "hogar"},
+    {"nombre": "Laura Gómez",     "canal": "whatsapp", "destino": "+57 300 555 0173", "seguro": "viajes"},
+]
+
+
+def sembrar_abandonos_demo() -> int:
+    """Crea unos perfiles vivos de 'abandono con contacto' (inactivos hace 2h),
+    para que el re-enganche del agente de ofertas muestre resultados en la demo.
+    Idempotente: no duplica si ya existen."""
+    db = get_db()
+    if db["perfiles"].count_documents({"origen_demo": "abandono"}) > 0:
+        return 0
+    hace = (dt.datetime.now() - dt.timedelta(hours=2)).isoformat(timespec="seconds")
+    docs = []
+    for i, a in enumerate(_ABANDONOS_DEMO, 1):
+        pid = f"NA-DEMO{i}"
+        campo = "telefono" if a["canal"] == "whatsapp" else "correo"
+        perfil = {
+            "id": pid, "es_afiliado": False,
+            "contacto": {"canal": a["canal"], "destino": a["destino"]},
+            "datos_contratacion": {"nombre": a["nombre"], campo: a["destino"]},
+            "seguro_solicitado": a["seguro"],
+            "intereses_productos": [a["seguro"]],
+            "estado_conversacion": "DIAGNOSTICO",
+        }
+        docs.append({"_id": pid, "id": pid, "es_afiliado": False, "identificador": None,
+                     "perfil": json.dumps(perfil, ensure_ascii=False), "interacciones": 2,
+                     "origen_demo": "abandono", "created_at": hace, "updated_at": hace})
+    if docs:
+        db["perfiles"].insert_many(docs, ordered=False)
+    logger.info("Abandonos demo sembrados: %d", len(docs))
+    return len(docs)
 
 
 def sembrar_si_vacia(n: int = 250) -> dict[str, int] | None:
