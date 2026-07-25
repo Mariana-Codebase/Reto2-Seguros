@@ -1,0 +1,83 @@
+{
+  "name": "Colsubsidio · Flujo de actualización (Clara)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Flujo de actualización de afiliados\nMantiene el perfil 360 de Mongo al día cuando otra base de Colsubsidio cambia los datos de un cliente (subió el salario, cambió de empresa/ciudad, se activó/desactivó…).\n\n**Cómo usarlo**\n1. Define la variable de entorno `CLARA_BASE_URL` (URL pública de la app; en local http://localhost:8000).\n2. Otra base hace POST al webhook con:\n   `{ \"serie\": \"123\", \"campos\": { \"rango_salarial\": \"Entre 4 y 6 SMLV\", \"ciudad\": \"MEDELLIN\" } }`\n3. El flujo aplica `PATCH /api/afiliados/{serie}` (solo campos editables), re-evalúa las ofertas y responde con el afiliado actualizado + ofertas/alertas.\n\nLa app valida qué campos son editables y registra el cambio en la bitácora `eventos`. n8n solo orquesta el disparo.\n\n**Campos editables:** genero, rango_edad, rango_salarial, categoria, segmento_familiar, segmento_poblacional, piramide, empresa, ciudad, marcas (dict bool), afiliado_activo.",
+        "height": 340,
+        "width": 420
+      },
+      "id": "note1",
+      "name": "Cómo funciona",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "colsubsidio-actualizacion",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh1",
+      "name": "Actualización de otra base",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 460],
+      "webhookId": "colsubsidio-actualizacion"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/afiliados/{{ $json.body.serie }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body.campos || {}) }}",
+        "options": {}
+      },
+      "id": "http1",
+      "name": "Aplicar cambios · PATCH /api/afiliados",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 460]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/afiliados/{{ $json.afiliado.serie }}/ofertas",
+        "options": {}
+      },
+      "id": "http2",
+      "name": "Re-evaluar ofertas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 460]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, actualizado: $('Aplicar cambios · PATCH /api/afiliados').item.json.afiliado, ofertas: $json.ofertas, alertas: $json.alertas }) }}",
+        "options": {}
+      },
+      "id": "resp1",
+      "name": "Responder a la base",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1160, 460]
+    }
+  ],
+  "connections": {
+    "Actualización de otra base": {
+      "main": [[{ "node": "Aplicar cambios · PATCH /api/afiliados", "type": "main", "index": 0 }]]
+    },
+    "Aplicar cambios · PATCH /api/afiliados": {
+      "main": [[{ "node": "Re-evaluar ofertas", "type": "main", "index": 0 }]]
+    },
+    "Re-evaluar ofertas": {
+      "main": [[{ "node": "Responder a la base", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

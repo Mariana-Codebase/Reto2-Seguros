@@ -37,3 +37,45 @@ Respuesta: la oferta con su razón. Ver eventos soportados en
 
 > Ejemplo insignia: `credito_vivienda_desembolsado` → **Seguro de Hogar** (protege
 > el patrimonio recién financiado) + cross-sell de **Seguro de Vida** (cubre el saldo).
+
+---
+
+# Flujo de actualización de afiliados
+
+Mientras el agente de ofertas **reacciona a eventos**, el **flujo de actualización**
+mantiene el **perfil 360 en Mongo al día**: cuando otra base de Colsubsidio cambia
+los datos de un cliente (subió el salario, cambió de empresa o ciudad, se
+activó/desactivó), este flujo aplica el cambio y vuelve a evaluar si desbloquea una
+oferta nueva.
+
+## Importar el workflow
+
+1. En tu n8n: **Workflows → Import from File** y elige
+   [`agente-actualizacion.workflow.json`](agente-actualizacion.workflow.json).
+2. Reutiliza la misma variable de entorno **`CLARA_BASE_URL`**.
+3. Activa el workflow.
+
+## Qué hace
+
+- **Webhook `POST /webhook/colsubsidio-actualizacion`** — otra base llama con la
+  serie y los campos a cambiar:
+  ```json
+  { "serie": "123", "campos": { "rango_salarial": "Entre 4 y 6 SMLV", "ciudad": "MEDELLIN" } }
+  ```
+- **`PATCH /api/afiliados/{serie}`** — aplica la actualización parcial en Mongo. La
+  app solo acepta campos editables y registra el cambio en la bitácora `eventos`.
+- **`GET /api/afiliados/{serie}/ofertas`** — re-evalúa ofertas y alertas con el
+  perfil ya actualizado (un alza de salario o una vivienda nueva puede desbloquear
+  una oferta que antes no aplicaba).
+- **Respuesta** — `{ ok, actualizado, ofertas, alertas }` con el afiliado ya
+  actualizado y las ofertas recalculadas.
+
+## Campos editables
+
+`genero` · `rango_edad` · `rango_salarial` · `categoria` · `segmento_familiar` ·
+`segmento_poblacional` · `piramide` · `empresa` · `ciudad` · `marcas` (dict de
+booleanos) · `afiliado_activo`. Cualquier otro campo enviado se ignora de forma
+segura.
+
+> Ejemplo: un afiliado sin vivienda al que otra base le marca `"marcas": { "vivienda": true }`
+> pasa, en la misma llamada, a recibir la oferta de **Seguro de Hogar** en la respuesta.
