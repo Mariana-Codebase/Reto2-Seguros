@@ -525,7 +525,7 @@ def _to_anthropic_messages(messages: list[dict[str, Any]]) -> tuple[str, list[di
             if not out and not content:
                 continue
             if not out:
-                # Saludo inicial: se omite; el system prompt ya indica que Clara saludó.
+                # Saludo inicial: se omite; el system prompt ya indica que Lara saludó.
                 continue
             if not content:
                 content = [{"type": "text", "text": " "}]

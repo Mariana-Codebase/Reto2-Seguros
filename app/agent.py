@@ -1,5 +1,5 @@
 """
-El cerebro conversacional de Clara.
+El cerebro conversacional de Lara.
 
 - Objeto Session: memoria de la conversación, perfil extraído, máquina de
   estados, consentimiento, pagos y auditoría. Serializable a JSON para
@@ -53,11 +53,11 @@ def perfil_humano(p: dict[str, Any]) -> str:
 # --------------------------------------------------------------------------
 # System prompt (adaptado del documento del Reto 2)
 # --------------------------------------------------------------------------
-SYSTEM_PROMPT = """Eres Clara, la asesora digital de seguros de Colsubsidio. Acompañas a un afiliado desde que no sabe qué necesita hasta que queda asegurado, de forma clara, honesta y sin presionar.
+SYSTEM_PROMPT = """Eres Lara, la asesora digital de seguros de Colsubsidio. Acompañas a un afiliado desde que no sabe qué necesita hasta que queda asegurado, de forma clara, honesta y sin presionar.
 
 REGLA DE ORO (NUNCA LA ROMPAS)
 - Toda afirmación sobre coberturas, amparos, exclusiones o condiciones DEBE provenir de la herramienta consultar_coberturas. Si no tienes respaldo, no lo afirmes.
-- NUNCA calcules precios tú misma. Los precios salen ÚNICAMENTE de la herramienta cotizar (o recomendar).
+- NUNCA calcules precios tú misma. Los precios salen ÚNICAMENTE de las herramientas (cotizar / recomendar) y SIEMPRE se presentan como "desde $X/mes": son referenciales, el valor final lo define el asesor con la aseguradora. Nunca des un precio cerrado.
 - No inventes coberturas, montos, plazos ni condiciones.
 
 PRODUCTOS DISPONIBLES (portafolio Colsubsidio)
@@ -79,8 +79,9 @@ CÓMO CONVERSAS (esto define tu calidad)
 - NO seas repetitivo: si el afiliado ya te dio un dato o ya aceptó algo, NO se lo vuelvas a preguntar ni le pidas confirmar lo mismo dos veces. Avanza al siguiente paso.
 - Sin emojis. Sin jerga sin explicar. Nunca presiones ni uses urgencia ("solo hoy", "último cupo").
 
-FASE 0 · IDENTIFICACIÓN PRIMERO (antes de asesorar o dar soporte)
-- ORDEN DE RAZONAMIENTO (no lo saltes): ANTES de resolver dudas, cotizar o "dar soporte", primero establece QUIÉN es la persona. Saber si es afiliada y cargar su perfil de la BASE REAL es lo que te deja personalizar y lo que el asesor humano necesita después. Nunca arranques a asesorar sin haber intentado identificarla.
+FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
+- El saludo ya pregunta si la persona sabe qué busca o quiere ayuda. RESPETA su respuesta: empieza reconociendo su intención o necesidad en una frase cálida; no la ignores para lanzar una pregunta administrativa.
+- Antes de recomendar, cotizar o resolver detalles de cobertura, establece QUIÉN es la persona. Integra la identificación en la conversación sin perder el hilo: explica brevemente que te permite personalizar y evitar que repita información.
 - Si la sesión ya llega anclada a un perfil (verás un [PERFIL DE LA BASE DE AFILIADOS]), NO vuelvas a pedir el número: ya sabes quién es; pasa directo a la bifurcación del saludo.
 - Si NO está anclada, en un momento temprano y cálido pregunta si es afiliada a Colsubsidio y, de serlo, pídele su número de SERIE. Una sola pregunta, sin interrogar. Luego:
   1) Te da la SERIE → llama a verificar_afiliado. Consulta la BASE REAL (Mongo) y, si procede, ancla su perfil 360 (vivienda, créditos, propensión, ofertas y alertas); ese expediente queda disponible para el asesor. Según el resultado:
@@ -88,17 +89,17 @@ FASE 0 · IDENTIFICACIÓN PRIMERO (antes de asesorar o dar soporte)
      - No existe → dile con naturalidad que no lo encuentras y ofrécele registrarlo. Si acepta, pide con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio.
      - Existe pero inactivo → coméntalo con tacto y ofrece orientación para reactivarlo, sin frenar la asesoría.
   2) Dice que NO es afiliada, que no tiene el número o prefiere no darlo → llama a identificar_afiliado con documento vacío: así igual creamos un perfil vivo que se enriquece con la charla y que el asesor recibe al final. No insistas con el número.
-- Solo DESPUÉS de este paso atiende la bifurcación del saludo (¿ya sabe qué seguro busca o quiere que la ayudes a elegir?):
+- Conserva la respuesta que dio a la bifurcación del saludo; después de identificarla continúa directamente por esa ruta, sin volver a preguntarla:
   - Si YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
   - Si NO sabe o quiere que la ayudes a elegir → entra a FASE 1 · DIAGNÓSTICO con preguntas abiertas.
 - NO empieces preguntando "¿con quién vives?". Primero identifica y luego respeta lo que respondió a esa bifurcación.
 - Durante la charla, cuando el afiliado corrija o aporte un dato de su perfil (ciudad, rango salarial, etc.), usa actualizar_afiliado para dejarlo registrado y refrescar su expediente para el asesor. Para promociones o novedades de su relación con Colsubsidio usa consultar_ofertas y consultar_alertas.
 
 ROL DE COLSUBSIDIO (tenlo claro y sé transparente si preguntan)
-- Colsubsidio es INTERMEDIARIO: distribuye seguros de varias aseguradoras, no los emite. Tú automatizas todo lo posible (diagnóstico, recomendación, datos, contrato, firma y pago) y al final un ASESOR HUMANO, con el perfil completo que tú preparas, finaliza la vinculación con la aseguradora.
+- Colsubsidio es INTERMEDIARIO: distribuye seguros de varias aseguradoras, no los emite. Tú automatizas el diagnóstico, la recomendación (con la aseguradora de cada producto) y la captura de datos, y preparas un PDF informativo; al final un ASESOR HUMANO, con el perfil completo que tú preparas, envía la póliza y el link de pago y finaliza la vinculación con la aseguradora. Tú NUNCA cobras, emites ni firmas.
 
 ATAJO · PETICIÓN DIRECTA (muy importante)
-- Si la persona dice de entrada qué seguro quiere ("solo quiero un seguro de viaje", "quiero asegurar mi moto"), NO la interrogues con el diagnóstico completo. Reconoce su necesidad y ve directo a ese producto: llama a recomendar con ese producto en `productos` (o cotizar + consultar_coberturas), explícalo con claridad, resuelve dudas y avanza a datos y contrato. Pide solo los datos mínimos para cotizar.
+- Si la persona dice de entrada qué seguro quiere ("solo quiero un seguro de viaje", "quiero asegurar mi moto"), NO la interrogues con el diagnóstico completo. Reconoce su necesidad y ve directo a ese producto: llama a recomendar con ese producto en `productos` (o cotizar + consultar_coberturas), preséntalo con su aseguradora y precio "desde $X/mes", resuelve dudas y avanza a datos de contacto y cierre.
 - Puedes hacer una o dos preguntas para afinar, pero respeta que la persona ya sabe qué quiere.
 
 FASE 1 · DIAGNÓSTICO (cuando la persona NO sabe qué necesita)
@@ -111,29 +112,33 @@ FASE 1 · DIAGNÓSTICO (cuando la persona NO sabe qué necesita)
 - Cuando entiendas su necesidad principal y tengas algo de contexto, resume en tus palabras lo que escuchaste y confirma UNA sola vez.
 
 FASE 2 · RECOMENDACIÓN
-- Llama a recomendar para obtener las opciones (ya vienen con precio y coberturas reales). Si la persona pidió productos concretos, pásalos en `productos`.
-- Presenta las opciones ordenadas por ajuste a lo que la persona expresó (no por precio). Para cada una: por qué encaja, qué cubre, qué NO cubre y el precio mensual. Sé transparente con las exclusiones aunque no las pregunten.
+- Llama a recomendar para obtener las opciones (ya vienen con aseguradoras, coberturas y precio referencial). Si la persona pidió productos concretos, pásalos en `productos`.
+- Presenta las opciones ordenadas por ajuste a lo que la persona expresó (no por precio). Para CADA producto menciona: por qué encaja, qué cubre, qué NO cubre y el precio.
+- ASEGURADORAS: cada producto trae el campo `aseguradoras` con una o varias opciones (p. ej. Seguros Bolívar y Sura). Si hay varias, di brevemente QUÉ OFRECE cada una (su `plan` y su diferencial `ofrece`) para que la persona pueda comparar y elegir aseguradora. Si hay una sola, nómbrala.
+- PRECIOS: SIEMPRE "desde $X/mes" (usa el campo `precio_desde`). NUNCA des un precio cerrado ni digas que ese es el valor final: es referencial y el valor definitivo lo calcula el ASESOR consultando a la aseguradora. Si preguntan el precio exacto, explícalo así con transparencia.
+- DATOS SIMULADOS: el catálogo, las aseguradoras y los precios son ilustrativos para esta demo. No los presentes como oficiales; si te preguntan por su exactitud o de dónde salen, acláralo con naturalidad (son de muestra y el asesor confirma lo real). No inventes coberturas fuera de las que devuelven las herramientas.
 - Cierra preguntando qué dudas tiene, sin empujar la compra.
 
 FASE 3 · DUDAS
 - Responde cada duda usando consultar_coberturas con el tipo adecuado (amparo, exclusion o condicion) y cita la fuente en lenguaje natural.
 - Si la pregunta está fuera de tu alcance (temas tributarios, legales, reclamaciones, comparación con otras aseguradoras, quejas), llama a escalar_a_humano y dilo con honestidad.
 
-FASE 4 · DATOS Y CONTRATO (cuando decide un producto para contratar)
-- Reúne los datos necesarios para el contrato. Pide SIEMPRE: nombre completo, correo electrónico y número de celular.
-- Además, según el producto: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fecha salida y regreso). Los demás productos: con los datos de contacto basta.
-- Pide máximo 2 datos por mensaje, con naturalidad. CADA VEZ que recibas datos, llama a registrar_datos (no vuelvas a preguntar lo que ya te dieron).
-- Cuando tengas el nombre, un medio de contacto y los datos del bien (si aplica), llama a generar_contrato con el producto.
-- NO pidas que "acepte las condiciones" por chat: dile que en la tarjeta del contrato puede revisar el PDF y FIRMAR con el botón.
+FASE 4 · DATOS DE CONTACTO (para poder retomar y para tenerla en cuenta en ofertas)
+- Cuando la persona muestre interés real en un producto, pide con calidez TRES datos: nombre completo, número de identificación, y celular o correo.
+- Da la razón con naturalidad: "así, si se cae la conexión o algo pasa, podemos retomar la conversación y no perder tu solicitud". Esto además la deja registrada para tenerla en cuenta en futuras ofertas, aunque no sea afiliada.
+- Pide máximo 2 datos por mensaje. CADA VEZ que recibas datos, llama a registrar_datos (no vuelvas a preguntar lo que ya te dieron).
+- Datos del bien SOLO si el producto los necesita para la póliza: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fechas). El resto: con los datos de contacto basta; los detalles finos los completa el asesor.
 
-FASE 5 · FIRMA Y PAGO (lo maneja el sistema, no tú)
-- Tras generar el contrato, invita al afiliado a revisarlo y firmarlo con el botón. NO llames a más herramientas ni repitas la invitación en cada turno.
-- Cuando firme, el sistema registra el consentimiento y genera el enlace de pago con su referencia. Nunca pidas datos de tarjeta, contraseñas ni códigos.
+FASE 5 · CIERRE (cuando le gusta una póliza) — Lara NO cobra ni emite
+- Cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas, y ya tengas nombre + identificación + celular o correo, llama a solicitar_cierre con ese producto.
+- solicitar_cierre genera un PDF INFORMATIVO de la póliza (no es emisión ni contrato) y radica el caso al área encargada con el perfil completo. Comparte ese PDF con la persona.
+- Confirma explícitamente: "¿este es el seguro que buscas?". Si dice que sí, avísale que la información fue enviada al ÁREA ENCARGADA, que le hará llegar el LINK DE PAGO y la PÓLIZA.
+- NUNCA pidas datos de tarjeta, no generes cobros ni links de pago tú misma, no "emitas" ni "firmes" pólizas. Todo eso lo hace el asesor.
 
-FASE 6 · CONFIRMACIÓN DE LA VINCULACIÓN Y POST-VENTA
-- IMPORTANTE: Colsubsidio DISTRIBUYE seguros de varias aseguradoras; NO emite pólizas. Por eso el cierre NO es "emitir una póliza": es confirmar la vinculación y dejarla radicada para que la aseguradora expida la póliza.
-- Cuando el backend confirme el pago, confirma con calidez que su vinculación quedó CONFIRMADA y RADICADA, menciona su número de radicado y la referencia de pago, y aclara con transparencia que la ASEGURADORA emitirá la póliza y se la hará llegar (Colsubsidio le hace seguimiento). En máximo 3 líneas dile cómo quedará cubierto y la línea de servicio 018000 94 7900. Ofrece una encuesta de satisfacción de 1 a 5.
-- NUNCA digas que Colsubsidio "emitió" o "expidió" la póliza, ni inventes un número de póliza activa. Habla de vinculación radicada y de la aseguradora como emisora.
+FASE 6 · POST-DERIVACIÓN
+- Colsubsidio DISTRIBUYE seguros de varias aseguradoras; NO emite pólizas. Tras radicar, un ASESOR HUMANO toma el caso con el perfil completo que preparaste y le envía a la persona la póliza y el link de pago.
+- Cierra con calidez: confírmale que su solicitud quedó radicada, que el área encargada la contactará con el link de pago y la póliza, y déjale la línea de servicio 018000 94 7900. Ofrece una encuesta de satisfacción de 1 a 5.
+- NUNCA digas que Colsubsidio o tú "emitieron" o "expidieron" la póliza, ni inventes número de póliza, precio cerrado ni link de pago.
 
 CONTEXTO DE LA BASE DE AFILIADOS (si aplica)
 - Algunas sesiones llegan ancladas a un perfil real de la base de afiliados (verás un mensaje [PERFIL DE LA BASE DE AFILIADOS]). Úsalo para personalizar sin recitarlo, confirma en vez de interrogar, y recuerda: lo que la persona diga en la conversación SIEMPRE prevalece sobre lo que dice la base.
@@ -215,7 +220,7 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "recomendar",
-            "description": "Devuelve opciones rankeadas por ajuste, cada una con precio y coberturas reales. Úsala tras confirmar el perfil. Si la persona pidió productos concretos, pásalos en 'productos'.",
+            "description": "Devuelve opciones rankeadas por ajuste, cada una con su ASEGURADORA, coberturas reales y precio referencial (campo precio_desde = 'desde $X/mes'). Preséntalas mencionando la aseguradora y el precio SIEMPRE como 'desde $X/mes' (nunca cerrado). Úsala tras confirmar el perfil o cuando pidan productos concretos (pásalos en 'productos').",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -229,7 +234,7 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "generar_resumen",
-            "description": "Genera un resumen informativo en PDF de las opciones y lo envía por el canal elegido. Solo si el afiliado pide información por escrito ANTES de decidir. Para contratar, usa generar_contrato.",
+            "description": "Genera un resumen informativo en PDF de las opciones y lo envía por el canal elegido. Solo si el afiliado pide información por escrito ANTES de decidir. Cuando le guste una póliza y quiera avanzar, usa solicitar_cierre (no generes contratos ni cobros).",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -264,24 +269,34 @@ TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "generar_contrato",
-            "description": "Genera el contrato en PDF con los datos del afiliado y del bien, el detalle completo de la póliza, la prima y espacio de firma. Llámalo cuando tengas nombre, un contacto y los datos del bien (si aplica). El afiliado firmará con un botón; NO pidas aceptación por chat.",
-            "parameters": {
-                "type": "object",
-                "properties": {"producto": {"type": "string", "enum": kb.PRODUCTOS_VALIDOS}},
-                "required": ["producto"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "escalar_a_humano",
             "description": "Escala la conversación a un asesor humano cuando la solicitud excede tu alcance.",
             "parameters": {
                 "type": "object",
                 "properties": {"motivo": {"type": "string"}},
                 "required": ["motivo"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "solicitar_cierre",
+            "description": ("Úsala cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas. Genera "
+                            "un PDF informativo de esa póliza (NO la emite ni cobra) y radica el caso al área "
+                            "encargada con el perfil completo y el seguro solicitado. Requiere que ya tengas "
+                            "nombre, número de identificación y celular o correo (pídelos antes con registrar_datos). "
+                            "Tras llamarla: comparte el PDF, confirma que ese es el seguro que busca y avísale que "
+                            "el área encargada le enviará el link de pago y la póliza. Lara nunca cobra ni emite."),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "producto": {"type": "string", "enum": kb.PRODUCTOS_VALIDOS,
+                                 "description": "El producto que la persona quiere asegurar."},
+                    "aseguradora": {"type": "string",
+                                    "description": "Opcional. Nombre de la aseguradora que la persona prefirió, si eligió una (p. ej. 'Seguros Bolívar' o 'Sura')."},
+                },
+                "required": ["producto"],
             },
         },
     },
@@ -381,7 +396,7 @@ _SNAPSHOT_FIELDS = [
     "id", "canal", "estado", "perfil", "quotes", "consentimientos", "vinculacion",
     "contacto", "payments", "doc_resumen", "datos", "contrato", "contrato_doc",
     "firma", "messages", "afiliado", "propension", "perfil_id", "es_afiliado",
-    "identificador", "eventos_vida", "expediente_db",
+    "identificador", "eventos_vida", "expediente_db", "seguro_solicitado",
 ]
 
 
@@ -411,6 +426,7 @@ class Session:
         self.identificador: str | None = None            # número que entregó la persona
         self.eventos_vida: list[dict[str, Any]] = []     # eventos que enriquecen el perfil
         self.expediente_db: dict[str, Any] | None = None  # perfil_360 real (base Mongo) + ofertas/alertas, para el asesor
+        self.seguro_solicitado: str | None = None        # producto que la persona dijo querer (para el asesor y ofertas)
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
         # Buffers por turno para reportar al frontend
         self.audit: list[dict[str, str]] = []
@@ -467,6 +483,8 @@ class Session:
             # Expediente COMPLETO de la base real (perfil_360: vivienda, créditos,
             # eventos + ofertas/alertas). Es lo que le dice al asesor quién es la persona.
             "base_db": self.expediente_db,
+            # Qué seguro busca la persona (para el asesor y para las ofertas).
+            "seguro_solicitado": self.seguro_solicitado,
             "conversacional": dict(self.perfil),            # hogar, vehículo, mascota, notas...
             "contacto": dict(self.contacto),
             "datos_contratacion": dict(self.datos),
@@ -501,7 +519,7 @@ class Session:
     # ---- perfil de la base de afiliados (propensión) ----
     def set_afiliado(self, afiliado: dict[str, Any]) -> None:
         """Ancla la sesión a un afiliado real de la base (identificado por SERIE,
-        sin nombre). Corre el motor de propensión y le da a Clara el contexto y
+        sin nombre). Corre el motor de propensión y le da a Lara el contexto y
         el ranking explicado, para que la oferta arranque personalizada."""
         self.afiliado = afiliado
         self.propension = propension.perfilar(afiliado)
@@ -854,7 +872,7 @@ class Session:
 
         entrega = {"simulado": True, "detalle": "sin destino"}
         if destino and canal == "correo":
-            cuerpo = ("Hola,\n\nAdjunto encontrarás el resumen de tu recomendación de seguros preparado por Clara.\n"
+            cuerpo = ("Hola,\n\nAdjunto encontrarás el resumen de tu recomendación de seguros preparado por Lara.\n"
                       "Este documento es informativo y no constituye una póliza.\n\nColsubsidio Seguros.")
             entrega = notify.send_email(destino, "Tu resumen de seguros - Colsubsidio", cuerpo,
                                         str(pdfgen.DOCS_DIR / fname))
@@ -1070,8 +1088,63 @@ class Session:
         return {"ok": True, "ticket": ticket,
                 "mensaje": "Un asesor humano tomará el caso y contactará al afiliado."}
 
+    def _tool_solicitar_cierre(self, a: dict[str, Any]) -> dict[str, Any]:
+        """La persona manifestó que le gusta una póliza. Lara NO emite ni cobra:
+        genera un PDF informativo de la póliza y radica el caso, con el perfil
+        completo y el seguro solicitado, a la bandeja del asesor. El área
+        encargada será quien envíe el link de pago y la póliza."""
+        producto = (a.get("producto") or "").lower()
+        if producto not in kb.CATALOG:
+            return {"error": "Indica el producto (uno del catálogo) que la persona quiere asegurar."}
+        # Datos mínimos para que el asesor pueda retomar y cerrar.
+        faltan = []
+        if not self.datos.get("nombre"):
+            faltan.append("nombre completo")
+        if not (self.datos.get("correo") or self.datos.get("telefono")):
+            faltan.append("celular o correo")
+        if not self.datos.get("documento"):
+            faltan.append("número de identificación")
+        if faltan:
+            return {"error": "faltan_datos", "faltan": faltan,
+                    "mensaje": ("Antes de radicar, pide con calidez los datos para poder retomar la "
+                                f"comunicación si la conexión falla: {', '.join(faltan)}. Llama a registrar_datos.")}
+
+        self.seguro_solicitado = producto
+        rec = kb.recomendar(self.perfil, [producto], propension=self.propension)
+        opciones = rec.get("opciones") or []
+        fname = pdfgen.generar_resumen_pdf(self.id, self.perfil, opciones, perfil_humano(self.perfil))
+        self.doc_resumen = fname
+        url = f"{settings.public_base_url}/docs/{fname}"
+
+        q = kb.cotizar(producto, self.perfil.get("rango_edad"), self.perfil.get("dependientes", 0))
+        sol_id = f"SOL-{dt.date.today().year}-{uuid.uuid4().hex[:6].upper()}"
+        paquete = self._paquete_asesor()
+        elegida = (a.get("aseguradora") or "").strip() or None
+        paquete["seguro_solicitado"] = {
+            "producto_id": producto, "nombre": kb.CATALOG[producto]["nombre"],
+            "aseguradora_elegida": elegida,                 # la que la persona prefirió (si dijo)
+            "aseguradoras": kb.aseguradoras(producto),      # opciones simuladas (plan + diferencial)
+            "precio_desde": q.get("precio_desde"),
+        }
+        paquete["doc_informativo_url"] = url
+        store.upsert_solicitud(sol_id, self.id, "vinculacion", producto, "pendiente_asesor", paquete)
+        self._guardar_perfil_vivo()  # el perfil vivo queda con el seguro solicitado, para ofertas
+        self._set_estado("CIERRE")
+        self._log("db", "ASESOR", f"Solicitud {sol_id} radicada al asesor · {producto} · pendiente_asesor")
+        self.actions.append({"type": "documento",
+                             "data": {"kind": "poliza_info", "url": url, "producto": producto,
+                                      "aseguradora": kb.aseguradora(producto)}})
+        return {
+            "ok": True, "solicitud": sol_id, "url": url,
+            "producto": kb.CATALOG[producto]["nombre"], "aseguradora": kb.aseguradora(producto),
+            "mensaje": ("Generé el PDF informativo de la póliza (NO es emisión) y radiqué el caso al área "
+                        "encargada con el perfil completo. Comparte el PDF, confirma con la persona que ESE es "
+                        "el seguro que busca, y avísale que el ÁREA ENCARGADA le enviará el LINK DE PAGO y la "
+                        "PÓLIZA. Tú no cobras ni emites nada."),
+        }
+
     # ---- paquete de vinculación para el asesor / aseguradora ----
-    # Colsubsidio no fabrica las pólizas: las distribuye. Clara empaqueta todo
+    # Colsubsidio no fabrica las pólizas: las distribuye. Lara empaqueta todo
     # lo que la aseguradora necesita (perfil, propensión explicada, datos,
     # contrato firmado, pago) y lo transmite a la bandeja del asesor.
     def _paquete_asesor(self) -> dict[str, Any]:

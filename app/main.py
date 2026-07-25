@@ -1,5 +1,5 @@
 """
-API de Clara (FastAPI) + entrega de la interfaz.
+API de Lara (FastAPI) + entrega de la interfaz.
 
 Endpoints:
   GET  /                          -> interfaz (static/index.html)
@@ -18,6 +18,7 @@ Ejecuta:  python server.py   (o uvicorn app.main:app)
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import pathlib
 
@@ -27,13 +28,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import (__version__, afiliados_db, agent, base_afiliados, knowledge as kb,
-               llm, notify, ofertas, payments, propension, store)
+               llm, notify, ofertas, payments, propension, seed, store)
 from .config import settings
 
 logger = logging.getLogger("clara.api")
 
 app = FastAPI(
-    title="Clara · Venta automatizada de seguros",
+    title="Lara · Venta automatizada de seguros",
     version=__version__,
     docs_url=None if settings.is_production else "/api/docs",
     redoc_url=None,
@@ -45,7 +46,7 @@ SESSIONS: dict[str, agent.Session] = {}
 app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
 
 SALUDO = (
-    "Hola, soy Clara, la asesora digital de seguros de Colsubsidio. "
+    "Hola, soy Lara, la asesora digital de seguros de Colsubsidio. "
     "Antes de empezar: tus datos se tratan conforme a la Política de Tratamiento de Datos "
     "Personales de Colsubsidio (Ley 1581 de 2012) y puedes solicitar su eliminación cuando quieras. "
     "Para empezar, cuéntame: ¿ya sabes qué seguro buscas o prefieres que te ayude a encontrar "
@@ -88,16 +89,29 @@ class IdentificarReq(BaseModel):
 
 
 class EventoReq(BaseModel):
-    """Entrada del agente de ofertas. La dispara n8n (u otra base de Colsubsidio)."""
+    """Entrada de Cody. La dispara n8n (u otra base de Colsubsidio)."""
     serie: str | None = None          # id del afiliado en la base
     perfil_id: str | None = None      # o el id del perfil vivo (NA-...)
     evento: str                       # p. ej. credito_vivienda_desembolsado
     datos: dict | None = None
     enviar: bool = True               # simular envío por el canal del perfil
+    source: str = "api"
+    trace_id: str | None = None
 
 
 class EstadoOfertaReq(BaseModel):
     estado: str = Field(pattern="^(generada|enviada|aceptada|descartada)$")
+
+
+class BarridoReq(BaseModel):
+    """Barrido autónomo del agente de ofertas sobre una muestra de la base real."""
+    muestra: int | None = 8           # cuántos afiliados de la base recorrer
+
+
+class ReengancheReq(BaseModel):
+    """Re-enganche de abandonos: minutos de inactividad tras los cuales se
+    considera abandonada una conversación con contacto dejado."""
+    minutos: int | None = 30
 
 
 class ChatReq(BaseModel):
@@ -116,7 +130,7 @@ class FirmaReq(BaseModel):
 
 
 class AfiliadoCrearReq(BaseModel):
-    """Datos con los que Clara (o el equipo) registra un afiliado nuevo. Todos
+    """Datos con los que Lara (o el equipo) registra un afiliado nuevo. Todos
     opcionales salvo lo mínimo para personalizar; la SERIE la asigna la base."""
     genero: str | None = Field(default=None, pattern="^[FM]$")
     rango_edad: str | None = None
@@ -150,8 +164,18 @@ class AfiliadoActualizarReq(BaseModel):
 @app.on_event("startup")
 def _startup():
     purged = store.purge_old_sessions()
+    # Siembra la muestra demo si la base de afiliados está vacía (no bloquea el
+    # arranque si Mongo no está listo: sembrar_si_vacia captura sus errores).
+    if settings.SEED_MUESTRA > 0:
+        sembrado = seed.sembrar_si_vacia(settings.SEED_MUESTRA)
+        if sembrado:
+            logger.info("Muestra demo sembrada: %s", sembrado)
+        try:
+            seed.sembrar_abandonos_demo()  # perfiles de abandono para la demo de re-enganche
+        except Exception as e:  # noqa: BLE001
+            logger.warning("No se pudieron sembrar los abandonos demo: %s", e)
     logger.info(
-        "Clara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
+        "Lara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
         __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,
     )
 
@@ -220,7 +244,7 @@ def crear_sesion(req: SessionReq):
             if hook:
                 gancho = f" Por lo que Colsubsidio ya conoce de ti, creo que lo primero que deberíamos mirar juntos es {hook}."
         saludo = (
-            "Hola, soy Clara, la asesora digital de seguros de Colsubsidio. "
+            "Hola, soy Lara, la asesora digital de seguros de Colsubsidio. "
             "Tus datos se tratan conforme a la Política de Tratamiento de Datos Personales "
             "(Ley 1581 de 2012) y puedes pedir su eliminación cuando quieras. "
             f"Veo que eres parte de la familia Colsubsidio.{gancho} "
@@ -318,7 +342,7 @@ def propension_reglas():
 
 
 # --------------------------------------------------------------------------
-# Panel del asesor: Colsubsidio distribuye, no emite. Clara transmite cada
+# Panel del asesor: Colsubsidio distribuye, no emite. Lara transmite cada
 # vinculación empaquetada y el asesor la gestiona con la aseguradora.
 # --------------------------------------------------------------------------
 @app.get("/asesor", include_in_schema=False)
@@ -343,7 +367,7 @@ def asesor_cambiar_estado(solicitud_id: str, req: EstadoSolicitudReq):
     if not store.set_estado_solicitud(solicitud_id, req.estado):
         raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
     # Lazo de vuelta al afiliado: la sesión queda enterada del avance para que
-    # Clara pueda informarlo si el afiliado pregunta por su solicitud.
+    # Lara pueda informarlo si el afiliado pregunta por su solicitud.
     aviso = _ESTADO_AVISO.get(req.estado)
     sol = next((x for x in store.list_solicitudes() if x["id"] == solicitud_id), None)
     if aviso and sol:
@@ -386,13 +410,21 @@ def ofertas_panel():
 
 @app.get("/api/ofertas/catalogo")
 def ofertas_catalogo():
-    """Eventos que el agente sabe atender y portafolio de crédito (para UI/n8n)."""
-    return {"eventos": ofertas.eventos_soportados(), "creditos": ofertas.CREDITOS}
+    """Eventos que el agente de seguros sabe atender (para UI/n8n)."""
+    return {"eventos": ofertas.eventos_soportados(), "creditos": {}}
 
 
 @app.get("/api/ofertas/salientes")
 def ofertas_salientes():
     return {"ofertas": store.list_ofertas()}
+
+
+@app.post("/api/ofertas/reset")
+def ofertas_reset():
+    """Vacía la bandeja de ofertas salientes para reiniciar la demo en limpio."""
+    n = store.limpiar_ofertas()
+    logger.info("Ofertas salientes reiniciadas (%d eliminadas)", n)
+    return {"ok": True, "eliminadas": n}
 
 
 @app.post("/api/ofertas/{oferta_id}/estado")
@@ -410,52 +442,141 @@ def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str,
     if guardado:
         return guardado["id"], guardado["perfil"]
     if serie:
+        # Canal simulado para que el envío del agente saliente se refleje en la
+        # demo (afiliado de la base sin contacto conversacional aún).
+        contacto = {"canal": "whatsapp", "destino": f"+57·demo·{serie}"}
+        # 1) Base REAL en Mongo (500k): la fuente principal del agente de ofertas.
+        doc = afiliados_db.existe_afiliado(serie)
+        if doc is not None:
+            perfil = {"id": str(doc.get("serie")), "es_afiliado": True,
+                      "base": base_afiliados.resumen_base(doc),
+                      "propension": propension.perfilar(doc),
+                      "contacto": contacto, "eventos_vida": []}
+            return str(doc.get("serie")), perfil
+        # 2) Muestra demo (fallback para series que no están en Mongo).
         af = base_afiliados.buscar(serie)
         if af:
             perfil = {"id": str(serie), "es_afiliado": True,
                       "base": base_afiliados.resumen_base(af),
                       "propension": propension.perfilar(af),
-                      "contacto": {}, "eventos_vida": []}
+                      "contacto": contacto, "eventos_vida": []}
             return str(serie), perfil
     # Perfil mínimo desconocido.
     return (pid or "NA-DESCONOCIDO"), {"id": pid, "es_afiliado": False, "eventos_vida": []}
 
 
-@app.post("/api/eventos")
-def recibir_evento(req: EventoReq):
-    """Webhook del agente de ofertas. Un evento de otra base de Colsubsidio
-    (crédito desembolsado, alza de ingreso, cumpleaños, inactividad…) entra aquí:
-    enriquece el perfil, decide la mejor oferta y la deja lista (y la envía por
-    el canal, simulado). Ejemplo: crédito de vivienda -> seguro de hogar."""
-    pid, perfil = _perfil_para_ofertas(req.serie, req.perfil_id)
+def _procesar_evento(serie, perfil_id, evento, datos, enviar) -> dict:
+    """Núcleo del agente de ofertas (100% seguros): enriquece el perfil, aplica
+    dedup (anti-spam), decide el SEGURO más pertinente y lo registra/envía."""
+    pid, perfil = _perfil_para_ofertas(serie, perfil_id)
 
     # 1) El evento enriquece el perfil vivo (la base sigue creciendo).
     perfil.setdefault("eventos_vida", []).append(
-        {"tipo": req.evento, "fuente": "base_externa", "datos": req.datos or {}})
+        {"tipo": evento, "fuente": "base_externa", "datos": datos or {}})
     store.upsert_perfil(pid, bool(perfil.get("es_afiliado")), None, perfil, bump=True)
 
-    # 2) El agente decide la oferta (regla evento -> producto, explicable).
-    res = ofertas.generar_oferta(perfil, req.evento, req.datos)
+    # 2) El agente decide el seguro (regla evento -> seguro, explicable).
+    res = ofertas.generar_oferta(perfil, evento, datos)
     oferta = res.get("oferta")
     if not oferta:
         return {"ok": True, "perfil_id": pid, "oferta": None, "motivo": res.get("motivo")}
+
+    # Anti-spam: no repetir el mismo seguro al perfil en 15 días.
+    if store.oferta_reciente(pid, oferta["producto_id"], dias=15):
+        return {"ok": True, "perfil_id": pid, "oferta": None, "suprimida": True,
+                "motivo": f"Ya se ofreció {oferta['nombre']} a este perfil hace poco (anti-spam, 15 días)."}
 
     # 3) Se registra y (si aplica) se envía por el canal del perfil.
     estado = "generada"
     entrega = {"simulado": True, "detalle": "no enviada"}
     contacto = (perfil.get("contacto") or {})
     destino = contacto.get("destino") or contacto.get("correo") or contacto.get("telefono")
-    if req.enviar and destino:
+    if enviar and destino:
         if oferta["canal"] == "correo":
             entrega = notify.send_email(destino, "Una recomendación de Colsubsidio para ti", oferta["mensaje"])
         else:
             entrega = notify.send_whatsapp(destino, oferta["mensaje"])
         estado = "enviada"
-    store.insert_oferta(oferta["id"], pid, req.evento, oferta["tipo"], oferta["producto_id"],
+    store.insert_oferta(oferta["id"], pid, evento, oferta["tipo"], oferta["producto_id"],
                         oferta["canal"], estado, {**oferta, "entrega": entrega})
     logger.info("Agente de ofertas · evento=%s perfil=%s -> %s (%s)",
-                req.evento, pid, oferta["nombre"], estado)
+                evento, pid, oferta["nombre"], estado)
     return {"ok": True, "perfil_id": pid, "estado": estado, "oferta": oferta, "entrega": entrega}
+
+
+@app.post("/api/eventos")
+def recibir_evento(req: EventoReq):
+    """Webhook del agente de ofertas. Un evento (crédito desembolsado en otra
+    base, alza de ingreso, nacimiento, inactividad…) entra aquí: enriquece el
+    perfil, decide el mejor SEGURO y lo deja listo. Ej.: crédito de vivienda ->
+    seguro de hogar."""
+    resultado = _procesar_evento(req.serie, req.perfil_id, req.evento, req.datos, req.enviar)
+    resultado["orquestacion"] = {
+        "source": req.source,
+        "trace_id": req.trace_id,
+        "agente": "Cody",
+    }
+    return resultado
+
+
+@app.post("/api/ofertas/barrido")
+def ofertas_barrido(req: BarridoReq):
+    """Barrido AUTÓNOMO: el agente no espera al cliente. Toma una muestra de la
+    base real (Mongo) y para cada afiliado decide y radica un SEGURO por
+    propensión, sin repetir (anti-spam). Es lo que el cron de n8n dispara."""
+    n = max(1, min(int(req.muestra or 8), 40))
+    series = afiliados_db.muestra_series(n)
+    generadas, suprimidas, resultados = 0, 0, []
+    for serie in series:
+        r = _procesar_evento(serie, None, "sin_interaccion_30d", {}, enviar=True)
+        item = {"serie": serie}
+        if r.get("oferta"):
+            generadas += 1
+            item.update({"oferta": r["oferta"]["nombre"], "tipo": r["oferta"]["tipo"],
+                         "razon": r["oferta"]["razon"]})
+        else:
+            suprimidas += 1
+            item["motivo"] = r.get("motivo")
+        resultados.append(item)
+    logger.info("Barrido autónomo · muestra=%d generadas=%d suprimidas=%d",
+                len(series), generadas, suprimidas)
+    return {"ok": True, "muestra": len(series), "generadas": generadas,
+            "suprimidas": suprimidas, "resultados": resultados}
+
+
+@app.post("/api/ofertas/reenganche")
+def ofertas_reenganche(req: ReengancheReq):
+    """UNIÓN DE LOS DOS AGENTES · Re-enganche de abandonos. Busca perfiles vivos
+    de gente que habló con Lara, dejó su contacto (celular/correo) y NO cerró la
+    compra; y para cada uno el agente de ofertas envía un RECORDATORIO de su
+    seguro ("aún puedes gestionarlo"). Es lo que el cron de n8n dispara."""
+    minutos = max(0, int(req.minutos if req.minutos is not None else 30))
+    corte = (dt.datetime.now() - dt.timedelta(minutes=minutos)).isoformat(timespec="seconds")
+    reenganchados, resultados = 0, []
+    for p in store.list_perfiles(limit=500):
+        perfil = p.get("perfil") or {}
+        contacto = perfil.get("contacto") or {}
+        datos = perfil.get("datos_contratacion") or {}
+        tiene_contacto = bool(contacto.get("destino") or datos.get("correo") or datos.get("telefono"))
+        interes = perfil.get("seguro_solicitado") or (perfil.get("intereses_productos") or [])
+        cerro = perfil.get("estado_conversacion") in ("CIERRE",) or perfil.get("vinculado")
+        # Elegible: dejó contacto, mostró interés, no cerró y está inactivo.
+        if not tiene_contacto or not interes or cerro:
+            continue
+        if (p.get("updated_at") or "") >= corte:
+            continue  # aún activo: darle tiempo
+        r = _procesar_evento(None, p["id"], "abandono_con_contacto", {}, enviar=True)
+        item = {"perfil_id": p["id"], "nombre": datos.get("nombre")}
+        if r.get("oferta"):
+            reenganchados += 1
+            item.update({"oferta": r["oferta"]["nombre"], "razon": r["oferta"]["razon"]})
+        else:
+            item["motivo"] = r.get("motivo")
+        resultados.append(item)
+    logger.info("Re-enganche de abandonos · reenganchados=%d de %d revisados",
+                reenganchados, len(resultados))
+    return {"ok": True, "reenganchados": reenganchados, "revisados": len(resultados),
+            "resultados": resultados}
 
 
 # --------------------------------------------------------------------------
@@ -558,7 +679,7 @@ def pago_estado(session_id: str):
 @app.post("/api/confirmar-pago")
 def confirmar_pago(req: ConfirmarReq):
     """Tras el pago aprobado: confirma y radica la vinculación (Colsubsidio
-    distribuye, no emite pólizas) y deja que Clara confirme en lenguaje natural.
+    distribuye, no emite pólizas) y deja que Lara confirme en lenguaje natural.
     La póliza la emitirá la aseguradora desde el panel del asesor."""
     s = _get_session(req.session_id)
     pago = s.payments.get(req.token)

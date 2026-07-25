@@ -1,5 +1,5 @@
 /* =========================================================================
-   Clara — Frontend (conectado al backend FastAPI + Gemini)
+   Lara — Frontend (conectado al backend FastAPI + Gemini)
    El agente vive en el servidor; aquí solo se renderiza la conversación,
    el perfil extraído, la auditoría y los documentos.
 ========================================================================= */
@@ -30,9 +30,48 @@ document.querySelectorAll("[data-view]").forEach(b => {
   b.addEventListener("click", () => showView(b.dataset.view));
 });
 
+const menuToggle = document.getElementById("menuToggle");
+const mainNav = document.getElementById("mainNav");
+
+function closeMenu() {
+  if (!menuToggle || !mainNav) return;
+  menuToggle.setAttribute("aria-expanded", "false");
+  mainNav.classList.remove("open");
+}
+
+if (menuToggle && mainNav) {
+  menuToggle.addEventListener("click", () => {
+    const open = menuToggle.getAttribute("aria-expanded") === "true";
+    menuToggle.setAttribute("aria-expanded", String(!open));
+    mainNav.classList.toggle("open", !open);
+  });
+  mainNav.addEventListener("click", closeMenu);
+}
+
+document.querySelectorAll("[data-scroll]").forEach(b => {
+  b.addEventListener("click", () => {
+    const targetId = b.dataset.scroll;
+    const revealTarget = () => {
+      const target = document.getElementById(targetId);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    showView("inicio");
+    closeMenu();
+    requestAnimationFrame(revealTarget);
+  });
+});
+
 (function initViewFromHash() {
   const id = (location.hash || "").replace("#", "");
-  if (id && document.getElementById(id)) showView(id);
+  const target = id && document.getElementById(id);
+  if (!target) return;
+  if (target.classList.contains("view")) {
+    showView(id);
+    return;
+  }
+  showView("inicio");
+  try { history.replaceState(null, "", "#" + id); } catch (e) { /* noop */ }
+  requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
 })();
 
 /* ---------- Etiquetas legibles del perfil ---------- */

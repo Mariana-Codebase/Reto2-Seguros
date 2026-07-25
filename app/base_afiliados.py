@@ -11,7 +11,7 @@ muestra `data/afiliados_demo.json`. En producción, `buscar()` consultaría el
 mismo índice contra la base completa (o un servicio de datos de Colsubsidio):
 el resto del sistema no cambia.
 
-El perfil VIVO (lo que Clara aprende y enriquece en cada interacción) NO vive
+El perfil VIVO (lo que Lara aprende y enriquece en cada interacción) NO vive
 aquí: vive en la tabla `perfiles` de store.py. Este módulo solo lee el registro
 semilla de la base.
 """

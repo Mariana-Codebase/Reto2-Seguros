@@ -213,7 +213,7 @@ def transformar(row: dict[str, Any], now: datetime,
 # ---------------------------------------------------------------------------
 # Carga
 # ---------------------------------------------------------------------------
-def main(path: str, reset_eventos: bool = False) -> None:
+def main(path: str, reset_eventos: bool = False, limite: int | None = None) -> None:
     t0 = time.time()
     db = get_db()
     now = datetime.now(timezone.utc)
@@ -268,6 +268,10 @@ def main(path: str, reset_eventos: bool = False) -> None:
             flush()
         if stats["filas"] % 100_000 == 0:
             print(f"  ... {stats['filas']:,} filas ({time.time() - t0:.0f}s)")
+        # --limit N: muestra menor (carga rápida para demo).
+        if limite and len(series_vistas) >= limite:
+            print(f"  Límite alcanzado: {limite:,} afiliados (muestra menor).")
+            break
     flush()
 
     # ------------------------------------------------------------------
@@ -299,7 +303,11 @@ def main(path: str, reset_eventos: bool = False) -> None:
 
 
 if __name__ == "__main__":
+    _limite = None
+    for _a in sys.argv[1:]:
+        if _a.startswith("--limit="):
+            _limite = int(_a.split("=", 1)[1])
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     if not args:
         sys.exit("Uso: python scripts/cargar_mongo.py <ruta al .xlsx> [--reset]")
-    main(args[0], reset_eventos="--reset" in sys.argv)
+    main(args[0], reset_eventos="--reset" in sys.argv, limite=_limite)

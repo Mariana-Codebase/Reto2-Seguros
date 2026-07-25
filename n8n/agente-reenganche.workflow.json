@@ -1,0 +1,53 @@
+{
+  "name": "Colsubsidio · Lara → Cody · Reenganche",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Lara → n8n → Cody · continuidad sin repetir\nCuando alguien habla con **Lara**, deja un contacto y no finaliza, este flujo activa a **Cody** para retomar la misma necesidad.\n\n**Responsabilidad de cada actor**\n1. Lara guarda intención, perfil y canal autorizado.\n2. n8n programa el reenganche y llama a `POST /api/ofertas/reenganche`.\n3. Cody valida elegibilidad y anti-spam, elige el mensaje y lo envía por el canal disponible.\n\nLa persona conserva el contexto: no empieza de cero y no recibe ofertas repetidas.",
+        "height": 300,
+        "width": 420
+      },
+      "id": "note1",
+      "name": "Cómo funciona",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 80]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "*/30 * * * *" }
+          ]
+        }
+      },
+      "id": "cron1",
+      "name": "Cada 30 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 460]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/ofertas/reenganche",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"minutos\": 30\n}",
+        "options": {}
+      },
+      "id": "http1",
+      "name": "Re-enganchar abandonos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 460]
+    }
+  ],
+  "connections": {
+    "Cada 30 min": {
+      "main": [[{ "node": "Re-enganchar abandonos", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

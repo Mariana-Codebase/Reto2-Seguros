@@ -1,5 +1,5 @@
 /* =========================================================================
-   Clara · Arquitectura — deck de capas + pipeline/tools
+   Lara · Arquitectura — deck de capas + pipeline/tools
 ========================================================================= */
 "use strict";
 

@@ -107,7 +107,7 @@ def purge_old_sessions(ttl_hours: int | None = None) -> int:
 
 # --------------------------------------------------------------------------
 # Solicitudes: la bandeja del asesor / aseguradora.
-# Colsubsidio no emite pólizas: Clara empaqueta cada vinculación y la
+# Colsubsidio no emite pólizas: Lara empaqueta cada vinculación y la
 # transmite aquí para que el asesor la gestione con la aseguradora.
 # --------------------------------------------------------------------------
 def upsert_solicitud(solicitud_id: str, session_id: str, tipo: str, producto: str | None,
@@ -240,6 +240,24 @@ def set_estado_oferta(oferta_id: str, estado: str) -> bool:
         {"$set": {"estado": estado, "updated_at": _now()}},
     )
     return result.matched_count > 0
+
+
+def limpiar_ofertas() -> int:
+    """Borra la bandeja de ofertas salientes (para reiniciar la demo). Devuelve
+    cuántas se eliminaron."""
+    return _db()["ofertas"].delete_many({}).deleted_count
+
+
+def oferta_reciente(perfil_id: str, producto_id: str, dias: int = 15) -> bool:
+    """True si ya se generó una oferta del mismo producto para el mismo perfil
+    dentro de los últimos `dias` (para no repetir/spamear al cliente)."""
+    if not perfil_id or not producto_id:
+        return False
+    limite = (dt.datetime.now() - dt.timedelta(days=dias)).isoformat(timespec="seconds")
+    return _db()["ofertas"].count_documents({
+        "perfil_id": perfil_id, "producto": producto_id,
+        "created_at": {"$gte": limite},
+    }) > 0
 
 
 def stats() -> dict[str, int]:

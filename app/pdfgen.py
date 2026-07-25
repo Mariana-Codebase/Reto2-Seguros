@@ -52,7 +52,7 @@ class _Doc(FPDF):
         self.set_xy(28, 18)
         self.set_text_color(*GRAY)
         self.set_font("helvetica", "", 9)
-        self.cell(0, 5, sanitize("Seguros - Asesora digital Clara"),
+        self.cell(0, 5, sanitize("Seguros - Asesora digital Lara"),
                   new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.set_draw_color(*GREEN)
         self.set_line_width(0.6)
@@ -64,7 +64,7 @@ class _Doc(FPDF):
         self.set_x(12)
         self.set_text_color(*GRAY)
         self.set_font("helvetica", "", 7.5)
-        txt = ("Documento generado por Clara. Datos tratados conforme a la Ley 1581 de 2012. "
+        txt = ("Documento generado por Lara. Datos tratados conforme a la Ley 1581 de 2012. "
                "Colsubsidio - NIT 860.007.336-1.")
         self.multi_cell(0, 4, sanitize(txt), align="C")
 
@@ -119,7 +119,7 @@ def generar_resumen_pdf(session_id: str, perfil: dict[str, Any], opciones: list[
     pdf.set_margins(12, 12, 12)
     pdf.add_page()
     _title(pdf, "Resumen de tu recomendacion de seguros",
-           "Preparado por Clara con base en el perfil que compartiste.")
+           "Preparado por Lara con base en el perfil que compartiste.")
 
     _section(pdf, "Perfil detectado")
     pdf.set_x(pdf.l_margin)

@@ -1,25 +1,23 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agente de ofertas — Clara | Colsubsidio × 30X</title>
-<meta name="description" content="Segundo agente: reacciona a eventos de las bases de Colsubsidio (crédito desembolsado, alza de ingreso, inactividad) y envía la oferta pertinente de seguro o crédito.">
-<meta name="theme-color" content="#ffd000">
+<title>Cody — Agente proactivo | Colsubsidio × 30X</title>
+<meta name="description" content="Cody detecta eventos y oportunidades, recibe contexto de Lara mediante n8n y activa ofertas de seguros pertinentes, explicables y sin spam.">
 <script>
-  (function(){try{var t=localStorage.getItem("clara-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+  (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css?v=nav6">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="stylesheet" href="/static/css/styles.css?v=nav-maicol-cody">
 <style>
-  .of-wrap{max-width:1120px;margin:0 auto;padding:28px 20px 60px}
+  .of-wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
   .of-head h1{margin:0;font-size:26px}
-  .of-head p{margin:6px 0 0;color:var(--muted);max-width:720px}
-  .of-cols{display:grid;grid-template-columns:340px 1fr;gap:20px;margin-top:20px}
-  @media(max-width:880px){.of-cols{grid-template-columns:1fr}}
+  .of-head p{margin:6px 0 0;color:var(--muted);max-width:760px}
+  .of-cols{display:grid;grid-template-columns:330px 1fr;gap:20px;margin-top:18px}
+  @media(max-width:900px){.of-cols{grid-template-columns:1fr}}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
   .card h3{margin:0 0 4px;font-size:15px}
   .card .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
@@ -28,50 +26,142 @@
   select:focus,input:focus{outline:none;border-color:var(--primary)}
   .btn-run{margin-top:14px;width:100%;font:inherit;font-weight:700;font-size:14px;padding:11px;border-radius:11px;border:none;background:var(--primary);color:#fff;cursor:pointer}
   .btn-run:hover{background:var(--primary-d)}
-  .of-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-  .of-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
+  .btn-run.sec{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+  .btn-run.on{background:var(--warn);color:#1a1200}
+
+  /* ---- Diagrama de flujo (estilo n8n) ---- */
+  .flow{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 22px;margin-top:16px;box-shadow:var(--shadow-sm)}
+  .flow h3{margin:0 0 2px;font-size:15px}
+  .flow .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .fl{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:6px}
+  .fcol{display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0}
+  .fcol.branches{gap:10px}
+  .node{position:relative;background:var(--surface-2);border:1.5px solid var(--line-2);border-radius:12px;padding:11px 13px;min-width:158px;transition:border-color .25s,box-shadow .25s,transform .25s}
+  .node .ntop{display:flex;align-items:center;gap:8px}
+  .node .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px;background:var(--primary-soft);color:var(--primary-d);flex:none}
+  .node b{font-size:13px;display:block}
+  .node small{color:var(--muted);font-size:11.5px;display:block;margin-top:3px;line-height:1.35}
+  .node .cnt{position:absolute;top:-9px;right:-9px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--primary);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+  .node.brain{border-color:var(--primary);background:var(--primary-soft)}
+  .node.brain .ico{background:var(--primary);color:#fff}
+  .node.mora .ico{background:var(--warn-soft);color:var(--warn)} .node.mora .cnt{background:var(--warn);color:#1a1200}
+  .node.dedup .ico{background:var(--info-soft);color:var(--info)} .node.dedup .cnt{background:var(--info)}
+  .node.reeng .ico{background:var(--warn-soft);color:var(--warn)} .node.reeng .cnt{background:var(--warn);color:#1a1200}
+  .node.reeng.pulse{border-color:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+  .node.envio{border-color:var(--primary)} .node.envio .ico{background:var(--primary);color:#fff}
+  .node.pulse{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);transform:translateY(-2px)}
+  .node.mora.pulse{border-color:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+  .node.dedup.pulse{border-color:var(--info);box-shadow:0 0 0 4px var(--info-soft)}
+  .conn{display:flex;align-items:center;padding:0 4px;color:var(--line-2)}
+  .conn svg{width:40px;height:22px}
+  .conn.tall{align-items:stretch}
+  .fanwrap{display:flex;align-items:center}
+  .fan{display:flex;flex-direction:column;justify-content:center;padding:0 2px}
+  .fan svg{width:34px}
+
+  .of-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .of-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 15px;min-width:112px}
   .of-kpi b{font-size:20px;color:var(--primary-d)}
   [data-theme="dark"] .of-kpi b{color:var(--primary)}
   .of-kpi span{display:block;font-size:12px;color:var(--muted)}
-  .oferta{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-bottom:12px}
+
+  .oferta{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:11px;animation:pop .35s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .oferta.fade{animation:fade .5s ease forwards}
+  @keyframes fade{to{opacity:.25;filter:grayscale(.6)}}
   .oferta-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .oferta-top b{font-size:15px}
+  .oferta-top b{font-size:14.5px}
   .tipo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:3px 9px;border-radius:999px}
   .tipo.seguro{background:var(--primary-soft);color:var(--primary-d)}
   .tipo.credito{background:var(--info-soft);color:var(--info)}
   .oferta .evento{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
-  .oferta .msg{margin:8px 0;font-size:13px;background:var(--surface-2);border-radius:9px;padding:9px 11px;border:1px solid var(--line)}
+  .oferta .msg{margin:8px 0;font-size:12.5px;background:var(--surface-2);border-radius:9px;padding:8px 10px;border:1px solid var(--line)}
   .oferta .razon{font-size:12.5px;color:var(--muted)}
   .oferta .cross{margin-top:8px;font-size:12px;padding:7px 10px;border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 8px 8px 0}
   .est{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}
   .est.generada{background:var(--warn-soft);color:var(--warn)}
   .est.enviada{background:var(--primary);color:#fff}
-  .empty{border:1px dashed var(--line-2);border-radius:13px;padding:34px;text-align:center;color:var(--muted)}
+  .empty{border:1px dashed var(--line-2);border-radius:13px;padding:30px;text-align:center;color:var(--muted)}
+  .badge-mini{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:2px 7px;border-radius:999px;margin-left:6px}
+  .badge-mini.mora{background:var(--warn-soft);color:var(--warn)}
+  .listhead{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 8px}
+  .listhead h3{font-size:14px;margin:0;color:var(--muted)}
+  .listhead span{font-size:12px;color:var(--muted)}
+  .liveflag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warn)}
+  .liveflag .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.25}}
+
+  /* ---- Cody · narrativa visual del flujo ---- */
+  .of-wrap{padding-top:42px}
+  .of-head{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:end;margin-bottom:26px}
+  .of-head .eyebrow{margin-bottom:15px}
+  .of-head h1{font-size:clamp(38px,5vw,62px);line-height:1;letter-spacing:-1.5px;max-width:650px}
+  .of-head h1 em{font-style:normal;color:var(--primary)}
+  .of-head p{font-size:16px;max-width:540px;margin:0}
+  .system-status{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .system-status span{display:inline-flex;align-items:center;gap:7px;font:600 10px var(--mono);padding:6px 9px;border:1px solid var(--line);background:var(--surface);border-radius:999px;color:var(--muted)}
+  .system-status i{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+  .flow{border-radius:24px;padding:26px;margin-top:0;background:linear-gradient(135deg,var(--surface),color-mix(in srgb,var(--surface) 86%,var(--primary-soft)));box-shadow:var(--shadow)}
+  .flow-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}
+  .flow-head h3{font-size:19px}
+  .flow-kicker{font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.45px;color:var(--primary)}
+  .flow-legend{display:flex;align-items:center;gap:7px;font:600 10px var(--mono);color:var(--muted);white-space:nowrap}
+  .flow-legend i{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:blink 1.5s infinite}
+  .cody-flow{display:grid;grid-template-columns:1fr 54px 1fr 54px 1.2fr 54px 1fr;align-items:center}
+  .flow-stage{position:relative;min-height:170px;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:18px;display:flex;flex-direction:column}
+  .flow-stage .stage-num{font:600 10px var(--mono);color:var(--muted);margin-bottom:24px}
+  .flow-stage .stage-icon{width:42px;height:42px;border-radius:13px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:18px;margin-bottom:13px}
+  .flow-stage b{font-size:14px}
+  .flow-stage small{display:block;color:var(--muted);font-size:11.5px;line-height:1.45;margin-top:5px}
+  .flow-stage.orchestrator{border-color:#ff8b7c;background:color-mix(in srgb,var(--surface) 92%,#ff6d5a)}
+  .flow-stage.orchestrator .stage-icon{background:#ff6d5a;color:white;font-weight:800;font-size:13px}
+  .flow-stage.cody{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .flow-stage.cody .stage-icon{background:var(--primary);color:#fff}
+  .flow-arrow{height:1px;background:var(--line-2);position:relative}
+  .flow-arrow::after{content:"";position:absolute;right:0;top:-4px;width:8px;height:8px;border-top:2px solid var(--muted);border-right:2px solid var(--muted);transform:rotate(45deg)}
+  .decision-stack{display:grid;gap:7px;margin-top:12px}
+  .decision-chip{position:relative;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:7px 29px 7px 9px;font-size:10.5px;color:var(--ink-2)}
+  .decision-chip .cnt{position:absolute;right:7px;top:6px;min-width:18px;height:18px;border-radius:6px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-weight:800}
+  .flow-stage.pulse,.decision-chip.pulse{border-color:var(--ok);box-shadow:0 0 0 4px var(--ok-soft);transform:translateY(-2px)}
+  .flow-caption{margin:18px 0 0;display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11.5px}
+  .flow-caption b{color:var(--ink)}
+  @media(max-width:960px){
+    .of-head{grid-template-columns:1fr;gap:16px}
+    .cody-flow{grid-template-columns:1fr;gap:10px}
+    .flow-arrow{width:1px;height:22px;justify-self:center}
+    .flow-arrow::after{right:-4px;top:auto;bottom:0;transform:rotate(135deg)}
+    .flow-stage{min-height:0}
+  }
+  @media(max-width:640px){
+    .nav .product{display:flex}.nav .product span{display:none}
+    .of-wrap{padding:28px 20px 48px}
+    .of-head h1{font-size:39px}
+    .flow{padding:22px 16px}
+    .flow-head{display:block}.flow-legend{margin-top:10px}
+  }
 </style>
 </head>
 <body>
 <header class="nav">
   <div class="nav-inner">
     <div class="brandlock">
-      <span class="cobrand" aria-label="Colsubsidio por 30X">
-        <img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio">
-        <span class="xsign">×</span>
-        <img class="logo-30x" src="/static/img/30x.png" alt="30X">
-      </span>
+      <span class="cobrand"><img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio"><span class="xsign">×</span><img class="logo-30x" src="/static/img/30x.png" alt="30X"></span>
       <span class="vdiv"></span>
-      <div class="product">
-        <div class="mark">C</div>
-        <div>
-          <b>Clara</b>
-          <span>Asesora digital de seguros</span>
-        </div>
-      </div>
+      <div class="product"><div class="mark">C</div><div><b>Cody</b><span>Agente proactivo de seguros</span></div></div>
     </div>
-    <nav class="nav-links">
-      <button onclick="location.href='/'">Inicio</button>
-      <button onclick="location.href='/#demo'">Demo interactiva</button>
-      <button onclick="location.href='/asesor'" title="Bandeja de vinculaciones que Clara transmite al asesor">Panel del asesor</button>
-      <button class="active" onclick="location.href='/ofertas'" title="Segundo agente: ofertas proactivas por eventos">Agente de ofertas</button>
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav-links" id="mainNav" aria-label="Navegación principal">
+      <a href="/">Inicio</a>
+      <a href="/#demo">Probar Lara</a>
+      <a href="/#ecosistema">Cómo funciona</a>
+      <a href="/#arquitectura">Tecnología</a>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a class="nav-agent-link active" href="/ofertas" aria-current="page">
+        <span class="nav-agent-dot"></span>Cody
+      </a>
+      <a class="nav-secondary-link" href="/asesor">Panel asesor</a>
     </nav>
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
       <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -82,112 +172,257 @@
 
 <div class="of-wrap">
   <div class="of-head">
-    <h1>Agente de ofertas</h1>
-    <p>Cody no espera a que el afiliado escriba: reacciona a <b>eventos</b> de las bases de Colsubsidio
-      (crédito de vivienda, alza de ingreso, cumpleaños, inactividad) y, con automatización inteligente,
-      elige la <b>oferta de seguro más pertinente</b>, la envía y actualiza el perfil de esa persona.
-      Aquí puedes simular un evento y ver la decisión.</p>
+    <div>
+      <span class="eyebrow">Agente 02 · Activación proactiva</span>
+      <h1>Cody convierte señales en <em>oportunidades.</em></h1>
+    </div>
+    <div>
+      <p>No espera a que el afiliado vuelva. Recibe eventos del ecosistema y contexto de Lara a través de
+        <b>n8n</b>, decide la acción pertinente y protege la experiencia con reglas anti-spam.</p>
+      <div class="system-status" aria-label="Estado del ecosistema">
+        <span><i></i>Lara conectada</span>
+        <span><i></i>n8n orquestando</span>
+        <span><i></i>Cody listo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RECORRIDO DEL EVENTO ================= -->
+  <div class="flow">
+    <div class="flow-head">
+      <div>
+        <span class="flow-kicker">El viaje de una señal</span>
+        <h3>Qué ocurre desde el evento hasta el mensaje</h3>
+        <p class="sub">Una secuencia fácil de explicar al jurado y auditable para el equipo.</p>
+      </div>
+      <span class="flow-legend"><i></i> Flujo operativo</span>
+    </div>
+    <div class="cody-flow">
+      <article class="flow-stage" id="n-trigger">
+        <span class="stage-num">01 · SEÑAL</span>
+        <span class="stage-icon">⚡</span>
+        <b>Algo cambia</b>
+        <small>Un evento de Colsubsidio, un barrido programado o una conversación pendiente de Lara.</small>
+      </article>
+      <span class="flow-arrow" aria-hidden="true"></span>
+      <article class="flow-stage orchestrator">
+        <span class="stage-num">02 · ORQUESTA</span>
+        <span class="stage-icon">n8n</span>
+        <b>n8n entrega el contexto</b>
+        <small>Normaliza el evento y llama al endpoint correcto sin tomar decisiones comerciales.</small>
+      </article>
+      <span class="flow-arrow" aria-hidden="true"></span>
+      <article class="flow-stage cody" id="n-brain">
+        <span class="stage-num">03 · DECIDE</span>
+        <span class="stage-icon">C</span>
+        <b>Cody evalúa la acción</b>
+        <small>Combina regla explicable, propensión y memoria anti-spam.</small>
+        <div class="decision-stack">
+          <span class="decision-chip" id="n-seguro">Oferta pertinente <b class="cnt" id="c-seguro">0</b></span>
+          <span class="decision-chip" id="n-reeng">Retomar a Lara <b class="cnt" id="c-reeng">0</b></span>
+          <span class="decision-chip" id="n-dedup">Suprimir repetición <b class="cnt" id="c-dedup">0</b></span>
+        </div>
+      </article>
+      <span class="flow-arrow" aria-hidden="true"></span>
+      <article class="flow-stage" id="n-envio">
+        <span class="stage-num">04 · ACTIVA</span>
+        <span class="stage-icon">↗</span>
+        <b>Mensaje por el canal correcto</b>
+        <small>WhatsApp o correo, con la razón de la recomendación y continuidad de contexto.</small>
+        <span class="cnt" id="c-envio" hidden>0</span>
+      </article>
+    </div>
+    <p class="flow-caption"><b>Principio clave:</b> Lara conversa, n8n transporta, Cody decide con reglas y el asesor finaliza cuando corresponde.</p>
   </div>
 
   <div class="of-cols">
     <div>
-      <div class="card">
-        <h3>Simular un evento</h3>
-        <p class="hint">Como cuando Colsubsidio detecta un cambio en el afiliado y activa a Cody.</p>
-        <label class="fld" for="serie">Afiliado (SERIE)</label>
-        <select id="serie"></select>
-        <label class="fld" for="evento">Evento</label>
-        <select id="evento"></select>
-        <label class="fld" for="canal">Enviar (simulado)</label>
-        <select id="canal"><option value="true">Sí, enviar por su canal</option><option value="false">No, solo generar</option></select>
-        <button class="btn-run" id="run">Ejecutar agente de ofertas</button>
+      <div class="card acc">
+        <h3>⚡ Explorar oportunidades</h3>
+        <p class="hint">Cody recorre una muestra y decide una acción por afiliado. Es la ruta que n8n activa cada día.</p>
+        <label class="fld" for="muestra">Afiliados a recorrer</label>
+        <input id="muestra" type="number" min="1" max="40" value="12">
+        <button class="btn-run" id="barrido">Ejecutar barrido</button>
+        <button class="btn-run sec" id="auto">▶ Demo automática (corre solo)</button>
+        <button class="btn-run sec" id="reset" style="margin-top:8px">🧹 Limpiar demo (empezar de cero)</button>
+      </div>
+      <div class="card acc" style="margin-top:14px">
+        <h3>💬 Continuar con Lara</h3>
+        <p class="hint">Cody recibe el interés que Lara ya detectó y retoma la conversación sin pedirle al afiliado que empiece de cero.</p>
+        <button class="btn-run" id="reenganche">Re-enganchar abandonos</button>
       </div>
       <div class="card" style="margin-top:14px">
-        <h3>Portafolio de crédito</h3>
-        <p class="hint">Sacado del portafolio Colsubsidio; el agente lo cruza con los seguros.</p>
-        <div id="creditos"></div>
+        <h3>Simular un evento puntual</h3>
+        <p class="hint">Como lo haría otra base de Colsubsidio (o n8n) al detectar un cambio en un cliente.</p>
+        <label class="fld" for="serie">Afiliado (muestra demo)</label>
+        <select id="serie"></select>
+        <label class="fld" for="serieReal">…o una SERIE real de la base</label>
+        <input id="serieReal" type="text" inputmode="numeric" placeholder="p. ej. 1">
+        <label class="fld" for="evento">Evento</label>
+        <select id="evento"></select>
+        <button class="btn-run" id="run">Activar a Cody</button>
       </div>
     </div>
 
     <div>
       <div class="of-kpis" id="kpis"></div>
-      <div id="lista"><div class="empty">Aún no hay ofertas. Simula un evento a la izquierda.</div></div>
+      <div class="listhead">
+        <h3>Actividad de Cody</h3>
+        <span id="liststat"></span>
+      </div>
+      <div id="lista"><div class="empty">Aún no hay ofertas. Dale a “Ejecutar barrido” o “Demo automática”.</div></div>
     </div>
   </div>
 </div>
 
 <script>
 "use strict";
+const menuToggle = document.getElementById("menuToggle");
+const mainNav = document.getElementById("mainNav");
+menuToggle.addEventListener("click", () => {
+  const open = menuToggle.getAttribute("aria-expanded") === "true";
+  menuToggle.setAttribute("aria-expanded", String(!open));
+  mainNav.classList.toggle("open", !open);
+});
+mainNav.addEventListener("click", () => {
+  menuToggle.setAttribute("aria-expanded", "false");
+  mainNav.classList.remove("open");
+});
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem("clara-theme", next); } catch (e) {}
+});
+const CAP = 15;                     // máximo de ofertas visibles (las demás se van)
+const acum = {seguro:0, reeng:0, dedup:0, envio:0};  // contadores del flujo
+let autoTimer = null;
+
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
 
 async function cargarControles(){
   const [demo, cat] = await Promise.all([
-    fetch("/api/afiliados-demo").then(r=>r.json()),
+    fetch("/api/afiliados-demo").then(r=>r.json()).catch(()=>({afiliados:[]})),
     fetch("/api/ofertas/catalogo").then(r=>r.json())
   ]);
-  const serie = document.getElementById("serie");
-  demo.afiliados.forEach(a=>{
+  const serie=document.getElementById("serie");
+  (demo.afiliados||[]).forEach(a=>{
     const o=document.createElement("option");o.value=a.serie;
-    o.textContent="SERIE "+a.serie+" · "+a.arquetipo_desc;serie.appendChild(o);
+    o.textContent="SERIE "+a.serie+" · "+(a.arquetipo_desc||"");serie.appendChild(o);
   });
   const evento=document.getElementById("evento");
   cat.eventos.filter(e=>e.evento!=="(cualquier otro)").forEach(e=>{
     const o=document.createElement("option");o.value=e.evento;
     o.textContent=e.evento+" → "+e.ofrece;evento.appendChild(o);
   });
-  const cr=document.getElementById("creditos");
-  cr.innerHTML=Object.values(cat.creditos).map(c=>
-    '<div style="font-size:12.5px;margin-bottom:7px"><b>'+esc(c.nombre)+'</b><br><span style="color:var(--muted)">'+esc(c.desc)+'</span></div>').join("");
+}
+
+/* ---- diagrama de flujo: contadores + pulso en las ramas activas ---- */
+function setCnt(id,n){document.getElementById(id).textContent=n;}
+function pulse(nodeId){
+  const el=document.getElementById(nodeId); if(!el)return;
+  el.classList.add("pulse"); setTimeout(()=>el.classList.remove("pulse"),700);
+}
+function pintarFlujo(){
+  setCnt("c-seguro",acum.seguro); setCnt("c-reeng",acum.reeng);
+  setCnt("c-dedup",acum.dedup); setCnt("c-envio",acum.envio);
+}
+function registrarResultado(x){
+  // suma al flujo según la rama que tomó cada afiliado
+  pulse("n-brain");
+  if(!x.oferta){ if(x.motivo&&/anti-spam/i.test(x.motivo)){acum.dedup++;pulse("n-dedup");} return; }
+  if(x.reeng){ acum.reeng++; pulse("n-reeng"); }
+  else { acum.seguro++; pulse("n-seguro"); }
+  acum.envio++; pulse("n-envio");
 }
 
 function ofertaCard(o){
   const p=o.payload||o;
   const cross=p.cross?'<div class="cross"><b>'+esc(p.cross.nombre)+'</b> — '+esc(p.cross.razon)+'</div>':'';
-  return '<div class="oferta"><div class="oferta-top"><b>'+esc(p.nombre)+'</b>'+
+  const aseg=(p.tipo==="seguro"&&p.aseguradora)?'<div class="razon" style="margin-top:3px"><b>Aseguradora:</b> '+esc(p.aseguradora)+'</div>':'';
+  const moraB=(o.evento==="en_mora_normalizacion")?'<span class="badge-mini mora">mora → normalización</span>':'';
+  return '<div class="oferta"><div class="oferta-top"><b>'+esc(p.nombre)+moraB+'</b>'+
     '<span><span class="tipo '+esc(p.tipo)+'">'+esc(p.tipo)+'</span> <span class="est '+esc(o.estado||"generada")+'">'+esc(o.estado||"generada")+'</span></span></div>'+
     '<div class="evento">evento: '+esc(o.evento||p.evento)+' · perfil '+esc(o.perfil_id||"")+'</div>'+
     '<div class="msg">'+esc(p.mensaje)+'</div>'+
-    '<div class="razon">'+esc(p.razon)+'</div>'+cross+'</div>';
+    '<div class="razon">'+esc(p.razon)+'</div>'+aseg+cross+'</div>';
 }
 
 async function refrescar(){
   const d=await fetch("/api/ofertas/salientes").then(r=>r.json());
-  const ofertas=d.ofertas||[];
-  const enviadas=ofertas.filter(o=>o.estado==="enviada").length;
-  const seguros=ofertas.filter(o=>o.tipo==="seguro").length;
+  const todas=d.ofertas||[];
+  const enviadas=todas.filter(o=>o.estado==="enviada").length;
+  const seguros=todas.filter(o=>o.tipo==="seguro").length;
   document.getElementById("kpis").innerHTML=
-    '<div class="of-kpi"><b>'+ofertas.length+'</b><span>ofertas generadas</span></div>'+
+    '<div class="of-kpi"><b>'+todas.length+'</b><span>ofertas generadas</span></div>'+
     '<div class="of-kpi"><b>'+enviadas+'</b><span>enviadas al cliente</span></div>'+
-    '<div class="of-kpi"><b>'+seguros+'</b><span>de seguro</span></div>'+
-    '<div class="of-kpi"><b>'+(ofertas.length-seguros)+'</b><span>de crédito</span></div>';
-  const lista=document.getElementById("lista");
-  lista.innerHTML=ofertas.length?ofertas.map(ofertaCard).join(""):'<div class="empty">Aún no hay ofertas. Simula un evento a la izquierda.</div>';
+    '<div class="of-kpi"><b>'+seguros+'</b><span>recomendaciones</span></div>'+
+    '<div class="of-kpi"><b>'+acum.dedup+'</b><span>repeticiones evitadas</span></div>';
+  // Cap de 15: solo las más recientes; las demás "se van".
+  const vis=todas.slice(0,CAP);
+  document.getElementById("liststat").textContent =
+    todas.length>CAP ? ("mostrando 15 más recientes de "+todas.length) : (todas.length+" en total");
+  document.getElementById("lista").innerHTML =
+    vis.length ? vis.map(ofertaCard).join("") : '<div class="empty">Cody está listo. Explora oportunidades o activa un evento para verlo decidir.</div>';
+}
+
+function serieElegida(){
+  const real=(document.getElementById("serieReal").value||"").trim();
+  return real || document.getElementById("serie").value;
 }
 
 document.getElementById("run").addEventListener("click",async()=>{
   const btn=document.getElementById("run");btn.disabled=true;btn.textContent="Ejecutando…";
   try{
-    await fetch("/api/eventos",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({serie:document.getElementById("serie").value,
-        evento:document.getElementById("evento").value,
-        enviar:document.getElementById("canal").value==="true"})});
-    await refrescar();
-  }finally{btn.disabled=false;btn.textContent="Ejecutar agente de ofertas";}
+    const evento=document.getElementById("evento").value;
+    const r=await fetch("/api/eventos",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({serie:serieElegida(),evento:evento,enviar:true})}).then(r=>r.json());
+    registrarResultado({serie:r.perfil_id,oferta:r.oferta&&r.oferta.nombre,tipo:r.oferta&&r.oferta.tipo,mora:r.mora_detectada,motivo:r.motivo});
+    pintarFlujo(); await refrescar();
+  }finally{btn.disabled=false;btn.textContent="Activar a Cody";}
 });
 
-cargarControles().then(refrescar);
-setInterval(refrescar,7000);
-</script>
-<script>
-(function () {
-  var btn = document.getElementById("themeToggle");
-  if (!btn) return;
-  btn.addEventListener("click", function () {
-    var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("clara-theme", next); } catch (e) { /* noop */ }
-  });
-})();
+async function correrBarrido(muestra){
+  const r=await fetch("/api/ofertas/barrido",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({muestra:muestra})}).then(r=>r.json());
+  // anima cada resultado escalonado para que se vea "trabajando"
+  (r.resultados||[]).forEach((x,i)=>setTimeout(()=>{registrarResultado(x);pintarFlujo();}, i*140));
+  setTimeout(refrescar, (r.resultados||[]).length*140 + 200);
+  return r;
+}
+
+document.getElementById("barrido").addEventListener("click",async()=>{
+  const btn=document.getElementById("barrido");btn.disabled=true;btn.textContent="Recorriendo…";
+  try{ await correrBarrido(parseInt(document.getElementById("muestra").value||"12",10)); }
+  finally{ setTimeout(()=>{btn.disabled=false;btn.textContent="Ejecutar barrido";}, 900); }
+});
+
+/* ---- Demo automática: el agente corre solo, por lotes pequeños ---- */
+function setAuto(on){
+  const btn=document.getElementById("auto");
+  const head=document.getElementById("liststat");
+  if(on){
+    btn.classList.add("on"); btn.textContent="⏸ Pausar demo automática";
+    correrBarrido(4);
+    autoTimer=setInterval(()=>correrBarrido(4), 4500);
+  }else{
+    btn.classList.remove("on"); btn.textContent="▶ Demo automática (corre solo)";
+    clearInterval(autoTimer); autoTimer=null;
+  }
+}
+document.getElementById("auto").addEventListener("click",()=>setAuto(!autoTimer));
+
+document.getElementById("reset").addEventListener("click",async()=>{
+  if(autoTimer) setAuto(false);
+  const btn=document.getElementById("reset");btn.disabled=true;btn.textContent="Limpiando…";
+  try{
+    await fetch("/api/ofertas/reset",{method:"POST"});
+    acum.mora=acum.seguro=acum.credito=acum.dedup=acum.envio=0;
+    pintarFlujo(); await refrescar();
+  }finally{btn.disabled=false;btn.textContent="🧹 Limpiar demo (empezar de cero)";}
+});
+
+cargarControles().then(()=>{pintarFlujo();refrescar();});
+setInterval(()=>{ if(!autoTimer) refrescar(); }, 9000);
 </script>
 </body>
 </html>

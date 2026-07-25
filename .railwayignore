@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.env.*
+var/docs
+node_modules
+*.xlsx
+*.csv
+scripts/__pycache__
+.claude
+.vscode

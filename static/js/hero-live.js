@@ -1,5 +1,5 @@
 /* =========================================================================
-   Clara · Hero live chat — bucle lento y muy visible
+   Lara · Hero live chat — bucle lento y muy visible
 ========================================================================= */
 "use strict";
 
@@ -8,23 +8,20 @@
     const body = document.getElementById("heroLiveChat");
     const statusEl = document.getElementById("heroLiveStatus");
     if (!body) {
-      console.warn("[Clara] #heroLiveChat no encontrado");
+      console.warn("[Lara] #heroLiveChat no encontrado");
       return;
     }
 
     const lines = [
-      { role: "bot", text: "Hola, soy Clara. ¿Eres afiliado Colsubsidio? Con tu SERIE o datos básicos te verifico." },
-      { role: "user", text: "Sí. SERIE 10482. Quiero proteger el crédito de vivienda." },
+      { role: "bot", text: "Hola, soy Lara. Para recomendarte lo adecuado, primero quiero entender tu situación." },
+      { role: "user", text: "Vivo en arriendo con mi pareja e hijo." },
       {
         role: "bot",
-        text: "Te encontré activo. Con tu perfil 360 y el crédito, te conviene el Seguro de Vida Deudores.",
-        stamp: "✓ Mongo · propensión · ofertas"
+        text: "Con base en tu perfil te propongo el Seguro de Vida: protege el ingreso de tu familia.",
+        stamp: "✓ respaldado · $28.900/mes"
       },
-      { role: "user", text: "Me interesa. ¿Cómo sigo con la vinculación?" },
-      {
-        role: "bot",
-        text: "Dejo tu caso listo y lo paso al asesor para contrato, firma y pago. Yo me quedo en la recomendación."
-      }
+      { role: "user", text: "Me interesa. ¿Me lo envías por escrito?" },
+      { role: "bot", text: "Te envié el resumen a tu correo y aquí tienes tu enlace de pago seguro." }
     ];
 
     let gen = 0;
@@ -144,7 +141,7 @@
       gen += 1;
       body.style.transition = "opacity .35s ease";
       body.style.opacity = "1";
-      console.info("[Clara] hero live chat started");
+      console.info("[Lara] hero live chat started");
       play(gen);
     }
 

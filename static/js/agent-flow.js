@@ -1,7 +1,7 @@
 /**
- * Clara · Agent Flow — cerebro animado (hero).
+ * Lara · Agent Flow — workflow animado del agente (hero).
  * Vanilla SVG + CSS. Sin librerías externas.
- * Flujo real: Afiliado → Identifica → Mongo → Clara → [Perfil 360 · Ofertas · Alertas] → Recomienda / escala
+ * Flujo real: Afiliado → Consulta → Lara → [Perfil · Coberturas · Cotizar] → Decide → Respuesta
  */
 (function () {
   "use strict";
@@ -9,50 +9,50 @@
   const ROOT_ID = "agentFlow";
   const RESUME_MS = 5000;
   const CYCLE_PAUSE_MS = 2200;
-  const HOLD_MS = 2800;
+  const HOLD_MS = 3000; // cada nodo se muestra expandido 3s
 
   const NODES = {
     user: {
       name: "Afiliado",
-      hint: "Llega al chat",
-      detail: "Clara pregunta si es afiliado Colsubsidio y abre la conversación por web o WhatsApp.",
-      bullets: ["Canal WhatsApp o web", "Lenguaje natural", "Sin formularios previos"],
+      hint: "Inicia el chat",
+      detail: "La persona llega por chat web o WhatsApp y cuenta qué necesita proteger.",
+      bullets: ["Canal WhatsApp o web", "Habla en lenguaje natural", "Sin formularios previos"],
     },
     query: {
-      name: "Identifica",
-      hint: "SERIE o datos",
-      detail: "Pide la SERIE o datos básicos para ubicar (o crear) al afiliado antes de recomendar.",
-      bullets: ["SERIE Colsubsidio", "Datos básicos", "Primer filtro"],
+      name: "Consulta",
+      hint: "Entra al sistema",
+      detail: "El mensaje llega a un solo endpoint y abre (o continúa) la sesión en SQLite.",
+      bullets: ["POST /api/chat", "Sesión persistida", "Aviso Ley 1581"],
     },
     agent: {
-      name: "Clara",
-      hint: "Orquesta el cerebro",
-      detail: "Verifica en Mongo, arma el contexto y recomienda.",
-      bullets: ["Verifica el usuario", "Elige herramientas", "Guarda la información."],
+      name: "Lara",
+      hint: "Analiza y decide",
+      detail: "Gemini conversa y pide herramientas. No inventa precios ni coberturas: solo orquesta.",
+      bullets: ["Entiende la intención", "Elige herramientas", "Guardrail de salida"],
     },
     perfil: {
-      name: "Perfil 360",
-      hint: "Quién es y qué necesita",
-      detail: "Clara arma una vista completa de su situación —hogar, vivienda y créditos— y calcula qué seguro encaja mejor, con el porqué.",
-      bullets: ["Vista completa del afiliado", "Vivienda, crédito y hogar", "Oferta con explicación clara"],
+      name: "Perfil",
+      hint: "Propensión",
+      detail: "registrar_perfil + motor de propensión sobre la base real de afiliados.",
+      bullets: ["Datos del hogar y vida", "34 reglas explicables", "Oferta con el porqué"],
     },
-    ofertas: {
-      name: "Ofertas",
-      hint: "Vivienda · crédito",
-      detail: "Consulta ofertas según vivienda/crédito del afiliado en las bases de Colsubsidio.",
-      bullets: ["Vivienda y crédito", "Oferta pertinente", "Cruce con seguros"],
+    coberturas: {
+      name: "Coberturas",
+      hint: "RAG póliza",
+      detail: "consultar_coberturas recupera texto real de la póliza con cita de fuente.",
+      bullets: ["Amparos y exclusiones", "Condiciones reales", "Cero invención"],
     },
-    alertas: {
-      name: "Alertas",
-      hint: "Mora · novedades",
-      detail: "Consulta alertas de mora y novedades para no recomendar a ciegas.",
-      bullets: ["Mora", "Novedades", "Contexto real"],
+    cotizar: {
+      name: "Cotizar",
+      hint: "Motor de reglas",
+      detail: "cotizar / recomendar calculan precio y ranking. El LLM nunca hace cuentas.",
+      bullets: ["Precio determinístico", "Desglose auditable", "Opciones rankeadas"],
     },
     respuesta: {
-      name: "Recomienda",
-      hint: "O escala al asesor",
-      detail: "Clara conversa y recomienda seguros. Actualiza al afiliado y escala a un asesor.",
-      bullets: ["Recomendación clara", "Actualiza + sesión Mongo", "Escala si hay cierre"],
+      name: "Respuesta",
+      hint: "Vuelve al afiliado",
+      detail: "Lara responde con respaldo documental. Luego puede avanzar a contrato, firma y pago.",
+      bullets: ["Lenguaje claro", "Coberturas citadas", "Listo para cerrar"],
     },
   };
 
@@ -61,22 +61,22 @@
     { id: "e-user-query", from: "user", to: "query", d: "M8 50 C14 50, 18 50, 23 50" },
     { id: "e-query-agent", from: "query", to: "agent", d: "M23 50 C29 50, 34 50, 40 50" },
     { id: "e-agent-perfil", from: "agent", to: "perfil", d: "M40 50 C48 32, 54 20, 62 18" },
-    { id: "e-agent-ofertas", from: "agent", to: "ofertas", d: "M40 50 C48 50, 54 50, 62 50" },
-    { id: "e-agent-alertas", from: "agent", to: "alertas", d: "M40 50 C48 68, 54 80, 62 82" },
+    { id: "e-agent-cob", from: "agent", to: "coberturas", d: "M40 50 C48 50, 54 50, 62 50" },
+    { id: "e-agent-cot", from: "agent", to: "cotizar", d: "M40 50 C48 68, 54 80, 62 82" },
     { id: "e-perfil-agent", from: "perfil", to: "agent", d: "M62 18 C54 20, 48 32, 40 50", ret: true },
-    { id: "e-ofertas-agent", from: "ofertas", to: "agent", d: "M62 50 C54 50, 48 50, 40 50", ret: true },
-    { id: "e-alertas-agent", from: "alertas", to: "agent", d: "M62 82 C54 80, 48 68, 40 50", ret: true },
+    { id: "e-cob-agent", from: "coberturas", to: "agent", d: "M62 50 C54 50, 48 50, 40 50", ret: true },
+    { id: "e-cot-agent", from: "cotizar", to: "agent", d: "M62 82 C54 80, 48 68, 40 50", ret: true },
     { id: "e-agent-resp", from: "agent", to: "respuesta", d: "M40 50 C55 92, 75 92, 90 50" },
   ];
 
   const ICONS = {
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    query: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+    query: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     agent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-.5"/><path d="M8 7V6a4 4 0 0 1 4-4"/><path d="M7.5 13H7a3 3 0 0 1 0-6h1"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 16c.8 1.2 2 2 3 2s2.2-.8 3-2"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>',
     perfil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-    ofertas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-    alertas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
-    respuesta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    coberturas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    cotizar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2l1.5 5L13 8h2"/></svg>',
+    respuesta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
   };
 
   function reduceMotion() {
@@ -110,11 +110,11 @@
   function build(root) {
     root.innerHTML = "";
     root.setAttribute("role", "img");
-    root.setAttribute("aria-label", "Cerebro de Clara: identifica, verifica en Mongo, recomienda y escala");
+    root.setAttribute("aria-label", "Flujo animado: cómo trabaja el agente Lara");
 
     const label = document.createElement("div");
     label.className = "af-label";
-    label.innerHTML = '<span class="af-live" aria-hidden="true"></span> Cerebro Clara';
+    label.innerHTML = '<span class="af-live" aria-hidden="true"></span> Agente en vivo';
     root.appendChild(label);
 
     const stage = document.createElement("div");
@@ -315,32 +315,32 @@
     await animateParticle(ctl, ui, "e-user-query", { duration: 700, slot: 0 });
     if (!(await gate())) return;
 
-    // 2. Identifica (SERIE / datos)
+    // 2. Consulta
     setNodeState(N, "agent", "next");
     if (!(await spotlight("query", "active"))) return;
     if (!(await gate())) return;
     await animateParticle(ctl, ui, "e-query-agent", { duration: 750, slot: 0 });
     if (!(await gate())) return;
 
-    // 3. Clara orquesta (Mongo + herramientas)
+    // 3. Lara analiza
     setNodeState(N, "perfil", "next");
-    setNodeState(N, "ofertas", "next");
-    setNodeState(N, "alertas", "next");
+    setNodeState(N, "coberturas", "next");
+    setNodeState(N, "cotizar", "next");
     if (!(await spotlight("agent", "thinking"))) return;
     if (!(await gate())) return;
 
-    // 4. Contexto en paralelo conceptual: perfil → ofertas → alertas
+    // 4. Herramientas una a una
     await animateParticle(ctl, ui, "e-agent-perfil", { duration: 800, slot: 0 });
     if (!(await gate())) return;
     if (!(await spotlight("perfil", "active"))) return;
 
-    await animateParticle(ctl, ui, "e-agent-ofertas", { duration: 800, slot: 1 });
+    await animateParticle(ctl, ui, "e-agent-cob", { duration: 800, slot: 1 });
     if (!(await gate())) return;
-    if (!(await spotlight("ofertas", "active"))) return;
+    if (!(await spotlight("coberturas", "active"))) return;
 
-    await animateParticle(ctl, ui, "e-agent-alertas", { duration: 800, slot: 2 });
+    await animateParticle(ctl, ui, "e-agent-cot", { duration: 800, slot: 2 });
     if (!(await gate())) return;
-    if (!(await spotlight("alertas", "active"))) return;
+    if (!(await spotlight("cotizar", "active"))) return;
 
     // 5. Retorno y decisión
     if (!(await gate())) return;
@@ -348,11 +348,11 @@
       animateParticle(ctl, ui, "e-perfil-agent", { duration: 700, slot: 0, ret: true }),
       (async () => {
         await sleep(80);
-        await animateParticle(ctl, ui, "e-ofertas-agent", { duration: 700, slot: 1, ret: true });
+        await animateParticle(ctl, ui, "e-cob-agent", { duration: 700, slot: 1, ret: true });
       })(),
       (async () => {
         await sleep(160);
-        await animateParticle(ctl, ui, "e-alertas-agent", { duration: 700, slot: 2, ret: true });
+        await animateParticle(ctl, ui, "e-cot-agent", { duration: 700, slot: 2, ret: true });
       })(),
     ]);
     if (!(await gate())) return;
@@ -366,7 +366,7 @@
     await animateParticle(ctl, ui, "e-agent-resp", { duration: 850, slot: 0 });
     if (!(await gate())) return;
 
-    // 6. Recomienda / escala (sin pago ni póliza)
+    // 6. Respuesta
     if (!(await spotlight("respuesta", "active"))) return;
 
     await sleep(CYCLE_PAUSE_MS);
@@ -375,8 +375,6 @@
   function showDetail(ctl, ui, id, nodeEl) {
     const meta = NODES[id];
     if (!meta) return;
-    ctl.detailId = id;
-    ctl.detailNode = nodeEl;
     ui.detail.innerHTML =
       "<h4><span>" + ICONS[id] + "</span>" + meta.name + "</h4>" +
       "<p>" + meta.detail + "</p>" +
@@ -405,37 +403,11 @@
   function hideDetail(ui, ctl) {
     ui.detail.classList.remove("is-open", "is-above");
     ui.detail.setAttribute("aria-hidden", "true");
-    if (ctl) {
-      ctl.detailId = null;
-      ctl.detailNode = null;
-      if (ctl.root) ctl.root.classList.remove("is-detail-open");
-    } else {
+    if (ctl && ctl.root) ctl.root.classList.remove("is-detail-open");
+    else {
       const root = document.getElementById(ROOT_ID);
       if (root) root.classList.remove("is-detail-open");
     }
-  }
-
-  /** Evita que el popup fijo quede flotando al hacer scroll. */
-  function syncDetailOnScroll(ctl, ui) {
-    if (!ui.detail.classList.contains("is-open") || !ctl.detailNode) return;
-    const rect = ctl.detailNode.getBoundingClientRect();
-    const visible = rect.bottom > 40 && rect.top < window.innerHeight - 40;
-    if (!visible) {
-      Object.values(ui.nodeEls).forEach((n) => n.classList.remove("is-hover"));
-      hideDetail(ui, ctl);
-      ctl.root.classList.remove("is-auto-focus");
-      if (ctl.hoverId) {
-        ctl.hoverId = null;
-        scheduleResume(ctl, ui);
-      }
-      return;
-    }
-    const maxW = parseFloat(ui.detail.style.width) || Math.min(220, window.innerWidth * 0.42);
-    let left = rect.left + rect.width / 2;
-    const half = maxW / 2;
-    left = Math.max(half + 8, Math.min(window.innerWidth - half - 8, left));
-    ui.detail.style.left = left + "px";
-    ui.detail.style.top = rect.bottom + 12 + "px";
   }
 
   function setHoverBadge(el, on) {
@@ -555,9 +527,6 @@
       });
       ctl.viewObs.observe(inicio, { attributes: true, attributeFilter: ["class"] });
     }
-
-    ctl.onScroll = function () { syncDetailOnScroll(ctl, ui); };
-    window.addEventListener("scroll", ctl.onScroll, { passive: true, capture: true });
   }
 
   function init() {
@@ -571,9 +540,6 @@
       loopActive: false,
       destroyed: false,
       hoverId: null,
-      detailId: null,
-      detailNode: null,
-      onScroll: null,
       timeouts: new Set(),
       intervals: new Set(),
       resumeTimer: null,
@@ -615,7 +581,6 @@
         ctl.destroyed = true;
         ctl.running = false;
         clearTimers(ctl);
-        if (ctl.onScroll) window.removeEventListener("scroll", ctl.onScroll, { capture: true });
         if (ctl.viewObs) ctl.viewObs.disconnect();
         if (ctl.io) ctl.io.disconnect();
         if (ui.detail && ui.detail.parentNode) ui.detail.parentNode.removeChild(ui.detail);

@@ -34,7 +34,7 @@ logger = logging.getLogger("clara.afiliados_db")
 
 _SIN_ID = {"_id": 0}
 
-# Campos que la conversación con Clara puede modificar sobre un afiliado.
+# Campos que la conversación con Lara puede modificar sobre un afiliado.
 CAMPOS_EDITABLES = {
     "genero", "rango_edad", "rango_salarial", "categoria",
     "segmento_familiar", "segmento_poblacional", "piramide",
@@ -113,6 +113,25 @@ def existe_afiliado(serie: Any) -> dict[str, Any] | None:
     return get_db()["afiliados"].find_one({"serie": s}, _SIN_ID)
 
 
+def muestra_series(n: int = 8) -> list[int]:
+    """Muestra aleatoria de SERIES de la base real (para el barrido autónomo del
+    agente de ofertas). Usa $sample de Mongo; si falla, cae a las primeras N."""
+    n = max(1, min(int(n or 8), 100))
+    db = get_db()
+    try:
+        cur = db["afiliados"].aggregate([
+            {"$sample": {"size": n}},
+            {"$project": {"_id": 0, "serie": 1}},
+        ])
+        series = [d["serie"] for d in cur if d.get("serie") is not None]
+        if series:
+            return series
+    except PyMongoError:
+        logger.warning("No se pudo tomar la muestra aleatoria; se usan las primeras series")
+    return [d["serie"] for d in db["afiliados"].find({}, {"_id": 0, "serie": 1}).limit(n)
+            if d.get("serie") is not None]
+
+
 def perfil_360(serie: Any) -> dict[str, Any] | None:
     """Vista completa del afiliado: datos + viviendas + créditos + eventos
     recientes. None si la serie no existe."""
@@ -143,7 +162,7 @@ def _nueva_serie(db: Any) -> int:
 def crear_afiliado(datos: dict[str, Any]) -> dict[str, Any]:
     """Crea un afiliado nuevo con serie asignada (max serie + 1).
 
-    `datos` trae los campos que Clara recogió en la conversación (minúsculas,
+    `datos` trae los campos que Lara recogió en la conversación (minúsculas,
     mismo esquema de parse_afiliado). Si incluye `vivienda` y/o `credito`
     (dicts), crea también esos registros. Registra el evento "creado" y
     devuelve el documento creado (sin _id)."""
