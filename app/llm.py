@@ -32,10 +32,13 @@ class LLMError(RuntimeError):
 
 
 def _is_vertex_key() -> bool:
-    """Las claves 'AQ....' son de Vertex AI en modo Express y usan el endpoint
-    aiplatform.googleapis.com; las 'AIza...' (AI Studio) usan
-    generativelanguage.googleapis.com."""
-    return settings.gemini_key.startswith("AQ.")
+    """Endpoint efectivo según el PROVEEDOR resuelto, no solo el prefijo de la
+    clave: Vertex AI Express (aiplatform.googleapis.com) cuando el proveedor es
+    'vertex'; en caso contrario la Gemini API / AI Studio
+    (generativelanguage.googleapis.com). Las claves 'AQ....' se detectan como
+    'vertex' por defecto, pero pueden ser de AI Studio: en ese caso basta con
+    fijar LLM_PROVIDER=aistudio en el entorno para enrutar bien."""
+    return settings.llm_provider == "vertex"
 
 
 def _endpoint_url() -> str:
@@ -165,7 +168,13 @@ def _parse_candidate(data: dict[str, Any]) -> dict[str, Any]:
                     args = json.loads(args)
                 except json.JSONDecodeError:
                     args = {}
-            tool_calls.append({"name": fc.get("name", ""), "arguments": args})
+            call = {"name": fc.get("name", ""), "arguments": args}
+            # Gemini 3 firma cada functionCall (thoughtSignature) y exige que se
+            # devuelva tal cual en el historial, o rechaza el siguiente turno.
+            sig = p.get("thoughtSignature")
+            if sig:
+                call["thought_signature"] = sig
+            tool_calls.append(call)
     return {
         "role": "assistant",
         "content": "".join(text_chunks).strip(),
@@ -552,7 +561,12 @@ def _to_gemini_contents(messages: list[dict[str, Any]]) -> tuple[str, list[dict[
             if m.get("content"):
                 parts.append({"text": m["content"]})
             for tc in m.get("tool_calls") or []:
-                parts.append({"functionCall": {"name": tc.get("name", ""), "args": tc.get("arguments") or {}}})
+                part: dict[str, Any] = {"functionCall": {"name": tc.get("name", ""), "args": tc.get("arguments") or {}}}
+                # Devolver la firma que Gemini 3 emitió con la llamada (obligatoria).
+                sig = tc.get("thought_signature")
+                if sig:
+                    part["thoughtSignature"] = sig
+                parts.append(part)
             if parts:
                 contents.append({"role": "model", "parts": parts})
         elif role == "tool":

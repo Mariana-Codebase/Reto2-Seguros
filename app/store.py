@@ -1,9 +1,21 @@
 """
-Persistencia en SQLite (var/clara.db).
+Persistencia en MongoDB (base `colsubsidio`, colecciones sessions /
+audit_log / solicitudes).
 
-Guarda un snapshot JSON de cada sesión tras cada turno y un registro de
-auditoría append-only. Así las sesiones sobreviven a reinicios del servidor
-y toda decisión queda trazada fuera de la memoria del proceso.
+Reemplaza el backend SQLite original (var/clara.db) manteniendo EXACTAMENTE
+la misma API pública: save_session, load_session, append_audit,
+purge_old_sessions, upsert_solicitud, list_solicitudes,
+set_estado_solicitud, stats. Los callers (app/main.py, app/agent.py) no
+requieren cambios.
+
+Decisiones de esquema (documentadas):
+- `sessions` y `solicitudes` usan `_id` = id propio (clave natural única:
+  el id de sesión y la referencia SOL-...). No hace falta un índice extra.
+- `snapshot` y `payload` se guardan como JSON string, igual que en SQLite,
+  para preservar byte a byte el formato de los snapshots existentes.
+- Las fechas se guardan como strings ISO con el mismo `_now()` de siempre
+  (isoformat con segundos), así los datos migrados y los nuevos comparan
+  lexicográficamente sin conversión.
 """
 
 from __future__ import annotations
@@ -11,81 +23,37 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-import sqlite3
-import threading
 from typing import Any
 
+from pymongo import ASCENDING, DESCENDING
+from pymongo.database import Database
+from pymongo.errors import PyMongoError
+
 from .config import settings
+from .mongo import get_db
 
 logger = logging.getLogger("clara.store")
 
-_lock = threading.Lock()
-
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS sessions (
-    id          TEXT PRIMARY KEY,
-    canal       TEXT NOT NULL,
-    estado      TEXT NOT NULL,
-    snapshot    TEXT NOT NULL,          -- JSON completo de la sesión
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS audit_log (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id  TEXT NOT NULL,
-    kind        TEXT NOT NULL,
-    tag         TEXT NOT NULL,
-    descripcion TEXT NOT NULL,
-    at          TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_audit_session ON audit_log(session_id);
-CREATE TABLE IF NOT EXISTS solicitudes (
-    id          TEXT PRIMARY KEY,        -- SOL-... (misma referencia del contrato)
-    session_id  TEXT NOT NULL,
-    tipo        TEXT NOT NULL,           -- vinculacion | escalamiento
-    producto    TEXT,
-    estado      TEXT NOT NULL,           -- pendiente_pago | pagada | enviada_aseguradora | emitida_aseguradora | cerrada
-    payload     TEXT NOT NULL,           -- JSON: perfil, propension, datos, contrato, pago, vinculacion
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
-);
--- Perfil VIVO: la base semilla se enriquece con cada interacción. Es lo que
--- convierte a Colsubsidio en dueño de un perfil claro y creciente por persona.
-CREATE TABLE IF NOT EXISTS perfiles (
-    id           TEXT PRIMARY KEY,       -- SERIE del afiliado, o NA-xxxx si no afiliado
-    es_afiliado  INTEGER NOT NULL,       -- 1 / 0
-    identificador TEXT,                  -- lo que la persona entregó (documento/serie)
-    perfil       TEXT NOT NULL,          -- JSON: base + conversacional + intereses + eventos + propension
-    interacciones INTEGER NOT NULL DEFAULT 0,
-    created_at   TEXT NOT NULL,
-    updated_at   TEXT NOT NULL
-);
--- Bandeja del AGENTE DE OFERTAS (segundo agente, proactivo/saliente).
-CREATE TABLE IF NOT EXISTS ofertas (
-    id          TEXT PRIMARY KEY,
-    perfil_id   TEXT,
-    evento      TEXT NOT NULL,           -- disparador (credito_vivienda, sin_interaccion_30d, ...)
-    tipo        TEXT NOT NULL,           -- seguro | credito
-    producto    TEXT,
-    canal       TEXT,
-    estado      TEXT NOT NULL,           -- generada | enviada | aceptada | descartada
-    payload     TEXT NOT NULL,           -- JSON de la oferta (mensaje, razon, url, ...)
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
-);
-"""
+_indexes_ok = False
 
 
-def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(settings.DB_PATH, check_same_thread=False)
-    conn.execute("PRAGMA journal_mode=WAL")
-    return conn
-
-
-_conn = _connect()
-with _lock:
-    _conn.executescript(_SCHEMA)
-    _conn.commit()
+def _db() -> Database:
+    """Base de datos con los índices asegurados (una sola vez por proceso)."""
+    global _indexes_ok
+    db = get_db()
+    if not _indexes_ok:
+        try:
+            db["audit_log"].create_index([("session_id", ASCENDING)])
+            db["sessions"].create_index([("updated_at", ASCENDING)])
+            db["solicitudes"].create_index([("estado", ASCENDING)])
+            db["perfiles"].create_index([("updated_at", DESCENDING)])
+            db["ofertas"].create_index([("updated_at", DESCENDING)])
+            _indexes_ok = True
+        except PyMongoError:
+            # Sin Mongo disponible los índices se reintentan en el próximo
+            # acceso; la operación que sigue fallará con su propio error.
+            logger.warning("No se pudieron asegurar los índices de Mongo")
+    return db
 
 
 def _now() -> str:
@@ -93,30 +61,25 @@ def _now() -> str:
 
 
 def save_session(session_id: str, canal: str, estado: str, snapshot: dict[str, Any]) -> None:
-    payload = json.dumps(snapshot, ensure_ascii=False)
-    with _lock:
-        _conn.execute(
-            """INSERT INTO sessions (id, canal, estado, snapshot, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(id) DO UPDATE SET
-                 estado = excluded.estado,
-                 snapshot = excluded.snapshot,
-                 updated_at = excluded.updated_at""",
-            (session_id, canal, estado, payload, _now(), _now()),
-        )
-        _conn.commit()
+    payload = json.dumps(snapshot, ensure_ascii=False, default=str)
+    now = _now()
+    _db()["sessions"].update_one(
+        {"_id": session_id},
+        {
+            "$set": {"estado": estado, "snapshot": payload, "updated_at": now},
+            "$setOnInsert": {"id": session_id, "canal": canal, "created_at": now},
+        },
+        upsert=True,
+    )
 
 
 def load_session(session_id: str) -> dict[str, Any] | None:
-    with _lock:
-        row = _conn.execute(
-            "SELECT snapshot FROM sessions WHERE id = ?", (session_id,)
-        ).fetchone()
-    if not row:
+    doc = _db()["sessions"].find_one({"_id": session_id}, {"snapshot": 1})
+    if not doc:
         return None
     try:
-        return json.loads(row[0])
-    except json.JSONDecodeError:
+        return json.loads(doc["snapshot"])
+    except (json.JSONDecodeError, KeyError, TypeError):
         logger.error("Snapshot corrupto para la sesión %s", session_id)
         return None
 
@@ -124,25 +87,22 @@ def load_session(session_id: str) -> dict[str, Any] | None:
 def append_audit(session_id: str, events: list[dict[str, str]]) -> None:
     if not events:
         return
-    with _lock:
-        _conn.executemany(
-            "INSERT INTO audit_log (session_id, kind, tag, descripcion, at) VALUES (?, ?, ?, ?, ?)",
-            [(session_id, e.get("kind", ""), e.get("tag", ""), e.get("desc", ""), _now())
-             for e in events],
-        )
-        _conn.commit()
+    now = _now()
+    _db()["audit_log"].insert_many([
+        {"session_id": session_id, "kind": e.get("kind", ""), "tag": e.get("tag", ""),
+         "descripcion": e.get("desc", ""), "at": now}
+        for e in events
+    ])
 
 
 def purge_old_sessions(ttl_hours: int | None = None) -> int:
     """Elimina sesiones sin actividad más antiguas que el TTL. Devuelve cuántas."""
     ttl = ttl_hours or settings.SESSION_TTL_HOURS
     limit = (dt.datetime.now() - dt.timedelta(hours=ttl)).isoformat(timespec="seconds")
-    with _lock:
-        cur = _conn.execute("DELETE FROM sessions WHERE updated_at < ?", (limit,))
-        _conn.commit()
-    if cur.rowcount:
-        logger.info("Sesiones purgadas por TTL: %d", cur.rowcount)
-    return cur.rowcount
+    result = _db()["sessions"].delete_many({"updated_at": {"$lt": limit}})
+    if result.deleted_count:
+        logger.info("Sesiones purgadas por TTL: %d", result.deleted_count)
+    return result.deleted_count
 
 
 # --------------------------------------------------------------------------
@@ -152,99 +112,90 @@ def purge_old_sessions(ttl_hours: int | None = None) -> int:
 # --------------------------------------------------------------------------
 def upsert_solicitud(solicitud_id: str, session_id: str, tipo: str, producto: str | None,
                      estado: str, payload: dict[str, Any]) -> None:
-    body = json.dumps(payload, ensure_ascii=False)
-    with _lock:
-        _conn.execute(
-            """INSERT INTO solicitudes (id, session_id, tipo, producto, estado, payload, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(id) DO UPDATE SET
-                 estado = excluded.estado,
-                 payload = excluded.payload,
-                 updated_at = excluded.updated_at""",
-            (solicitud_id, session_id, tipo, producto, estado, body, _now(), _now()),
-        )
-        _conn.commit()
+    body = json.dumps(payload, ensure_ascii=False, default=str)
+    now = _now()
+    _db()["solicitudes"].update_one(
+        {"_id": solicitud_id},
+        {
+            "$set": {"estado": estado, "payload": body, "updated_at": now},
+            "$setOnInsert": {"id": solicitud_id, "session_id": session_id,
+                             "tipo": tipo, "producto": producto, "created_at": now},
+        },
+        upsert=True,
+    )
 
 
 def list_solicitudes() -> list[dict[str, Any]]:
-    with _lock:
-        rows = _conn.execute(
-            "SELECT id, session_id, tipo, producto, estado, payload, created_at, updated_at "
-            "FROM solicitudes ORDER BY updated_at DESC"
-        ).fetchall()
     out = []
-    for r in rows:
+    for doc in _db()["solicitudes"].find({}).sort("updated_at", DESCENDING):
         try:
-            payload = json.loads(r[5])
+            payload = json.loads(doc.get("payload") or "{}")
         except json.JSONDecodeError:
             payload = {}
-        out.append({"id": r[0], "session_id": r[1], "tipo": r[2], "producto": r[3],
-                    "estado": r[4], "payload": payload, "created_at": r[6], "updated_at": r[7]})
+        out.append({
+            "id": doc["_id"], "session_id": doc.get("session_id"),
+            "tipo": doc.get("tipo"), "producto": doc.get("producto"),
+            "estado": doc.get("estado"), "payload": payload,
+            "created_at": doc.get("created_at"), "updated_at": doc.get("updated_at"),
+        })
     return out
 
 
 def set_estado_solicitud(solicitud_id: str, estado: str) -> bool:
-    with _lock:
-        cur = _conn.execute(
-            "UPDATE solicitudes SET estado = ?, updated_at = ? WHERE id = ?",
-            (estado, _now(), solicitud_id),
-        )
-        _conn.commit()
-    return cur.rowcount > 0
+    result = _db()["solicitudes"].update_one(
+        {"_id": solicitud_id},
+        {"$set": {"estado": estado, "updated_at": _now()}},
+    )
+    return result.matched_count > 0
 
 
 # --------------------------------------------------------------------------
 # Perfil vivo: la base que se enriquece con cada interacción.
 # --------------------------------------------------------------------------
 def get_perfil(perfil_id: str) -> dict[str, Any] | None:
-    with _lock:
-        row = _conn.execute(
-            "SELECT id, es_afiliado, identificador, perfil, interacciones, created_at, updated_at "
-            "FROM perfiles WHERE id = ?", (perfil_id,)
-        ).fetchone()
-    if not row:
+    doc = _db()["perfiles"].find_one({"_id": perfil_id})
+    if not doc:
         return None
     try:
-        perfil = json.loads(row[3])
+        perfil = json.loads(doc.get("perfil") or "{}")
     except json.JSONDecodeError:
         perfil = {}
-    return {"id": row[0], "es_afiliado": bool(row[1]), "identificador": row[2],
-            "perfil": perfil, "interacciones": row[4], "created_at": row[5], "updated_at": row[6]}
+    return {"id": doc["_id"], "es_afiliado": bool(doc.get("es_afiliado")),
+            "identificador": doc.get("identificador"), "perfil": perfil,
+            "interacciones": doc.get("interacciones", 0),
+            "created_at": doc.get("created_at"), "updated_at": doc.get("updated_at")}
 
 
 def upsert_perfil(perfil_id: str, es_afiliado: bool, identificador: str | None,
                   perfil: dict[str, Any], bump: bool = True) -> None:
-    body = json.dumps(perfil, ensure_ascii=False)
-    inc = 1 if bump else 0
-    with _lock:
-        _conn.execute(
-            """INSERT INTO perfiles (id, es_afiliado, identificador, perfil, interacciones, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(id) DO UPDATE SET
-                 es_afiliado = excluded.es_afiliado,
-                 identificador = COALESCE(excluded.identificador, perfiles.identificador),
-                 perfil = excluded.perfil,
-                 interacciones = perfiles.interacciones + ?,
-                 updated_at = excluded.updated_at""",
-            (perfil_id, 1 if es_afiliado else 0, identificador, body, inc, _now(), _now(), inc),
-        )
-        _conn.commit()
+    body = json.dumps(perfil, ensure_ascii=False, default=str)
+    now = _now()
+    set_fields = {"es_afiliado": bool(es_afiliado), "perfil": body, "updated_at": now}
+    # identificador: solo se sobrescribe si viene uno nuevo (COALESCE del SQL).
+    if identificador is not None:
+        set_fields["identificador"] = identificador
+    _db()["perfiles"].update_one(
+        {"_id": perfil_id},
+        {
+            "$set": set_fields,
+            "$setOnInsert": {"id": perfil_id, "created_at": now},
+            "$inc": {"interacciones": 1 if bump else 0},
+        },
+        upsert=True,
+    )
 
 
 def list_perfiles(limit: int = 100) -> list[dict[str, Any]]:
-    with _lock:
-        rows = _conn.execute(
-            "SELECT id, es_afiliado, identificador, perfil, interacciones, updated_at "
-            "FROM perfiles ORDER BY updated_at DESC LIMIT ?", (limit,)
-        ).fetchall()
     out = []
-    for r in rows:
+    for doc in _db()["perfiles"].find({}).sort("updated_at", DESCENDING).limit(limit):
         try:
-            perfil = json.loads(r[3])
+            perfil = json.loads(doc.get("perfil") or "{}")
         except json.JSONDecodeError:
             perfil = {}
-        out.append({"id": r[0], "es_afiliado": bool(r[1]), "identificador": r[2],
-                    "perfil": perfil, "interacciones": r[4], "updated_at": r[5]})
+        out.append({"id": doc["_id"], "es_afiliado": bool(doc.get("es_afiliado")),
+                    "identificador": doc.get("identificador"), "perfil": perfil,
+                    "interacciones": doc.get("interacciones", 0),
+                    "updated_at": doc.get("updated_at")})
     return out
 
 
@@ -254,49 +205,49 @@ def list_perfiles(limit: int = 100) -> list[dict[str, Any]]:
 def insert_oferta(oferta_id: str, perfil_id: str | None, evento: str, tipo: str,
                   producto: str | None, canal: str | None, estado: str,
                   payload: dict[str, Any]) -> None:
-    body = json.dumps(payload, ensure_ascii=False)
-    with _lock:
-        _conn.execute(
-            """INSERT INTO ofertas (id, perfil_id, evento, tipo, producto, canal, estado, payload, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(id) DO UPDATE SET
-                 estado = excluded.estado, payload = excluded.payload, updated_at = excluded.updated_at""",
-            (oferta_id, perfil_id, evento, tipo, producto, canal, estado, body, _now(), _now()),
-        )
-        _conn.commit()
+    body = json.dumps(payload, ensure_ascii=False, default=str)
+    now = _now()
+    _db()["ofertas"].update_one(
+        {"_id": oferta_id},
+        {
+            "$set": {"estado": estado, "payload": body, "updated_at": now},
+            "$setOnInsert": {"id": oferta_id, "perfil_id": perfil_id, "evento": evento,
+                             "tipo": tipo, "producto": producto, "canal": canal,
+                             "created_at": now},
+        },
+        upsert=True,
+    )
 
 
 def list_ofertas(limit: int = 100) -> list[dict[str, Any]]:
-    with _lock:
-        rows = _conn.execute(
-            "SELECT id, perfil_id, evento, tipo, producto, canal, estado, payload, created_at, updated_at "
-            "FROM ofertas ORDER BY updated_at DESC LIMIT ?", (limit,)
-        ).fetchall()
     out = []
-    for r in rows:
+    for doc in _db()["ofertas"].find({}).sort("updated_at", DESCENDING).limit(limit):
         try:
-            payload = json.loads(r[7])
+            payload = json.loads(doc.get("payload") or "{}")
         except json.JSONDecodeError:
             payload = {}
-        out.append({"id": r[0], "perfil_id": r[1], "evento": r[2], "tipo": r[3], "producto": r[4],
-                    "canal": r[5], "estado": r[6], "payload": payload, "created_at": r[8], "updated_at": r[9]})
+        out.append({"id": doc["_id"], "perfil_id": doc.get("perfil_id"),
+                    "evento": doc.get("evento"), "tipo": doc.get("tipo"),
+                    "producto": doc.get("producto"), "canal": doc.get("canal"),
+                    "estado": doc.get("estado"), "payload": payload,
+                    "created_at": doc.get("created_at"), "updated_at": doc.get("updated_at")})
     return out
 
 
 def set_estado_oferta(oferta_id: str, estado: str) -> bool:
-    with _lock:
-        cur = _conn.execute(
-            "UPDATE ofertas SET estado = ?, updated_at = ? WHERE id = ?", (estado, _now(), oferta_id))
-        _conn.commit()
-    return cur.rowcount > 0
+    result = _db()["ofertas"].update_one(
+        {"_id": oferta_id},
+        {"$set": {"estado": estado, "updated_at": _now()}},
+    )
+    return result.matched_count > 0
 
 
 def stats() -> dict[str, int]:
-    with _lock:
-        sesiones = _conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
-        eventos = _conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
-        solicitudes = _conn.execute("SELECT COUNT(*) FROM solicitudes").fetchone()[0]
-        perfiles = _conn.execute("SELECT COUNT(*) FROM perfiles").fetchone()[0]
-        ofertas = _conn.execute("SELECT COUNT(*) FROM ofertas").fetchone()[0]
-    return {"sesiones": sesiones, "eventos_auditoria": eventos, "solicitudes_asesor": solicitudes,
-            "perfiles_vivos": perfiles, "ofertas_salientes": ofertas}
+    db = _db()
+    return {
+        "sesiones": db["sessions"].count_documents({}),
+        "eventos_auditoria": db["audit_log"].count_documents({}),
+        "solicitudes_asesor": db["solicitudes"].count_documents({}),
+        "perfiles_vivos": db["perfiles"].count_documents({}),
+        "ofertas_salientes": db["ofertas"].count_documents({}),
+    }

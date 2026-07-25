@@ -14,3 +14,6 @@ fpdf2==2.8.2
 
 # --- Procesamiento de la base de afiliados (scripts/perfilar_base.py) ---
 openpyxl==3.1.5
+
+# --- MongoDB (afiliados, sesiones, solicitudes) ---
+pymongo==4.17.0
