@@ -18,8 +18,11 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
+import re
 import uuid
 from typing import Any
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$")
 
 from . import (afiliados_db, base_afiliados, extraction, knowledge as kb, llm,
                notify, payments, pdfgen, propension, store)
@@ -115,7 +118,8 @@ FASE 1 · DIAGNÓSTICO (cuando la persona NO sabe qué necesita)
 - Tu PRIMERA pregunta del diagnóstico debe ser abierta e invitar a contar. Solo después profundiza en detalles como con quién vive, si tiene carro/moto/mascota, etc.
 - A partir de lo que cuente, profundiza con naturalidad (máximo ~6 intercambios) en lo relevante: con quién vive, vehículo, mascotas, viajes, dependientes, ocupación y rango de edad (solo para cotizar). No fuerces temas que no aplican.
 - CADA VEZ que descubras un dato, llama a registrar_perfil. Guarda en `notas` cualquier detalle o interés que la persona mencione. NUNCA ignores lo que te comparte.
-- IMPORTANTE: en registrar_perfil envía SOLO lo que el afiliado haya dicho de forma explícita. NUNCA inventes ni infieras datos.
+- IMPORTANTE — NO INVENTES NI INFIERAS: en registrar_perfil envía SOLO lo que la persona dijo de forma EXPLÍCITA. Si no te dijo que tiene o no tiene carro, NO registres "vehiculo: no"; déjalo vacío hasta que lo diga. Lo mismo con dependientes, con quién vive, ocupación, etc. Nunca supongas un dato que la persona no expresó.
+- ¿PARA QUIÉN es el seguro? Si dice que es para OTRA persona (su pareja, un hijo, un familiar), el ASEGURADO es esa persona, no ella: pregunta por los datos del asegurado que el producto necesite (edad, relación, y lo pertinente) y no armes el perfil como si fuera para ella. Ella queda como tomador y contacto.
 - Cuando entiendas su necesidad principal y tengas algo de contexto, resume en tus palabras lo que escuchaste y confirma UNA sola vez.
 
 FASE 2 · RECOMENDACIÓN
@@ -134,7 +138,11 @@ FASE 4 · DATOS DE CONTACTO (para poder retomar y para tenerla en cuenta en ofer
 - Cuando la persona muestre interés real en un producto, pide con calidez TRES datos: nombre completo, número de identificación, y celular o correo.
 - Da la razón con naturalidad: "así, si se cae la conexión o algo pasa, podemos retomar la conversación y no perder tu solicitud". Esto además la deja registrada para tenerla en cuenta en futuras ofertas, aunque no sea afiliada.
 - Pide máximo 2 datos por mensaje. CADA VEZ que recibas datos, llama a registrar_datos (no vuelvas a preguntar lo que ya te dieron).
-- Datos del bien SOLO si el producto los necesita para la póliza: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fechas). El resto: con los datos de contacto basta; los detalles finos los completa el asesor.
+- VALIDA lo que te dan: si registrar_datos responde que un dato NO es válido (correo sin @, celular con muy pocos dígitos, identificación que no parece cédula, o un número en vez de nombre), NO sigas de largo: acláralo con amabilidad y pídelo de nuevo explicando el formato correcto. No aceptes datos mal formados.
+- INFORMACIÓN NECESARIA PARA EMITIR: antes de cerrar, reúne lo mínimo que el seguro necesita para poder cotizarse/emitirse:
+  · Rango de edad del asegurado (siempre, para cotizar) · con quién vive/número de dependientes para Vida, Vida y Ahorro y Salud (con registrar_perfil).
+  · Datos del bien SOLO si aplica: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fechas).
+  Pídelos con naturalidad, una o dos cosas por mensaje. Si el asegurado es otra persona, estos datos son de ESA persona.
 
 FASE 5 · CIERRE (cuando le gusta una póliza) — Lara NO cobra ni emite
 - Cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas, y ya tengas nombre + identificación + celular o correo, llama a solicitar_cierre con ese producto.
@@ -903,12 +911,28 @@ class Session:
                      "viaje_destino", "viaje_inicio", "viaje_fin"]
 
     def _tool_registrar_datos(self, a: dict[str, Any]) -> dict[str, Any]:
-        cambios = {}
+        cambios: dict[str, str] = {}
+        invalidos: dict[str, str] = {}
         for c in self._DATOS_CAMPOS:
             v = a.get(c)
-            if v not in (None, ""):
-                self.datos[c] = str(v).strip()
-                cambios[c] = self.datos[c]
+            if v in (None, ""):
+                continue
+            val = str(v).strip()
+            # Validaciones básicas: no aceptar datos mal formados.
+            if c == "nombre" and re.fullmatch(r"[\d\s.\-]+", val):
+                invalidos["nombre"] = "Eso parece un número, no un nombre; pídele su nombre completo."
+                continue
+            if c == "correo" and not _EMAIL_RE.match(val):
+                invalidos["correo"] = "El correo no es válido: debe tener @ y un dominio, por ejemplo nombre@correo.com."
+                continue
+            if c == "telefono" and len(re.sub(r"\D", "", val)) < 7:
+                invalidos["telefono"] = "El celular no parece válido: debe tener al menos 7 dígitos."
+                continue
+            if c == "documento" and len(re.sub(r"\D", "", val)) < 5:
+                invalidos["documento"] = "El número de identificación no parece válido: deben ser solo dígitos (cédula de ciudadanía)."
+                continue
+            self.datos[c] = val
+            cambios[c] = val
         # El medio de contacto define el canal de entrega del contrato y la póliza.
         if self.datos.get("correo"):
             self.contacto = {"canal": "correo", "destino": self.datos["correo"]}
@@ -916,7 +940,12 @@ class Session:
             self.contacto = {"canal": "whatsapp", "destino": self.datos["telefono"]}
         if cambios:
             self._log("db", "CUSTOMERS", "UPSERT customers · " + ", ".join(f"{k}={v}" for k, v in cambios.items()))
-        return {"ok": True, "datos_actuales": self.datos}
+        res: dict[str, Any] = {"ok": not invalidos, "datos_actuales": self.datos}
+        if invalidos:
+            res["invalidos"] = invalidos
+            res["mensaje"] = ("NO guardé estos datos porque no son válidos. Pídelos de nuevo con amabilidad, "
+                              "explicando el formato correcto: " + " ".join(invalidos.values()))
+        return res
 
     def _faltantes_datos(self, producto: str) -> list[str]:
         faltan: list[str] = []

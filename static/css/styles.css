@@ -413,6 +413,11 @@ section.block{padding:72px 0}
 .msg{max-width:78%;font-size:14px;line-height:1.55;animation:rise .3s var(--ease-out)}
 @keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 .msg .body{padding:11px 15px;border-radius:15px}
+.msg .body ul,.msg .body ol{margin:6px 0;padding-left:20px}
+.msg .body li{margin:3px 0}
+.msg .body li>strong:first-child{color:var(--accent-d)}
+.msg .body strong{font-weight:700}
+.msg .body br+br{display:none}
 .msg.bot{align-self:flex-start}
 .msg.bot .body{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px;color:var(--ink)}
 .msg.user{align-self:flex-end}

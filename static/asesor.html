@@ -82,6 +82,8 @@
   .bubble.lara{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
   .bubble.cliente{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:4px}
   .bubble.cliente .nm{opacity:.65}
+  .bubble.asesor{align-self:flex-start;background:var(--accent-soft);border:1px solid var(--accent);color:var(--ink);border-bottom-left-radius:4px}
+  .bubble.asesor .nm{color:var(--accent-d)}
   .chat-empty{color:var(--muted);font-size:13px;text-align:center;padding:22px}
 
   .det-actions{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:9px;flex-wrap:wrap;align-items:center;background:var(--surface-2)}
@@ -90,6 +92,8 @@
   .det-actions .adv{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);margin-left:auto}
   .det-actions .adv:hover{background:var(--brand-strong)}
   .det-actions .adv:disabled{opacity:.6;cursor:default}
+  .det-actions .del{color:var(--muted)}
+  .det-actions .del:hover{border-color:#e5484d;color:#e5484d}
   .as-empty{border:1px dashed var(--line-2);border-radius:16px;padding:56px 30px;text-align:center;color:var(--muted)}
 </style>
 </head>
@@ -235,15 +239,19 @@ function pintarDetalle(){
     '<li'+(o.aseguradora===ss.aseguradora_elegida?' class="pick"':'')+'><b>'+esc(o.aseguradora)+'</b>'+
     (o.aseguradora===ss.aseguradora_elegida?'<span class="pill">elegida</span>':'')+
     (o.plan?' · '+esc(o.plan):'')+(o.ofrece?'<div style="color:var(--muted);margin-top:3px">'+esc(o.ofrece)+'</div>':'')+'</li>').join("");
+  const quien = {cliente: nombreDe(s), asesor: "Asesor (tú)", lara: "Lara"};
   const burbujas = conv.length ? conv.map(m =>
-    '<div class="bubble '+(m.de==="cliente"?"cliente":"lara")+'"><span class="nm">'+(m.de==="cliente"?esc(nombreDe(s)):"Lara")+'</span>'+esc(m.texto)+'</div>').join("")
+    '<div class="bubble '+(m.de==="cliente"?"cliente":m.de==="asesor"?"asesor":"lara")+'"><span class="nm">'+esc(quien[m.de]||"Lara")+'</span>'+esc(m.texto)+'</div>').join("")
     : '<div class="chat-empty">Esta solicitud no tiene conversación registrada.</div>';
   const next = ESTADOS_SIGUIENTE[s.estado];
 
+  const esPendiente = s.estado === "pendiente_asesor";
   let acciones = "";
   if (p.doc_informativo_url) acciones += '<a href="'+esc(p.doc_informativo_url)+'" target="_blank" rel="noopener">Ver póliza informativa (PDF)</a>';
   if (p.contrato && p.contrato.url) acciones += '<a href="'+esc(p.contrato.url)+'" target="_blank" rel="noopener">Ver contrato (PDF)</a>';
-  if (next) acciones += '<button class="adv" id="advBtn">'+esc(next[1])+'</button>';
+  acciones += '<button class="del" id="delBtn">Descartar</button>';
+  if (esPendiente) acciones += '<button class="adv" id="advBtn">Enviar póliza y link de pago</button>';
+  else if (next) acciones += '<button class="adv" id="advBtn">'+esc(next[1])+'</button>';
 
   cont.innerHTML =
     '<div class="as-detail">'+
@@ -267,7 +275,9 @@ function pintarDetalle(){
     '</div>';
 
   const advBtn = document.getElementById("advBtn");
-  if (advBtn && next) advBtn.onclick = () => avanzar(s.id, next[0], advBtn);
+  if (advBtn) advBtn.onclick = () => esPendiente ? continuar(s.id, advBtn) : avanzar(s.id, next[0], advBtn);
+  const delBtn = document.getElementById("delBtn");
+  if (delBtn) delBtn.onclick = () => descartar(s.id, delBtn);
 }
 
 async function avanzar(id, estado, btn){
@@ -277,6 +287,23 @@ async function avanzar(id, estado, btn){
       method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ estado })
     });
     if (r.ok) await cargar();
+  } catch (e) { btn.disabled = false; }
+}
+
+async function continuar(id, btn){
+  // Simula: el asesor envía la póliza y el link de pago, y el cliente responde.
+  btn.disabled = true; btn.textContent = "Enviando…";
+  try {
+    const r = await fetch("/api/asesor/solicitudes/" + encodeURIComponent(id) + "/continuar", { method: "POST" });
+    if (r.ok) await cargar();
+  } catch (e) { btn.disabled = false; }
+}
+
+async function descartar(id, btn){
+  btn.disabled = true; btn.textContent = "…";
+  try {
+    const r = await fetch("/api/asesor/solicitudes/" + encodeURIComponent(id) + "/eliminar", { method: "POST" });
+    if (r.ok) { selId = null; await cargar(); }
   } catch (e) { btn.disabled = false; }
 }
 

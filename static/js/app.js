@@ -118,10 +118,34 @@ function addUser(text) {
   scrollChat();
 }
 
+// Render markdown ligero y seguro (negrita, cursiva, listas) para el chat.
+function mdInline(s) {
+  return s
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+}
+function mdToHtml(text) {
+  const esc = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const lines = esc.split("\n");
+  let html = "", list = null;
+  const close = () => { if (list) { html += "</" + list + ">"; list = null; } };
+  for (const raw of lines) {
+    const line = raw.replace(/\s+$/, "");
+    const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+    const ul = line.match(/^\s*[-*]\s+(.*)$/);
+    if (ol) { if (list !== "ol") { close(); html += "<ol>"; list = "ol"; } html += "<li>" + mdInline(ol[1]) + "</li>"; }
+    else if (ul) { if (list !== "ul") { close(); html += "<ul>"; list = "ul"; } html += "<li>" + mdInline(ul[1]) + "</li>"; }
+    else if (line.trim() === "") { close(); html += "<br>"; }
+    else { close(); html += mdInline(line) + "<br>"; }
+  }
+  close();
+  return html;
+}
+
 function addBot(text, opts = {}) {
   const m = document.createElement("div");
   m.className = "msg bot";
-  const safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
+  const safe = mdToHtml(text);
   let inner = '<div class="body">' + safe;
   if (opts.verified) {
     inner += '<div class="verified">✓ Respaldado en documentos · Guardrail: aprobado</div>';

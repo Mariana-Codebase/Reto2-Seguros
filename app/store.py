@@ -242,6 +242,30 @@ def set_estado_oferta(oferta_id: str, estado: str) -> bool:
     return result.matched_count > 0
 
 
+def get_solicitud(sol_id: str) -> dict[str, Any] | None:
+    """Una solicitud con su payload parseado, o None."""
+    doc = _db()["solicitudes"].find_one({"_id": sol_id})
+    if not doc:
+        return None
+    try:
+        payload = json.loads(doc.get("payload") or "{}")
+    except json.JSONDecodeError:
+        payload = {}
+    return {"id": doc["_id"], "estado": doc.get("estado"), "producto": doc.get("producto"),
+            "session_id": doc.get("session_id"), "tipo": doc.get("tipo"), "payload": payload}
+
+
+def eliminar_solicitud(sol_id: str) -> bool:
+    return _db()["solicitudes"].delete_one({"_id": sol_id}).deleted_count > 0
+
+
+def actualizar_payload_solicitud(sol_id: str, payload: dict[str, Any]) -> bool:
+    body = json.dumps(payload, ensure_ascii=False, default=str)
+    r = _db()["solicitudes"].update_one(
+        {"_id": sol_id}, {"$set": {"payload": body, "updated_at": _now()}})
+    return r.matched_count > 0
+
+
 def limpiar_ofertas() -> int:
     """Borra la bandeja de ofertas salientes (para reiniciar la demo). Devuelve
     cuántas se eliminaron."""

@@ -384,6 +384,43 @@ def asesor_cambiar_estado(solicitud_id: str, req: EstadoSolicitudReq):
     return {"ok": True, "id": solicitud_id, "estado": req.estado}
 
 
+@app.post("/api/asesor/solicitudes/{solicitud_id}/eliminar")
+def asesor_eliminar(solicitud_id: str):
+    """El asesor descarta una solicitud de la bandeja."""
+    if not store.eliminar_solicitud(solicitud_id):
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
+    return {"ok": True, "id": solicitud_id}
+
+
+@app.post("/api/asesor/solicitudes/{solicitud_id}/continuar")
+def asesor_continuar(solicitud_id: str):
+    """Simula que el asesor retoma la conversación: envía la póliza y el link de
+    pago al cliente, y el cliente responde. Deja el intercambio en la solicitud y
+    avanza el estado (demo del cierre del lado del asesor)."""
+    sol = store.get_solicitud(solicitud_id)
+    if sol is None:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
+    p = sol["payload"]
+    ss = p.get("seguro_solicitado") or {}
+    datos = p.get("datos_contratante") or {}
+    nombre = (datos.get("nombre") or "").split(" ")[0] or "hola"
+    aseg = ss.get("aseguradora_elegida") or ss.get("aseguradora") or "la aseguradora"
+    prod = ss.get("nombre") or "tu seguro"
+    ref = "PAGO-" + solicitud_id.split("-")[-1]
+    conv = list(p.get("conversacion") or [])
+    conv.append({"de": "asesor",
+                 "texto": (f"Hola {nombre}, soy tu asesor de Colsubsidio. Confirmé {prod} con {aseg}. "
+                           f"Te comparto tu póliza y el link de pago (referencia {ref}); cuando lo completes "
+                           "queda todo listo. Cualquier duda, con gusto te ayudo.")})
+    conv.append({"de": "cliente",
+                 "texto": "¡Perfecto, muchas gracias! Reviso la póliza y hago el pago ahora mismo."})
+    p["conversacion"] = conv
+    store.actualizar_payload_solicitud(solicitud_id, p)
+    store.set_estado_solicitud(solicitud_id, "enviada_aseguradora")
+    logger.info("Asesor continuó la solicitud %s (simulado) → enviada_aseguradora", solicitud_id)
+    return {"ok": True, "id": solicitud_id, "estado": "enviada_aseguradora"}
+
+
 # --------------------------------------------------------------------------
 # Perfil vivo: la base que se enriquece con cada interacción.
 # --------------------------------------------------------------------------
