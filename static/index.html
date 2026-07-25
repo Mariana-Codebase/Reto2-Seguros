@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/styles.css?v=system-flow-3">
 <link rel="stylesheet" href="/static/css/arch.css">
-<link rel="stylesheet" href="/static/css/agent-flow.css?v=system-flow-3">
+<link rel="stylesheet" href="/static/css/agent-flow.css?v=parallel-flow-1">
 </head>
 <body>
 
@@ -95,7 +95,7 @@
         </div>
         <div class="hc-body" id="heroLiveChat"></div>
         <div class="hc-tech" aria-label="Tecnología de la conversación">
-          <span>Sol 5.6</span><i></i><span>RAG verificado</span><i></i><span>Perfil vivo</span>
+          <span>RAG verificable</span><i></i><span>Motor de reglas</span><i></i><span>Perfil vivo</span>
         </div>
       </div>
     </div>
@@ -109,81 +109,64 @@
         </div>
         <div class="sf-heading">
           <div>
-            <span class="eyebrow">El sistema completo, en vivo</span>
-            <h2 id="systemFlowTitle">De una conversación a una oportunidad, sin perder el contexto.</h2>
+            <span class="eyebrow">Dos agentes · dos rutas claras</span>
+            <h2 id="systemFlowTitle">Lara y Cody trabajan en paralelo.</h2>
           </div>
-          <p>Lara escucha, Sol 5.6 razona, las herramientas verifican, n8n transporta el contexto y Cody actúa cuando aparece el momento correcto.</p>
+          <p>Lara atiende la conversación. Cody es un flujo independiente que funciona únicamente en n8n. Solo recibe contexto de Lara si la persona abandona y ya dejó un dato de contacto.</p>
         </div>
 
         <div class="sf-canvas">
-          <div class="sf-flow" id="systemFlow" role="list" aria-label="Flujo de Lara, Sol 5.6, n8n, Cody y el asesor">
-            <button class="sf-node is-active" type="button" role="listitem" data-sf-step="0" aria-pressed="true">
-              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
-              <span class="sf-step">01 · INICIA</span>
-              <span class="sf-icon user" aria-hidden="true">◎</span>
-              <strong>Afiliado</strong>
-              <small>Expresa su necesidad</small>
-              <span class="sf-chip">intención</span>
-            </button>
-            <button class="sf-node" type="button" role="listitem" data-sf-step="1" aria-pressed="false">
-              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
-              <span class="sf-step">02 · ENTIENDE</span>
-              <span class="sf-icon lara" aria-hidden="true">L</span>
-              <strong>Lara</strong>
-              <small>Conversa y construye el perfil</small>
-              <span class="sf-chip">agente conversacional</span>
-            </button>
-            <button class="sf-node sf-node-model" type="button" role="listitem" data-sf-step="2" aria-pressed="false">
-              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
-              <span class="sf-step">03 · RAZONA</span>
-              <span class="sf-icon model" aria-hidden="true">S</span>
-              <strong>Sol 5.6</strong>
-              <small>Elige la herramienta correcta</small>
-              <span class="sf-tools"><b>Mongo</b><b>RAG</b><b>Reglas</b></span>
-            </button>
-            <button class="sf-node sf-node-n8n" type="button" role="listitem" data-sf-step="3" aria-pressed="false">
-              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
-              <span class="sf-step">04 · ORQUESTA</span>
-              <span class="sf-icon n8n" aria-hidden="true">n8n</span>
-              <strong>n8n</strong>
-              <small>Mueve contexto y eventos</small>
-              <span class="sf-chip">webhooks</span>
-            </button>
-            <button class="sf-node sf-node-cody" type="button" role="listitem" data-sf-step="4" aria-pressed="false">
-              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
-              <span class="sf-step">05 · ACTIVA</span>
-              <span class="sf-icon cody" aria-hidden="true">C</span>
-              <strong>Cody</strong>
-              <small>Detecta y retoma oportunidades</small>
-              <span class="sf-tools"><b>eventos</b><b>anti-spam</b></span>
-            </button>
-            <button class="sf-node" type="button" role="listitem" data-sf-step="5" aria-pressed="false">
-              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
-              <span class="sf-step">06 · FINALIZA</span>
-              <span class="sf-icon advisor" aria-hidden="true">✓</span>
-              <strong>Asesor</strong>
-              <small>Continúa el cierre regulado</small>
-              <span class="sf-tools"><b>póliza</b><b>pago</b></span>
-            </button>
-            <span class="sf-signal" aria-hidden="true"></span>
+          <div class="sf-flow" id="systemFlow" aria-label="Rutas independientes de Lara y Cody">
+            <section class="sf-lane sf-lane-lara" aria-labelledby="laraLaneTitle">
+              <header class="sf-lane-head">
+                <span>RUTA 01 · CONVERSACIÓN ACTIVA</span>
+                <strong id="laraLaneTitle"><i></i> Lara</strong>
+              </header>
+              <div class="sf-lane-track sf-lane-track-lara" role="list">
+                <button class="sf-node is-active" type="button" role="listitem" data-flow-node="afiliado" aria-pressed="true"><span class="sf-step">01</span><span class="sf-icon user">◎</span><strong>Afiliado</strong><small>Inicia el chat</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="consulta" aria-pressed="false"><span class="sf-step">02</span><span class="sf-icon query">↗</span><strong>Consulta</strong><small>Entra al sistema</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="lara" aria-pressed="false"><span class="sf-step">03</span><span class="sf-icon lara">L</span><strong>Lara</strong><small>Entiende y coordina</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="perfil" aria-pressed="false"><span class="sf-step">04</span><span class="sf-icon profile">◉</span><strong>Perfil</strong><small>Contexto del afiliado</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="coberturas" aria-pressed="false"><span class="sf-step">05</span><span class="sf-icon rag">▤</span><strong>Coberturas</strong><small>RAG documental</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="cotizar" aria-pressed="false"><span class="sf-step">06</span><span class="sf-icon quote">$</span><strong>Cotizar</strong><small>Motor de reglas</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="respuesta" aria-pressed="false"><span class="sf-step">07</span><span class="sf-icon response">➤</span><strong>Respuesta</strong><small>Información clara</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="asesor" aria-pressed="false"><span class="sf-step">08</span><span class="sf-icon advisor">✓</span><strong>Asesor</strong><small>Solo si quiere continuar</small></button>
+              </div>
+            </section>
+
+            <div class="sf-abandon-handoff" role="note">
+              <span class="sf-handoff-label">ÚNICO PUENTE ENTRE AGENTES</span>
+              <div><b>Conversación abandonada</b><i>+</i><b>correo o contacto disponible</b><span>→</span><strong>n8n entrega el contexto a Cody</strong></div>
+            </div>
+
+            <section class="sf-lane sf-lane-cody" aria-labelledby="codyLaneTitle">
+              <header class="sf-lane-head">
+                <span>RUTA 02 · WORKFLOW INDEPENDIENTE EN n8n</span>
+                <strong id="codyLaneTitle"><i></i> Cody · automático</strong>
+              </header>
+              <div class="sf-lane-track sf-lane-track-cody" role="list">
+                <button class="sf-node sf-node-n8n" type="button" role="listitem" data-flow-node="n8n" aria-pressed="false"><span class="sf-step">01</span><span class="sf-icon n8n">n8n</span><strong>Trigger n8n</strong><small>Evento o abandono válido</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="contexto" aria-pressed="false"><span class="sf-step">02</span><span class="sf-icon context">↳</span><strong>Contexto</strong><small>Perfil, interés y contacto</small></button>
+                <button class="sf-node sf-node-cody" type="button" role="listitem" data-flow-node="cody" aria-pressed="false"><span class="sf-step">03</span><span class="sf-icon cody">C</span><strong>Cody</strong><small>Workflow independiente</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="criterio" aria-pressed="false"><span class="sf-step">04</span><span class="sf-icon rule">◇</span><strong>Guardrails</strong><small>Pertinencia + anti-spam</small></button>
+                <button class="sf-node" type="button" role="listitem" data-flow-node="mensaje" aria-pressed="false"><span class="sf-step">05</span><span class="sf-icon message">➤</span><strong>Recordatorio</strong><small>Retoma y envía la oferta</small></button>
+              </div>
+            </section>
           </div>
 
           <div class="sf-detail" id="systemFlowDetail" aria-live="polite">
-            <span class="sf-detail-index">01</span>
+            <span class="sf-detail-index">2×</span>
             <div>
-              <strong>El afiliado inicia con una necesidad real.</strong>
-              <p>El flujo comienza con lenguaje natural; no obliga a elegir un producto antes de entender la situación.</p>
+              <strong>Dos rutas paralelas, no una cadena entre agentes.</strong>
+              <p>Lara atiende y puede escalar al asesor. Cody opera de forma independiente en n8n; solo recibe un abandono cuando ya existe información de contacto.</p>
             </div>
-            <div class="sf-detail-tags"><span>entrada conversacional</span><span>consentimiento</span></div>
+            <div class="sf-detail-tags"><span>Lara conversacional</span><span>Cody independiente</span></div>
           </div>
         </div>
         <div class="sf-principle">
-          <span><b>Lara</b> entiende</span><i></i>
-          <span><b>Sol 5.6</b> razona</span><i></i>
-          <span><b>Reglas</b> verifican</span><i></i>
-          <span><b>n8n</b> conecta</span><i></i>
-          <span><b>Cody</b> activa</span><i></i>
-          <span><b>Asesor</b> finaliza</span>
+          <span><b>Lara → asesor:</b> solo cuando la persona decide continuar</span>
+          <span class="sf-route-separator" aria-hidden="true"></span>
+          <span><b>Cody:</b> workflow independiente en n8n · sin conexión con el asesor</span>
         </div>
       </section>
 
@@ -756,6 +739,6 @@
 <script src="/static/js/app.js?v=nav-maicol-cody"></script>
 <script src="/static/js/hero-live.js?v=system-flow-3"></script>
 <script src="/static/js/arch.js"></script>
-<script src="/static/js/agent-flow.js?v=system-flow-3"></script>
+<script src="/static/js/agent-flow.js?v=parallel-flow-1"></script>
 </body>
 </html>
