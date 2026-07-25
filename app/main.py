@@ -424,8 +424,17 @@ def ofertas_salientes():
 def ofertas_reset():
     """Vacía la bandeja de ofertas salientes para reiniciar la demo en limpio."""
     n = store.limpiar_ofertas()
+    seed.resembrar_abandonos_demo()  # deja los abandonos listos para re-enganchar de nuevo
     logger.info("Ofertas salientes reiniciadas (%d eliminadas)", n)
     return {"ok": True, "eliminadas": n}
+
+
+@app.post("/api/ofertas/demo/reset-abandonos")
+def ofertas_reset_abandonos():
+    """Reinicia los abandonos demo para que el re-enganche vuelva a mostrar
+    resultados (útil para repetir la demostración ante el jurado)."""
+    n = seed.resembrar_abandonos_demo()
+    return {"ok": True, "abandonos": n}
 
 
 @app.post("/api/ofertas/{oferta_id}/estado")

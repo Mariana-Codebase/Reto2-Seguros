@@ -236,6 +236,16 @@ _SOLICITUDES_DEMO = [
 ]
 
 
+def resembrar_abandonos_demo() -> int:
+    """Reinicia los abandonos demo (para que el re-enganche sea repetible en la
+    demo): borra los perfiles demo y sus ofertas recientes, y los vuelve a crear
+    'inactivos'. Devuelve cuántos abandonos quedaron listos."""
+    db = get_db()
+    db["perfiles"].delete_many({"origen_demo": "abandono"})
+    db["ofertas"].delete_many({"perfil_id": {"$regex": "^NA-DEMO"}})
+    return sembrar_abandonos_demo()
+
+
 def sembrar_solicitudes_demo() -> int:
     """Crea solicitudes demo (con conversación) para el panel del asesor.
     Idempotente: no duplica si ya existen."""

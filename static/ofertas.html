@@ -392,9 +392,33 @@ document.getElementById("reset").addEventListener("click",async()=>{
   const btn=document.getElementById("reset");btn.disabled=true;btn.textContent="Limpiando…";
   try{
     await fetch("/api/ofertas/reset",{method:"POST"});
-    acum.mora=acum.seguro=acum.credito=acum.dedup=acum.envio=0;
+    acum.seguro=acum.reeng=acum.dedup=acum.envio=0;
     pintarFlujo(); await refrescar();
   }finally{btn.disabled=false;btn.textContent="🧹 Limpiar demo (empezar de cero)";}
+});
+
+/* ---- Re-enganche de abandonos (unión Lara → Cody) ---- */
+async function pedirReenganche(){
+  return fetch("/api/ofertas/reenganche",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({minutos:30})}).then(r=>r.json());
+}
+document.getElementById("reenganche").addEventListener("click",async()=>{
+  const btn=document.getElementById("reenganche");btn.disabled=true;btn.textContent="Retomando…";
+  try{
+    let r=await pedirReenganche();
+    if((r.reenganchados||0)===0){                 // ya se consumieron: resébralos y reintenta
+      await fetch("/api/ofertas/demo/reset-abandonos",{method:"POST"});
+      r=await pedirReenganche();
+    }
+    const res=(r.resultados||[]).filter(x=>x.oferta);
+    res.forEach((x,i)=>setTimeout(()=>{
+      registrarResultado({perfil_id:x.perfil_id, oferta:x.oferta, reeng:true});
+      pintarFlujo();
+    }, i*180));
+    setTimeout(refrescar, res.length*180+250);
+    btn.textContent = res.length ? ("✓ "+res.length+" abandonos retomados") : "Sin abandonos por retomar";
+    setTimeout(()=>{btn.textContent="Re-enganchar abandonos";}, 2200);
+  }finally{ setTimeout(()=>{btn.disabled=false;}, 900); }
 });
 
 cargarControles().then(()=>{pintarFlujo();refrescar();});
