@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css?v=nav5">
-<link rel="stylesheet" href="/static/css/agent-flow.css">
+<link rel="stylesheet" href="/static/css/styles.css?v=nav7">
+<link rel="stylesheet" href="/static/css/agent-flow.css?v=cody3">
 </head>
 <body>
 
@@ -38,8 +38,8 @@
     <nav class="nav-links">
       <button data-view="inicio" class="active">Inicio</button>
       <button data-view="demo">Demo interactiva</button>
-      <button onclick="window.open('/asesor','_blank')" title="Bandeja de vinculaciones que Clara transmite al asesor">Panel del asesor</button>
-      <button onclick="window.open('/ofertas','_blank')" title="Segundo agente: ofertas proactivas por eventos">Agente de ofertas</button>
+      <button onclick="location.href='/asesor'" title="Bandeja de vinculaciones que Clara transmite al asesor">Panel del asesor</button>
+      <button onclick="location.href='/ofertas'" title="Segundo agente: ofertas proactivas por eventos">Agente de ofertas</button>
     </nav>
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
       <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -91,7 +91,7 @@
     </div>
 
     <div class="container">
-      <div class="agent-flow" id="agentFlow" aria-label="Cómo trabaja el agente Clara"></div>
+      <div class="agent-flow" id="agentFlow" aria-label="Cerebro de Clara: identifica, verifica y recomienda"></div>
     </div>
 
     <div class="container">
@@ -101,6 +101,10 @@
         <div class="kpi" data-reveal data-reveal-delay="2"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
         <div class="kpi" data-reveal data-reveal-delay="3"><b>&lt; 5 min</b><span>del primer mensaje a la vinculación confirmada</span></div>
       </div>
+    </div>
+
+    <div class="container">
+      <div class="agent-flow cody-flow" id="codyFlow" aria-label="Cerebro de Cody: evento, regla, envío y actualización"></div>
     </div>
   </section>
 
@@ -133,9 +137,9 @@
           <div class="ic" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           </div>
-          <h3>Cierre completo</h3>
-          <p>Contrato en PDF con firma electrónica, consentimiento registrado, pago en pasarela (sandbox Wompi) y
-            confirmación de la vinculación, que se transmite a la aseguradora. Todo sin un asesor humano.</p>
+          <h3>Escalado al asesor</h3>
+          <p>Cuando el afiliado quiere vincularse, Clara deja el caso listo y lo pasa al asesor: perfil,
+            recomendación y contexto. Contrato, firma y pago siguen en el flujo humano, con trazabilidad.</p>
         </div>
       </div>
 
@@ -293,7 +297,8 @@
 </footer>
 
 <script src="/static/js/app.js"></script>
-<script src="/static/js/hero-live.js"></script>
-<script src="/static/js/agent-flow.js"></script>
+<script src="/static/js/hero-live.js?v=brain1"></script>
+<script src="/static/js/agent-flow.js?v=scroll1"></script>
+<script src="/static/js/cody-flow.js?v=scroll1"></script>
 </body>
 </html>
