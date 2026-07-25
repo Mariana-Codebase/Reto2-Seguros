@@ -215,8 +215,8 @@
 }
 .af-node[data-id="agent"] .af-name{font-size:13px}
 .af-node[data-id="perfil"]{left:62%;top:18%}
-.af-node[data-id="coberturas"]{left:62%;top:50%}
-.af-node[data-id="cotizar"]{left:62%;top:82%}
+.af-node[data-id="ofertas"]{left:62%;top:50%}
+.af-node[data-id="alertas"]{left:62%;top:82%}
 .af-node[data-id="respuesta"]{left:90%;top:50%}
 
 /* States */
@@ -399,8 +399,8 @@
   .af-node[data-id="query"]{left:24%;top:50%}
   .af-node[data-id="agent"]{left:42%;top:50%}
   .af-node[data-id="perfil"]{left:66%;top:16%}
-  .af-node[data-id="coberturas"]{left:66%;top:50%}
-  .af-node[data-id="cotizar"]{left:66%;top:84%}
+  .af-node[data-id="ofertas"]{left:66%;top:50%}
+  .af-node[data-id="alertas"]{left:66%;top:84%}
   .af-node[data-id="respuesta"]{left:92%;top:50%}
   .af-detail{width:min(200px,82%)}
   .af-wires .af-edge{stroke-width:2}
@@ -408,8 +408,77 @@
 
 @media(prefers-reduced-motion:reduce){
   .af-label .af-live{animation:none}
-  .af-node.is-agent.is-thinking .af-ico{animation:none}
+  .af-node.is-agent.is-thinking .af-ico,
+  .af-node.is-cody.is-thinking .af-ico{animation:none}
   .af-node.is-pulse{animation:none}
   .af-think-dots i{animation:none;opacity:.7}
   .af-particle{display:none}
+}
+
+/* ---------- Cody flow (pipeline, distinto al hub de Clara) ---------- */
+.agent-flow.cody-flow{
+  margin-top:0;
+  background:
+    radial-gradient(80% 120% at 12% 50%, color-mix(in srgb,var(--brand) 28%,transparent), transparent 55%),
+    radial-gradient(70% 100% at 88% 50%, color-mix(in srgb,var(--brand) 12%,transparent), transparent 50%),
+    #ffffff;
+}
+[data-theme="dark"] .agent-flow.cody-flow{
+  background:
+    radial-gradient(80% 120% at 12% 50%, rgba(255,212,38,.14), transparent 55%),
+    radial-gradient(70% 100% at 88% 50%, rgba(255,212,38,.06), transparent 50%),
+    #151a23;
+}
+
+.cody-flow .af-node[data-id="evento"]{left:8%;top:50%}
+.cody-flow .af-node[data-id="afiliado"]{left:23%;top:50%}
+.cody-flow .af-node[data-id="cody"]{
+  left:40%;top:50%;
+  width:var(--af-agent-w);
+  padding:13px 12px 12px;
+  border-radius:18px;
+  z-index:3;
+}
+.cody-flow .af-node[data-id="cody"] .af-ico{
+  width:42px;height:42px;border-radius:13px;
+  background:linear-gradient(145deg,var(--brand),color-mix(in srgb,var(--brand) 55%,#fff));
+  color:#1a1a1a;
+  border-color:color-mix(in srgb,var(--brand) 55%, var(--line));
+}
+.cody-flow .af-node[data-id="cody"] .af-name{font-size:13px}
+.cody-flow .af-node[data-id="regla"]{left:58%;top:50%}
+.cody-flow .af-node[data-id="envio"]{left:75%;top:50%}
+.cody-flow .af-node[data-id="actualiza"]{left:92%;top:50%}
+
+.af-node.is-cody.is-active,
+.af-node.is-cody.is-thinking{
+  border-color:color-mix(in srgb,var(--brand) 70%, #000 10%);
+  box-shadow:
+    0 0 0 5px var(--brand-soft),
+    0 0 28px color-mix(in srgb,var(--brand) 35%, transparent),
+    0 10px 24px rgba(0,0,0,.08);
+  transform:translate(-50%,-50%) scale(1.08);
+}
+.af-node.is-cody.is-thinking .af-ico{animation:afThinkSpin 2.4s linear infinite}
+.af-node.is-cody.is-thinking .af-status{color:#1a1a1a;background:var(--brand);border-color:transparent}
+
+.af-wires .af-edge.is-cody-edge.is-lit{
+  stroke:var(--brand-deep);
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--brand) 50%,transparent));
+}
+[data-theme="dark"] .af-wires .af-edge.is-cody-edge.is-lit{stroke:var(--brand)}
+.af-particle.is-cody-particle{
+  fill:var(--brand-deep);
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--brand) 75%,transparent));
+}
+[data-theme="dark"] .af-particle.is-cody-particle{fill:var(--brand)}
+
+@media(max-width:720px){
+  .cody-flow .af-node[data-id="evento"]{left:7%;top:50%}
+  .cody-flow .af-node[data-id="afiliado"]{left:24%;top:50%}
+  .cody-flow .af-node[data-id="cody"]{left:42%;top:50%}
+  .cody-flow .af-node[data-id="regla"]{left:60%;top:50%}
+  .cody-flow .af-node[data-id="envio"]{left:76%;top:50%}
+  .cody-flow .af-node[data-id="actualiza"]{left:92%;top:50%}
+  .cody-flow .af-node[data-id="cody"] .af-ico{width:32px;height:32px}
 }

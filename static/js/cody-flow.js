@@ -1,82 +1,71 @@
 /**
- * Clara · Agent Flow — cerebro animado (hero).
- * Vanilla SVG + CSS. Sin librerías externas.
- * Flujo real: Afiliado → Identifica → Mongo → Clara → [Perfil 360 · Ofertas · Alertas] → Recomienda / escala
+ * Cody · Agent Flow — cerebro animado del agente de ofertas (hero).
+ * Solo UI explicativa (sin backend). Estructura distinta a Clara:
+ * Evento → Afiliado → Cody → Regla → Envía → Actualiza
  */
 (function () {
   "use strict";
 
-  const ROOT_ID = "agentFlow";
+  const ROOT_ID = "codyFlow";
   const RESUME_MS = 5000;
   const CYCLE_PAUSE_MS = 2200;
-  const HOLD_MS = 2800;
+  const HOLD_MS = 2600;
 
   const NODES = {
-    user: {
+    evento: {
+      name: "Evento",
+      hint: "Algo cambió en su vida",
+      detail: "Cuando Colsubsidio registra un hecho importante —por ejemplo, un crédito de vivienda aprobado— esa señal activa a Cody. No hace falta que la persona inicie un chat.",
+      bullets: ["Crédito, ingreso, familia…", "Señal automática", "Sin esperar al afiliado"],
+    },
+    afiliado: {
       name: "Afiliado",
-      hint: "Llega al chat",
-      detail: "Clara pregunta si es afiliado Colsubsidio y abre la conversación por web o WhatsApp.",
-      bullets: ["Canal WhatsApp o web", "Lenguaje natural", "Sin formularios previos"],
+      hint: "Lee su información",
+      detail: "Cody consulta la base de datos de Colsubsidio, ubica a esa persona y entiende su contexto: qué acaba de ocurrir y qué protección tiene sentido ofrecerle.",
+      bullets: ["Consulta la base", "Identifica a la persona", "Entiende el momento"],
     },
-    query: {
-      name: "Identifica",
-      hint: "SERIE o datos",
-      detail: "Pide la SERIE o datos básicos para ubicar (o crear) al afiliado antes de recomendar.",
-      bullets: ["SERIE Colsubsidio", "Datos básicos", "Primer filtro"],
+    cody: {
+      name: "Cody",
+      hint: "Agente automático",
+      detail: "Un agente independiente que trabaja solo: recibe el evento, piensa la mejor oferta de seguro y actúa. Automatización inteligente al servicio del afiliado.",
+      bullets: ["Independiente de Clara", "Piensa y actúa solo", "Enfocado en seguros"],
     },
-    agent: {
-      name: "Clara",
-      hint: "Orquesta el cerebro",
-      detail: "Verifica en Mongo, arma el contexto y recomienda.",
-      bullets: ["Verifica el usuario", "Elige herramientas", "Guarda la información."],
+    regla: {
+      name: "Criterio",
+      hint: "Elige qué ofrecer",
+      detail: "Con pensamiento claro y reglas transparentes: si hubo un crédito de vivienda, propone el seguro que protege ese patrimonio. Siempre con una razón que se puede explicar.",
+      bullets: ["Evento → oferta justa", "Razón fácil de entender", "Sin decisiones al azar"],
     },
-    perfil: {
-      name: "Perfil 360",
-      hint: "Quién es y qué necesita",
-      detail: "Clara arma una vista completa de su situación —hogar, vivienda y créditos— y calcula qué seguro encaja mejor, con el porqué.",
-      bullets: ["Vista completa del afiliado", "Vivienda, crédito y hogar", "Oferta con explicación clara"],
+    envio: {
+      name: "Envía",
+      hint: "Llega a la persona",
+      detail: "Cody manda la oferta de seguro por el canal del afiliado. El mensaje llega en el momento oportuno: cuando el evento recién ocurrió.",
+      bullets: ["Oferta de seguro", "En el momento justo", "Canal del afiliado"],
     },
-    ofertas: {
-      name: "Ofertas",
-      hint: "Vivienda · crédito",
-      detail: "Consulta ofertas según vivienda/crédito del afiliado en las bases de Colsubsidio.",
-      bullets: ["Vivienda y crédito", "Oferta pertinente", "Cruce con seguros"],
-    },
-    alertas: {
-      name: "Alertas",
-      hint: "Mora · novedades",
-      detail: "Consulta alertas de mora y novedades para no recomendar a ciegas.",
-      bullets: ["Mora", "Novedades", "Contexto real"],
-    },
-    respuesta: {
-      name: "Recomienda",
-      hint: "O escala al asesor",
-      detail: "Clara conversa y recomienda seguros. Actualiza al afiliado y escala a un asesor.",
-      bullets: ["Recomendación clara", "Actualiza + sesión Mongo", "Escala si hay cierre"],
+    actualiza: {
+      name: "Actualiza",
+      hint: "Deja constancia",
+      detail: "Guarda el evento y la oferta en el perfil de esa persona. La información queda al día para futuras interacciones con Colsubsidio o con Clara.",
+      bullets: ["Perfil actualizado", "Historial del evento", "Listo para el siguiente contacto"],
     },
   };
 
-  /** Paths L→R in viewBox 0 0 100 100 (node centers) */
+  /** Pipeline horizontal: distinto al hub de Clara. */
   const EDGES = [
-    { id: "e-user-query", from: "user", to: "query", d: "M8 50 C14 50, 18 50, 23 50" },
-    { id: "e-query-agent", from: "query", to: "agent", d: "M23 50 C29 50, 34 50, 40 50" },
-    { id: "e-agent-perfil", from: "agent", to: "perfil", d: "M40 50 C48 32, 54 20, 62 18" },
-    { id: "e-agent-ofertas", from: "agent", to: "ofertas", d: "M40 50 C48 50, 54 50, 62 50" },
-    { id: "e-agent-alertas", from: "agent", to: "alertas", d: "M40 50 C48 68, 54 80, 62 82" },
-    { id: "e-perfil-agent", from: "perfil", to: "agent", d: "M62 18 C54 20, 48 32, 40 50", ret: true },
-    { id: "e-ofertas-agent", from: "ofertas", to: "agent", d: "M62 50 C54 50, 48 50, 40 50", ret: true },
-    { id: "e-alertas-agent", from: "alertas", to: "agent", d: "M62 82 C54 80, 48 68, 40 50", ret: true },
-    { id: "e-agent-resp", from: "agent", to: "respuesta", d: "M40 50 C55 92, 75 92, 90 50" },
+    { id: "e-ev-af", from: "evento", to: "afiliado", d: "M8 50 C14 50, 18 50, 23 50" },
+    { id: "e-af-cody", from: "afiliado", to: "cody", d: "M23 50 C29 50, 34 50, 40 50" },
+    { id: "e-cody-regla", from: "cody", to: "regla", d: "M40 50 C48 50, 52 50, 58 50" },
+    { id: "e-regla-envio", from: "regla", to: "envio", d: "M58 50 C65 50, 70 50, 75 50" },
+    { id: "e-envio-act", from: "envio", to: "actualiza", d: "M75 50 C82 50, 86 50, 92 50" },
   ];
 
   const ICONS = {
-    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    query: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
-    agent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-.5"/><path d="M8 7V6a4 4 0 0 1 4-4"/><path d="M7.5 13H7a3 3 0 0 1 0-6h1"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 16c.8 1.2 2 2 3 2s2.2-.8 3-2"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>',
-    perfil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-    ofertas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-    alertas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
-    respuesta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    evento: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    afiliado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    cody: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-.5"/><path d="M8 7V6a4 4 0 0 1 4-4"/><path d="M7.5 13H7a3 3 0 0 1 0-6h1"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 16c.8 1.2 2 2 3 2s2.2-.8 3-2"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>',
+    regla: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M8 9h2"/></svg>',
+    envio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+    actualiza: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>',
   };
 
   function reduceMotion() {
@@ -110,11 +99,11 @@
   function build(root) {
     root.innerHTML = "";
     root.setAttribute("role", "img");
-    root.setAttribute("aria-label", "Cerebro de Clara: identifica, verifica en Mongo, recomienda y escala");
+    root.setAttribute("aria-label", "Cerebro de Cody: evento, afiliado, regla, envío y actualización");
 
     const label = document.createElement("div");
     label.className = "af-label";
-    label.innerHTML = '<span class="af-live" aria-hidden="true"></span> Cerebro Clara';
+    label.innerHTML = '<span class="af-live" aria-hidden="true"></span> Cerebro Cody · ofertas automáticas';
     root.appendChild(label);
 
     const stage = document.createElement("div");
@@ -133,17 +122,16 @@
       const path = document.createElementNS(svgNS, "path");
       path.setAttribute("d", e.d);
       path.setAttribute("id", e.id);
-      path.classList.add("af-edge");
-      if (e.ret) path.classList.add("is-return");
+      path.classList.add("af-edge", "is-cody-edge");
       svg.appendChild(path);
       edgeEls[e.id] = path;
     });
 
     const particles = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const c = document.createElementNS(svgNS, "circle");
       c.setAttribute("r", "0.85");
-      c.classList.add("af-particle");
+      c.classList.add("af-particle", "is-cody-particle");
       c.style.display = "none";
       svg.appendChild(c);
       particles.push(c);
@@ -155,7 +143,7 @@
       const meta = NODES[id];
       const el = document.createElement("button");
       el.type = "button";
-      el.className = "af-node" + (id === "agent" ? " is-agent" : "");
+      el.className = "af-node" + (id === "cody" ? " is-cody" : "");
       el.dataset.id = id;
       el.setAttribute("aria-label", meta.name + ": " + meta.hint);
       el.innerHTML =
@@ -163,7 +151,7 @@
         '<span class="af-ico" aria-hidden="true">' + ICONS[id] + "</span>" +
         '<span class="af-name">' + meta.name + "</span>" +
         '<span class="af-hint">' + meta.hint + "</span>" +
-        (id === "agent"
+        (id === "cody"
           ? '<span class="af-think-dots" aria-hidden="true"><i></i><i></i><i></i></span>'
           : "");
       stage.appendChild(el);
@@ -171,7 +159,7 @@
     });
 
     const detail = document.createElement("div");
-    detail.className = "af-detail";
+    detail.className = "af-detail af-detail-cody";
     detail.setAttribute("aria-hidden", "true");
     document.body.appendChild(detail);
 
@@ -188,15 +176,12 @@
       if (st) st.textContent = "Activo";
     } else if (state === "thinking") {
       el.classList.add("is-active", "is-thinking");
-      if (st) st.textContent = "Analizando";
+      if (st) st.textContent = "Decidiendo";
     } else if (state === "next") {
       el.classList.add("is-next");
       if (st) st.textContent = "";
     } else if (state === "done") {
       el.classList.add("is-done");
-      if (st) st.textContent = "";
-    } else if (state === "dim") {
-      el.classList.add("is-dim");
       if (st) st.textContent = "";
     } else if (st) {
       st.textContent = "";
@@ -207,7 +192,7 @@
     Object.keys(ui.nodeEls).forEach((id) => setNodeState(ui.nodeEls, id, "idle"));
     Object.values(ui.edgeEls).forEach((p) => p.classList.remove("is-lit"));
     ui.particles.forEach((c) => {
-      c.classList.remove("is-on", "is-return");
+      c.classList.remove("is-on");
       c.style.display = "none";
     });
     Object.values(ui.nodeEls).forEach((n) => n.classList.remove("is-hover"));
@@ -222,14 +207,10 @@
   function animateParticle(ctl, ui, edgeId, opts) {
     const path = ui.edgeEls[edgeId];
     const particle = ui.particles[opts.slot || 0];
-    if (!path || !particle || reduceMotion()) {
-      return Promise.resolve();
-    }
+    if (!path || !particle || reduceMotion()) return Promise.resolve();
     return new Promise((resolve) => {
       const dur = opts.duration || 900;
-      const ret = !!opts.ret;
       path.classList.add("is-lit");
-      particle.classList.toggle("is-return", ret);
       particle.classList.add("is-on");
       particle.style.display = "";
       let elapsed = 0;
@@ -253,9 +234,8 @@
         const pt = pointOnPath(path, ease);
         particle.setAttribute("cx", pt.x);
         particle.setAttribute("cy", pt.y);
-        if (t < 1) {
-          ctl.raf = requestAnimationFrame(frame);
-        } else {
+        if (t < 1) ctl.raf = requestAnimationFrame(frame);
+        else {
           particle.classList.remove("is-on");
           particle.style.display = "none";
           resolve();
@@ -281,21 +261,17 @@
       ctl.autoSpotlight = null;
     }
 
-    /** Activa un nodo, muestra su hover/detalle 3s y luego lo cierra. */
     async function spotlight(id, state) {
       const el = N[id];
       if (!el || !(await gate())) return false;
-
       await clearSpotlight();
       setNodeState(N, id, state || "active");
       el.classList.add("is-hover");
       ctl.root.classList.add("is-auto-focus");
       ctl.autoSpotlight = id;
       showDetail(ctl, ui, id, el);
-
       await sleep(HOLD_MS);
       if (!(await gate())) return false;
-
       el.classList.remove("is-hover");
       hideDetail(ui, ctl);
       ctl.root.classList.remove("is-auto-focus");
@@ -308,66 +284,25 @@
     await clearSpotlight();
     if (!(await gate())) return;
 
-    // 1. Afiliado
-    setNodeState(N, "query", "next");
-    if (!(await spotlight("user", "active"))) return;
-    if (!(await gate())) return;
-    await animateParticle(ctl, ui, "e-user-query", { duration: 700, slot: 0 });
-    if (!(await gate())) return;
+    const steps = [
+      ["evento", "e-ev-af", "afiliado"],
+      ["afiliado", "e-af-cody", "cody"],
+      ["cody", "e-cody-regla", "regla", "thinking"],
+      ["regla", "e-regla-envio", "envio"],
+      ["envio", "e-envio-act", "actualiza"],
+      ["actualiza", null, null],
+    ];
 
-    // 2. Identifica (SERIE / datos)
-    setNodeState(N, "agent", "next");
-    if (!(await spotlight("query", "active"))) return;
-    if (!(await gate())) return;
-    await animateParticle(ctl, ui, "e-query-agent", { duration: 750, slot: 0 });
-    if (!(await gate())) return;
-
-    // 3. Clara orquesta (Mongo + herramientas)
-    setNodeState(N, "perfil", "next");
-    setNodeState(N, "ofertas", "next");
-    setNodeState(N, "alertas", "next");
-    if (!(await spotlight("agent", "thinking"))) return;
-    if (!(await gate())) return;
-
-    // 4. Contexto en paralelo conceptual: perfil → ofertas → alertas
-    await animateParticle(ctl, ui, "e-agent-perfil", { duration: 800, slot: 0 });
-    if (!(await gate())) return;
-    if (!(await spotlight("perfil", "active"))) return;
-
-    await animateParticle(ctl, ui, "e-agent-ofertas", { duration: 800, slot: 1 });
-    if (!(await gate())) return;
-    if (!(await spotlight("ofertas", "active"))) return;
-
-    await animateParticle(ctl, ui, "e-agent-alertas", { duration: 800, slot: 2 });
-    if (!(await gate())) return;
-    if (!(await spotlight("alertas", "active"))) return;
-
-    // 5. Retorno y decisión
-    if (!(await gate())) return;
-    await Promise.all([
-      animateParticle(ctl, ui, "e-perfil-agent", { duration: 700, slot: 0, ret: true }),
-      (async () => {
-        await sleep(80);
-        await animateParticle(ctl, ui, "e-ofertas-agent", { duration: 700, slot: 1, ret: true });
-      })(),
-      (async () => {
-        await sleep(160);
-        await animateParticle(ctl, ui, "e-alertas-agent", { duration: 700, slot: 2, ret: true });
-      })(),
-    ]);
-    if (!(await gate())) return;
-
-    setNodeState(N, "respuesta", "next");
-    if (!(await spotlight("agent", "active"))) return;
-    const st = N.agent.querySelector("[data-st]");
-    if (st) st.textContent = "";
-
-    if (!(await gate())) return;
-    await animateParticle(ctl, ui, "e-agent-resp", { duration: 850, slot: 0 });
-    if (!(await gate())) return;
-
-    // 6. Recomienda / escala (sin pago ni póliza)
-    if (!(await spotlight("respuesta", "active"))) return;
+    for (let i = 0; i < steps.length; i++) {
+      const [id, edge, next, state] = steps[i];
+      if (next) setNodeState(N, next, "next");
+      if (!(await spotlight(id, state || "active"))) return;
+      if (!(await gate())) return;
+      if (edge) {
+        await animateParticle(ctl, ui, edge, { duration: 750, slot: 0 });
+        if (!(await gate())) return;
+      }
+    }
 
     await sleep(CYCLE_PAUSE_MS);
   }
@@ -383,20 +318,17 @@
       "<ul>" + meta.bullets.map((b) => "<li>" + b + "</li>").join("") + "</ul>";
 
     const nodeRect = nodeEl.getBoundingClientRect();
-    const maxW = Math.min(220, window.innerWidth * 0.42);
+    const maxW = Math.min(240, window.innerWidth * 0.42);
     ui.detail.style.width = maxW + "px";
     ui.detail.style.position = "fixed";
 
     let left = nodeRect.left + nodeRect.width / 2;
     const half = maxW / 2;
     left = Math.max(half + 8, Math.min(window.innerWidth - half - 8, left));
-
-    // Siempre debajo del nodo, por encima del resto de la página
-    const top = nodeRect.bottom + 12;
     ui.detail.classList.remove("is-above");
     ui.detail.style.transformOrigin = "top center";
     ui.detail.style.left = left + "px";
-    ui.detail.style.top = top + "px";
+    ui.detail.style.top = nodeRect.bottom + 12 + "px";
     ui.detail.classList.add("is-open");
     ui.detail.setAttribute("aria-hidden", "false");
     ctl.root.classList.add("is-detail-open");
@@ -415,7 +347,6 @@
     }
   }
 
-  /** Evita que el popup fijo quede flotando al hacer scroll. */
   function syncDetailOnScroll(ctl, ui) {
     if (!ui.detail.classList.contains("is-open") || !ctl.detailNode) return;
     const rect = ctl.detailNode.getBoundingClientRect();
@@ -430,7 +361,7 @@
       }
       return;
     }
-    const maxW = parseFloat(ui.detail.style.width) || Math.min(220, window.innerWidth * 0.42);
+    const maxW = parseFloat(ui.detail.style.width) || Math.min(240, window.innerWidth * 0.42);
     let left = rect.left + rect.width / 2;
     const half = maxW / 2;
     left = Math.max(half + 8, Math.min(window.innerWidth - half - 8, left));
@@ -438,20 +369,7 @@
     ui.detail.style.top = rect.bottom + 12 + "px";
   }
 
-  function setHoverBadge(el, on) {
-    const st = el && el.querySelector("[data-st]");
-    if (!st) return;
-    if (on) {
-      // No pisar "Analizando" si ya está en thinking
-      if (!el.classList.contains("is-thinking") || !st.textContent) {
-        if (!st.textContent) st.textContent = "Activo";
-      }
-    } else if (!el.classList.contains("is-active") && !el.classList.contains("is-thinking")) {
-      st.textContent = "";
-    }
-  }
-
-  function pause(ctl, ui) {
+  function pause(ctl) {
     ctl.paused = true;
     ctl.root.classList.add("is-paused");
     ctl.root.classList.remove("is-auto-focus");
@@ -479,13 +397,8 @@
         await wait(150, ctl);
         continue;
       }
-      try {
-        await runCycle(ctl, ui);
-      } catch (e) {
-        /* noop */
-      }
+      try { await runCycle(ctl, ui); } catch (e) { /* noop */ }
       if (reduceMotion()) {
-        // Static showcase once then stop loop churn
         Object.keys(ui.nodeEls).forEach((id) => setNodeState(ui.nodeEls, id, "done"));
         break;
       }
@@ -497,36 +410,14 @@
     Object.entries(ui.nodeEls).forEach(([id, el]) => {
       el.addEventListener("pointerenter", () => {
         ctl.hoverId = id;
-        pause(ctl, ui);
-        Object.values(ui.nodeEls).forEach((n) => {
-          n.classList.remove("is-hover");
-          setHoverBadge(n, false);
-        });
+        pause(ctl);
+        Object.values(ui.nodeEls).forEach((n) => n.classList.remove("is-hover"));
         el.classList.add("is-hover");
         const st = el.querySelector("[data-st]");
         if (st) st.textContent = "Activo";
         showDetail(ctl, ui, id, el);
       });
       el.addEventListener("pointerleave", () => {
-        if (ctl.hoverId === id) ctl.hoverId = null;
-        el.classList.remove("is-hover");
-        setHoverBadge(el, false);
-        if (!el.classList.contains("is-active") && !el.classList.contains("is-thinking")) {
-          const st = el.querySelector("[data-st]");
-          if (st) st.textContent = "";
-        }
-        hideDetail(ui, ctl);
-        scheduleResume(ctl, ui);
-      });
-      el.addEventListener("focus", () => {
-        ctl.hoverId = id;
-        pause(ctl, ui);
-        el.classList.add("is-hover");
-        const st = el.querySelector("[data-st]");
-        if (st) st.textContent = "Activo";
-        showDetail(ctl, ui, id, el);
-      });
-      el.addEventListener("blur", () => {
         if (ctl.hoverId === id) ctl.hoverId = null;
         el.classList.remove("is-hover");
         if (!el.classList.contains("is-active") && !el.classList.contains("is-thinking")) {
@@ -538,14 +429,13 @@
       });
     });
 
-    // Pause when hero view hidden
     const inicio = document.getElementById("inicio");
     if (inicio && "MutationObserver" in window) {
       ctl.viewObs = new MutationObserver(() => {
         const active = inicio.classList.contains("active");
         if (!active) {
           ctl.running = false;
-          pause(ctl, ui);
+          pause(ctl);
           clearTimers(ctl);
         } else if (!ctl.loopActive) {
           ctl.paused = false;
@@ -585,7 +475,6 @@
     const ui = build(root);
     bind(ctl, ui);
 
-    // Start when visible
     if ("IntersectionObserver" in window) {
       const io = new IntersectionObserver((entries) => {
         entries.forEach((e) => {
@@ -597,20 +486,19 @@
             ctl.loopActive = false;
           }
         });
-      }, { threshold: 0.25 });
+      }, { threshold: 0.2 });
       io.observe(root);
       ctl.io = io;
     } else {
       startLoop(ctl, ui);
     }
 
-    // Reduced motion: show completed snapshot
     if (reduceMotion()) {
       Object.keys(ui.nodeEls).forEach((id) => setNodeState(ui.nodeEls, id, "done"));
       Object.values(ui.edgeEls).forEach((p) => p.classList.add("is-lit"));
     }
 
-    window.__claraAgentFlow = {
+    window.__claraCodyFlow = {
       destroy() {
         ctl.destroyed = true;
         ctl.running = false;

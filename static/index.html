@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8" />
@@ -13,9 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css">
-<link rel="stylesheet" href="/static/css/arch.css">
-<link rel="stylesheet" href="/static/css/agent-flow.css">
+<link rel="stylesheet" href="/static/css/styles.css?v=nav7">
+<link rel="stylesheet" href="/static/css/agent-flow.css?v=cody3">
 </head>
 <body>
 
@@ -39,15 +38,13 @@
     <nav class="nav-links">
       <button data-view="inicio" class="active">Inicio</button>
       <button data-view="demo">Demo interactiva</button>
-      <button data-view="arquitectura">Arquitectura</button>
-      <button onclick="window.open('/asesor','_blank')" title="Bandeja de vinculaciones que Clara transmite al asesor">Panel del asesor</button>
-      <button onclick="window.open('/ofertas','_blank')" title="Segundo agente: ofertas proactivas por eventos">Agente de ofertas</button>
+      <button onclick="location.href='/asesor'" title="Bandeja de vinculaciones que Clara transmite al asesor">Panel del asesor</button>
+      <button onclick="location.href='/ofertas'" title="Segundo agente: ofertas proactivas por eventos">Agente de ofertas</button>
     </nav>
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
       <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="i-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </button>
-    <button class="nav-cta" data-view="demo">Probar la demo</button>
   </div>
 </header>
 
@@ -64,7 +61,6 @@
           humana y con trazabilidad total.</p>
         <div class="hero-actions">
           <button class="btn primary" data-view="demo">Iniciar conversación con Clara</button>
-          <button class="btn ghost" data-view="arquitectura">Ver la arquitectura</button>
         </div>
         <div class="hero-dev">
           <span class="hero-dev-label">Desarrollado por</span>
@@ -95,7 +91,7 @@
     </div>
 
     <div class="container">
-      <div class="agent-flow" id="agentFlow" aria-label="Cómo trabaja el agente Clara"></div>
+      <div class="agent-flow" id="agentFlow" aria-label="Cerebro de Clara: identifica, verifica y recomienda"></div>
     </div>
 
     <div class="container">
@@ -105,6 +101,10 @@
         <div class="kpi" data-reveal data-reveal-delay="2"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
         <div class="kpi" data-reveal data-reveal-delay="3"><b>&lt; 5 min</b><span>del primer mensaje a la vinculación confirmada</span></div>
       </div>
+    </div>
+
+    <div class="container">
+      <div class="agent-flow cody-flow" id="codyFlow" aria-label="Cerebro de Cody: evento, regla, envío y actualización"></div>
     </div>
   </section>
 
@@ -137,9 +137,9 @@
           <div class="ic" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           </div>
-          <h3>Cierre completo</h3>
-          <p>Contrato en PDF con firma electrónica, consentimiento registrado, pago en pasarela (sandbox Wompi) y
-            confirmación de la vinculación, que se transmite a la aseguradora. Todo sin un asesor humano.</p>
+          <h3>Escalado al asesor</h3>
+          <p>Cuando el afiliado quiere vincularse, Clara deja el caso listo y lo pasa al asesor: perfil,
+            recomendación y contexto. Contrato, firma y pago siguen en el flujo humano, con trazabilidad.</p>
         </div>
       </div>
 
@@ -262,310 +262,6 @@
   </div>
 </main>
 
-<!-- ============ ARQUITECTURA ============ -->
-<main id="arquitectura" class="view">
-  <div class="arch">
-    <div class="container">
-
-      <header class="arch-hero">
-        <p class="arch-kicker">Arquitectura · Clara × Colsubsidio</p>
-        <h2 class="arch-title">El modelo conversa.<br><em>El sistema decide.</em></h2>
-        <p class="arch-lead">Cuatro capas. Un flujo determinístico. Cada precio, cobertura y vinculación sale del código — nunca del LLM.</p>
-      </header>
-
-      <!-- Capas: deck hover -->
-      <section class="arch-deck" aria-label="Capas del sistema" id="archDeck">
-        <div class="deck-row">
-          <article class="deck-card" tabindex="0" style="--lc:var(--accent)">
-            <div class="deck-glow" aria-hidden="true"></div>
-            <span class="deck-idx">01</span>
-            <h3>Canales</h3>
-            <p class="deck-sub">Entrada del afiliado</p>
-            <p class="deck-body">El afiliado llega por chat web o WhatsApp. Toda la conversación entra por un solo endpoint.</p>
-            <ul class="deck-ports">
-              <li>Chat web</li>
-              <li>WhatsApp · Twilio</li>
-              <li class="mono">POST /api/chat</li>
-            </ul>
-          </article>
-
-          <article class="deck-card" tabindex="0" style="--lc:var(--brand)">
-            <div class="deck-glow" aria-hidden="true"></div>
-            <span class="deck-idx">02</span>
-            <h3>Agente · Clara</h3>
-            <p class="deck-sub">Gemini con tool use</p>
-            <p class="deck-body">El modelo conversa y pide herramientas. No inventa precios ni coberturas: solo orquesta.</p>
-            <ul class="deck-ports">
-              <li class="mono">Gemini API</li>
-              <li>Orquestación conversacional</li>
-              <li>Extracción · responseSchema</li>
-            </ul>
-          </article>
-
-          <article class="deck-card" tabindex="0" style="--lc:var(--warn)">
-            <div class="deck-glow" aria-hidden="true"></div>
-            <span class="deck-idx">03</span>
-            <h3>Backend</h3>
-            <p class="deck-sub">Control determinístico</p>
-            <p class="deck-body">FastAPI manda: máquina de estados, sesiones en SQLite y guardrails que auditan cada salida.</p>
-            <ul class="deck-ports">
-              <li class="mono">FastAPI</li>
-              <li class="mono">SQLite · auditoría</li>
-              <li>Máquina de estados</li>
-              <li>Guardrails en código</li>
-            </ul>
-          </article>
-
-          <article class="deck-card" tabindex="0" style="--lc:var(--ok)">
-            <div class="deck-glow" aria-hidden="true"></div>
-            <span class="deck-idx">04</span>
-            <h3>Servicios</h3>
-            <p class="deck-sub">Determinísticos</p>
-            <p class="deck-body">RAG, propensión, reglas, PDF, pago y bandeja del asesor. Cada uno es código puro — nunca el LLM.</p>
-            <ul class="deck-ports">
-              <li>RAG · coberturas</li>
-              <li>Motor de propensión</li>
-              <li>PDF · fpdf2</li>
-              <li>Bandeja del asesor</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <!-- Pipeline -->
-      <section class="arch-pipe" aria-label="Workflow automatizado">
-        <div class="arch-sec-head">
-          <span class="arch-kicker">Workflow</span>
-          <h3>De punta a punta, sin intervención humana</h3>
-          <p>Ocho estaciones. El pipeline avanza solo.</p>
-        </div>
-
-        <div class="pipe-stage" id="pipeStage">
-          <div class="pipe-track" aria-hidden="true">
-            <i class="pipe-track-line"></i>
-            <i class="pipe-track-fill" id="pipeTrackFill"></i>
-            <span class="pipe-signal" id="pipeSignal"></span>
-          </div>
-
-          <ol class="pipe-rail" id="pipeRail">
-            <li class="pipe-step" data-step="0">
-              <span class="pipe-num">00</span>
-              <div class="pipe-body">
-                <h4>Entrada y sesión <code>init</code></h4>
-                <p>Se crea la sesión en Diagnóstico y se persiste en SQLite. Saludo + aviso Ley 1581.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="1">
-              <span class="pipe-num">01</span>
-              <div class="pipe-body">
-                <h4>Diagnóstico <code>registrar_perfil</code></h4>
-                <p>Preguntas abiertas. Perfil con herramientas del agente + extracción estructurada.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="2">
-              <span class="pipe-num">02</span>
-              <div class="pipe-body">
-                <h4>Recomendación <code>recomendar</code></h4>
-                <p>consultar_coberturas() y cotizar() rankean opciones con precio real.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="3">
-              <span class="pipe-num">03</span>
-              <div class="pipe-body">
-                <h4>Resolución de dudas <code>RAG</code></h4>
-                <p>Respuestas respaldadas en condiciones reales. Fuera de alcance → humano.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="4">
-              <span class="pipe-num">04</span>
-              <div class="pipe-body">
-                <h4>Datos y contrato <code>generar_contrato</code></h4>
-                <p>Datos del bien + PDF único con detalle de póliza y firma.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="5">
-              <span class="pipe-num">05</span>
-              <div class="pipe-body">
-                <h4>Firma y pago <code>Wompi</code></h4>
-                <p>Firma electrónica, consentimiento registrado y checkout sandbox.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="6">
-              <span class="pipe-num">06</span>
-              <div class="pipe-body">
-                <h4>Vinculación <code>webhook</code></h4>
-                <p>Pago APPROVED → vinculación radicada y resumen PDF. La póliza la emite la aseguradora.</p>
-              </div>
-            </li>
-            <li class="pipe-step" data-step="7">
-              <span class="pipe-num">07</span>
-              <div class="pipe-body">
-                <h4>Post-venta <code>CSAT</code></h4>
-                <p>Encuesta de satisfacción y la vinculación pasa a la bandeja del asesor.</p>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <!-- Herramientas · Tool rack 3D -->
-      <section class="arch-tools" aria-label="Herramientas del agente" id="archTools">
-        <div class="arch-sec-head">
-          <span class="arch-kicker">Tool surface</span>
-          <h3>Herramientas del agente</h3>
-          <p>Quién decide el contenido: nunca el modelo inventa coberturas ni precios.</p>
-        </div>
-
-        <p class="tool-hint" id="toolHint"><span class="tool-live" aria-hidden="true"></span>Superficie de tools · 6 endpoints determinísticos</p>
-
-        <div class="tool-stage" id="toolStage" aria-hidden="false">
-          <div class="tool-stage-floor" aria-hidden="true"></div>
-          <div class="tool-rack" id="toolRack">
-            <article class="tool-card tool-row-a" data-tool="0" style="--ti:0;--ry:-10deg">
-              <div class="tool-scan" aria-hidden="true"></div>
-              <header class="tool-head">
-                <span class="tool-fn">fn</span>
-                <code class="tool-name">consultar_coberturas</code>
-                <span class="tool-slot">01</span>
-              </header>
-              <div class="tool-bus">
-                <div class="tool-port">
-                  <span class="port-pin in" aria-hidden="true"></span>
-                  <div><span class="port-lab">Entrada</span><span class="port-val">producto, tipo (amparo / exclusión / condición)</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin out" aria-hidden="true"></span>
-                  <div><span class="port-lab">Salida</span><span class="port-val">chunks con texto de la póliza y fuente</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin decide" aria-hidden="true"></span>
-                  <div><span class="port-lab">Decide</span><span class="port-val">Documentos reales Colsubsidio <span class="src">RAG</span></span></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="tool-card tool-row-a" data-tool="1" style="--ti:1;--ry:2deg">
-              <div class="tool-scan" aria-hidden="true"></div>
-              <header class="tool-head">
-                <span class="tool-fn">fn</span>
-                <code class="tool-name">cotizar</code>
-                <span class="tool-slot">02</span>
-              </header>
-              <div class="tool-bus">
-                <div class="tool-port">
-                  <span class="port-pin in" aria-hidden="true"></span>
-                  <div><span class="port-lab">Entrada</span><span class="port-val">producto, edad, dependientes</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin out" aria-hidden="true"></span>
-                  <div><span class="port-lab">Salida</span><span class="port-val">precio mensual y desglose</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin decide" aria-hidden="true"></span>
-                  <div><span class="port-lab">Decide</span><span class="port-val">Motor de reglas <span class="src">nunca el modelo</span></span></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="tool-card tool-row-a" data-tool="2" style="--ti:2;--ry:10deg">
-              <div class="tool-scan" aria-hidden="true"></div>
-              <header class="tool-head">
-                <span class="tool-fn">fn</span>
-                <code class="tool-name">registrar_datos</code>
-                <span class="tool-slot">03</span>
-              </header>
-              <div class="tool-bus">
-                <div class="tool-port">
-                  <span class="port-pin in" aria-hidden="true"></span>
-                  <div><span class="port-lab">Entrada</span><span class="port-val">contacto y datos del bien</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin out" aria-hidden="true"></span>
-                  <div><span class="port-lab">Salida</span><span class="port-val">datos de contratación validados</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin decide" aria-hidden="true"></span>
-                  <div><span class="port-lab">Decide</span><span class="port-val">Backend <span class="src">regex + responseSchema</span></span></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="tool-card tool-row-b" data-tool="3" style="--ti:3;--ry:-10deg">
-              <div class="tool-scan" aria-hidden="true"></div>
-              <header class="tool-head">
-                <span class="tool-fn">fn</span>
-                <code class="tool-name">generar_contrato</code>
-                <span class="tool-slot">04</span>
-              </header>
-              <div class="tool-bus">
-                <div class="tool-port">
-                  <span class="port-pin in" aria-hidden="true"></span>
-                  <div><span class="port-lab">Entrada</span><span class="port-val">producto</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin out" aria-hidden="true"></span>
-                  <div><span class="port-lab">Salida</span><span class="port-val">PDF: datos, detalle de póliza y firma</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin decide" aria-hidden="true"></span>
-                  <div><span class="port-lab">Decide</span><span class="port-val">Plantilla con datos de la sesión</span></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="tool-card tool-row-b" data-tool="4" style="--ti:4;--ry:-2deg">
-              <div class="tool-scan" aria-hidden="true"></div>
-              <header class="tool-head">
-                <span class="tool-fn">fn</span>
-                <code class="tool-name">firmar-contrato</code>
-                <span class="tool-slot">05</span>
-              </header>
-              <div class="tool-bus">
-                <div class="tool-port">
-                  <span class="port-pin in" aria-hidden="true"></span>
-                  <div><span class="port-lab">Entrada</span><span class="port-val">producto (botón de firma)</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin out" aria-hidden="true"></span>
-                  <div><span class="port-lab">Salida</span><span class="port-val">consentimiento + enlace y referencia de pago</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin decide" aria-hidden="true"></span>
-                  <div><span class="port-lab">Decide</span><span class="port-val">Backend + Wompi sandbox</span></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="tool-card tool-row-b" data-tool="5" style="--ti:5;--ry:10deg">
-              <div class="tool-scan" aria-hidden="true"></div>
-              <header class="tool-head">
-                <span class="tool-fn">fn</span>
-                <code class="tool-name">escalar_a_humano</code>
-                <span class="tool-slot">06</span>
-              </header>
-              <div class="tool-bus">
-                <div class="tool-port">
-                  <span class="port-pin in" aria-hidden="true"></span>
-                  <div><span class="port-lab">Entrada</span><span class="port-val">motivo</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin out" aria-hidden="true"></span>
-                  <div><span class="port-lab">Salida</span><span class="port-val">ticket creado</span></div>
-                </div>
-                <div class="tool-port">
-                  <span class="port-pin decide" aria-hidden="true"></span>
-                  <div><span class="port-lab">Decide</span><span class="port-val">Backend</span></div>
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-
-    </div>
-  </div>
-</main>
-
 <footer class="foot">
   <div class="container foot-inner">
     <div class="foot-credits">
@@ -601,8 +297,8 @@
 </footer>
 
 <script src="/static/js/app.js"></script>
-<script src="/static/js/hero-live.js"></script>
-<script src="/static/js/arch.js"></script>
-<script src="/static/js/agent-flow.js"></script>
+<script src="/static/js/hero-live.js?v=brain1"></script>
+<script src="/static/js/agent-flow.js?v=scroll1"></script>
+<script src="/static/js/cody-flow.js?v=scroll1"></script>
 </body>
 </html>
