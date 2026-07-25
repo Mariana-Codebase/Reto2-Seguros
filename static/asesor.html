@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Panel del asesor — Lara | Colsubsidio × 30X</title>
-<meta name="description" content="Bandeja de vinculaciones: Lara vende de forma autónoma y transmite cada solicitud empaquetada al asesor, que la gestiona con la aseguradora.">
+<meta name="description" content="Bandeja del asesor: cada solicitud que Lara radica, con la conversación del cliente, sus datos, el seguro que busca y las acciones para cerrar con la aseguradora.">
 <meta name="theme-color" content="#ffd000">
 <script>
   (function(){try{var t=localStorage.getItem("clara-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
@@ -12,41 +12,85 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css?v=system-flow-3">
+<link rel="stylesheet" href="/static/css/styles.css?v=asesor-2">
 <style>
-  .as-wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
-  .as-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:8px}
-  .as-head h1{margin:0;font-size:26px}
-  .as-head p{margin:6px 0 0;color:var(--muted);max-width:640px}
-  .as-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
-  .as-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
-  .as-kpi b{font-size:20px;color:var(--accent-d)}
+  .as-wrap{max-width:1200px;margin:0 auto;padding:26px 20px 60px}
+  .as-head h1{margin:0;font-size:24px}
+  .as-head p{margin:6px 0 0;color:var(--muted);max-width:680px;font-size:14px}
+  .as-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 14px}
+  .as-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 15px;min-width:104px}
+  .as-kpi b{font-size:19px;color:var(--accent-d)}
   [data-theme="dark"] .as-kpi b{color:var(--accent)}
-  .as-kpi span{display:block;font-size:12px;color:var(--muted)}
-  .sol{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
-  .sol-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .sol-top h3{margin:0;font-size:15.5px}
-  .sol-top .mono{font-family:var(--mono);font-size:12px;color:var(--muted)}
-  .badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
+  .as-kpi span{display:block;font-size:11.5px;color:var(--muted)}
+
+  /* filtros */
+  .as-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;transition:all .15s}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+  .chip .n{opacity:.7;font-weight:700;margin-left:4px}
+  .as-search{flex:1;min-width:180px;max-width:280px;font:inherit;font-size:13.5px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+  .as-search:focus{outline:none;border-color:var(--accent)}
+
+  /* maestro-detalle */
+  .as-split{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+  @media(max-width:920px){.as-split{grid-template-columns:1fr}}
+  .as-list{display:flex;flex-direction:column;gap:9px;max-height:74vh;overflow-y:auto;padding-right:2px}
+  .row{text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;font:inherit}
+  .row:hover{border-color:var(--accent)}
+  .row.sel{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft, rgba(255,208,0,.28))}
+  .row-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .row-top b{font-size:14px}
+  .row-sub{margin-top:3px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .row .prod{font-weight:600;color:var(--ink)}
+  .row .time{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line-2)}
+
+  .badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+  .badge.pendiente_asesor{background:var(--warn-soft);color:var(--warn)}
   .badge.pendiente_pago{background:var(--warn-soft);color:var(--warn)}
   .badge.pagada{background:var(--info-soft);color:var(--info)}
   .badge.enviada_aseguradora{background:var(--accent-soft);color:var(--accent-d)}
   .badge.emitida_aseguradora{background:var(--accent);color:#fff}
   .badge.cerrada{background:var(--line);color:var(--muted)}
   .badge.nueva{background:var(--warn-soft);color:var(--warn)}
-  .sol-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
-  .sol-sec{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px}
-  .sol-sec h4{margin:0 0 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
-  .sol-sec .kv{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
-  .sol-sec .kv .k{color:var(--muted)}
-  .sol-sec ul{margin:4px 0 0;padding-left:16px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
-  .sol-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .sol-actions button,.sol-actions a{font:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none}
-  .sol-actions button:hover,.sol-actions a:hover{border-color:var(--accent);color:var(--accent-d)}
-  .sol-actions .adv{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
-  .sol-actions .adv:hover{background:var(--brand-strong);color:var(--brand-ink)}
-  .as-empty{border:1px dashed var(--line-2);border-radius:14px;padding:40px;text-align:center;color:var(--muted)}
-  .aff-tag{font-size:11px;background:var(--info-soft);color:var(--info);border-radius:6px;padding:2px 7px;font-weight:700}
+
+  /* detalle */
+  .as-detail{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .det-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .det-head .who{font-size:19px;font-weight:700;margin:0}
+  .det-head .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .det-body{padding:18px 20px;display:grid;grid-template-columns:1.15fr .85fr;gap:22px}
+  @media(max-width:720px){.det-body{grid-template-columns:1fr}}
+  .sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin:0 0 10px}
+  .info-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .info-row:last-child{border-bottom:none}
+  .info-row .k{color:var(--muted)}
+  .info-row .v{font-weight:600;text-align:right}
+  .block{margin-bottom:20px}
+  .aseg-list{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+  .aseg-list li{font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+  .aseg-list li b{color:var(--ink)}
+  .aseg-list li.pick{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--info-soft);color:var(--info);margin-left:6px}
+
+  /* conversación */
+  .chat{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+  .bubble{max-width:84%;padding:9px 12px;border-radius:13px;font-size:13px;line-height:1.42}
+  .bubble .nm{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;opacity:.7;margin-bottom:3px}
+  .bubble.lara{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .bubble.cliente{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:4px}
+  .bubble.cliente .nm{opacity:.65}
+  .chat-empty{color:var(--muted);font-size:13px;text-align:center;padding:22px}
+
+  .det-actions{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:9px;flex-wrap:wrap;align-items:center;background:var(--surface-2)}
+  .det-actions a,.det-actions button{font:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none}
+  .det-actions a:hover{border-color:var(--accent);color:var(--accent-d)}
+  .det-actions .adv{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);margin-left:auto}
+  .det-actions .adv:hover{background:var(--brand-strong)}
+  .det-actions .adv:disabled{opacity:.6;cursor:default}
+  .as-empty{border:1px dashed var(--line-2);border-radius:16px;padding:56px 30px;text-align:center;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -72,9 +116,7 @@
       <a href="/">Inicio</a>
       <a href="/#ecosistema">Cómo funciona</a>
       <span class="nav-divider" aria-hidden="true"></span>
-      <a class="nav-agent-link" href="/ofertas">
-        <span class="nav-agent-dot"></span>Cody
-      </a>
+      <a class="nav-agent-link" href="/ofertas"><span class="nav-agent-dot"></span>Cody</a>
       <a class="nav-secondary-link active" href="/asesor" aria-current="page">Panel asesor</a>
     </nav>
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
@@ -86,17 +128,21 @@
 
 <div class="as-wrap">
   <div class="as-head">
-    <div>
-      <h1>Bandeja de vinculaciones</h1>
-      <p>Colsubsidio distribuye seguros, no los emite. Lara identifica a la persona, arma su perfil completo,
-        recomienda con la aseguradora y el precio referencial, y radica aquí cada solicitud — con el seguro que
-        busca, sus datos de contacto y el PDF informativo — para que el asesor le envíe la póliza y el link de pago.</p>
-    </div>
-    <button class="btn ghost" onclick="cargar()">Actualizar</button>
+    <h1>Bandeja del asesor</h1>
+    <p>Cada solicitud que Lara radica llega aquí con la conversación del cliente, sus datos y el seguro que busca. Colsubsidio distribuye: tú envías la póliza y el link de pago, la aseguradora emite.</p>
   </div>
 
   <div class="as-kpis" id="kpis"></div>
-  <div id="lista"><div class="as-empty">Cargando solicitudes…</div></div>
+
+  <div class="as-filters">
+    <div class="chips" id="chips"></div>
+    <input class="as-search" id="search" type="search" placeholder="Buscar por nombre…" autocomplete="off">
+  </div>
+
+  <div class="as-split">
+    <div class="as-list" id="lista"><div class="as-empty">Cargando…</div></div>
+    <div id="detalle"></div>
+  </div>
 </div>
 
 <script>
@@ -108,18 +154,15 @@ menuToggle.addEventListener("click", () => {
   menuToggle.setAttribute("aria-expanded", String(!open));
   mainNav.classList.toggle("open", !open);
 });
-mainNav.addEventListener("click", () => {
-  menuToggle.setAttribute("aria-expanded", "false");
-  mainNav.classList.remove("open");
-});
 document.getElementById("themeToggle").addEventListener("click", () => {
   const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem("clara-theme", next); } catch (e) {}
 });
+
 const ESTADOS_SIGUIENTE = {
-  pendiente_asesor: ["enviada_aseguradora", "Enviar póliza y link de pago"],  // el asesor toma el caso
-  pendiente_pago: null,                       // avanza sola cuando el afiliado paga
+  pendiente_asesor: ["enviada_aseguradora", "Enviar póliza y link de pago"],
+  pendiente_pago: null,
   pagada: ["enviada_aseguradora", "Enviar a la aseguradora"],
   enviada_aseguradora: ["emitida_aseguradora", "Marcar emitida por la aseguradora"],
   emitida_aseguradora: ["cerrada", "Cerrar solicitud"],
@@ -128,172 +171,140 @@ const ESTADOS_SIGUIENTE = {
 };
 const ESTADO_LABEL = {
   pendiente_asesor: "Pendiente del asesor", pendiente_pago: "Pendiente de pago",
-  pagada: "Pagada · lista para aseguradora",
-  enviada_aseguradora: "Póliza y pago enviados", emitida_aseguradora: "Emitida por aseguradora",
-  cerrada: "Cerrada", nueva: "Nueva"
+  pagada: "Pagada", enviada_aseguradora: "Póliza y pago enviados",
+  emitida_aseguradora: "Emitida", cerrada: "Cerrada", nueva: "Nueva"
 };
+const FILTROS = [
+  ["todas", "Todas"], ["pendiente_asesor", "Pendientes"],
+  ["enviada_aseguradora", "Enviadas"], ["emitida_aseguradora", "Emitidas"], ["cerrada", "Cerradas"]
+];
+
+let SOLS = [];
+let filtro = "todas";
+let busca = "";
+let selId = null;
 
 function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
-function kv(k, v){ return '<div class="kv"><span class="k">' + esc(k) + '</span><span>' + esc(v || "—") + '</span></div>'; }
+function nombreDe(s){ return (s.payload && s.payload.datos_contratante && s.payload.datos_contratante.nombre)
+  || (s.tipo === "escalamiento" ? "Escalamiento" : "Cliente"); }
+function fecha(t){ return (t || "").replace("T", " ").slice(0, 16); }
 
-function afiliadoSec(af, seg){
-  if (!af) return '<div class="sol-sec"><h4>Afiliado</h4><div class="kv"><span class="k">Origen</span><span>Visitante sin registro en la base</span></div></div>';
-  seg = seg || {};
-  const marcas = Object.entries(af.marcas || {}).filter(([,v]) => v).map(([k]) => k).join(", ") || "ninguna";
-  return '<div class="sol-sec"><h4>Afiliado (base Colsubsidio, por SERIE)</h4>' +
-    kv("Serie", af.serie) + kv("Edad", af.rango_edad) + kv("Rango salarial", af.rango_salarial) +
-    kv("Grupo familiar", seg.segmento_familiar || af.segmento_familiar) +
-    kv("Pirámide", seg.piramide || af.piramide) +
-    kv("Ciudad", af.ciudad) + kv("Marcas de consumo", marcas) + '</div>';
+function visibles(){
+  return SOLS.filter(s => (filtro === "todas" || s.estado === filtro))
+    .filter(s => !busca || nombreDe(s).toLowerCase().includes(busca));
 }
 
-function propSec(prop){
-  if (!prop || !prop.productos || !prop.productos.length) return "";
-  const top = prop.productos[0];
-  const razones = (top.razones || []).slice(0, 3).map(r => "<li>" + esc(r.razon) + "</li>").join("");
-  return '<div class="sol-sec"><h4>Propensión (motor de reglas)</h4>' +
-    '<div class="kv"><span class="k">Producto top</span><span>' + esc(top.nombre) +
-    ' <span class="aff-tag">' + Math.round(top.afinidad) + '%</span></span></div>' +
-    '<ul>' + razones + '</ul></div>';
+function pintarChips(){
+  const cont = {};
+  SOLS.forEach(s => { cont[s.estado] = (cont[s.estado]||0)+1; });
+  document.getElementById("chips").innerHTML = FILTROS.map(([k,lbl]) => {
+    const n = k === "todas" ? SOLS.length : (cont[k]||0);
+    return '<button class="chip'+(filtro===k?" on":"")+'" data-f="'+k+'">'+esc(lbl)+'<span class="n">'+n+'</span></button>';
+  }).join("");
+  document.querySelectorAll("#chips .chip").forEach(b =>
+    b.onclick = () => { filtro = b.dataset.f; pintarChips(); pintarLista(); });
 }
 
-function seguroSolicitadoSec(s){
-  const ss = s.payload && s.payload.seguro_solicitado;
-  if (!ss) return "";
-  const opciones = (ss.aseguradoras || []).map(o =>
-    "<li><b>" + esc(o.aseguradora) + "</b>" + (o.plan ? " · " + esc(o.plan) : "") +
-    (o.ofrece ? ": " + esc(o.ofrece) : "") + "</li>").join("");
-  return '<div class="sol-sec"><h4>Seguro que busca</h4>' +
-    kv("Producto", ss.nombre) +
-    kv("Aseguradora elegida", ss.aseguradora_elegida || "Sin elegir (mostrar opciones)") +
-    kv("Precio referencial", ss.precio_desde) +
-    (opciones ? '<div class="kv"><span class="k">Opciones (simuladas)</span></div><ul>' + opciones + '</ul>' : "") +
-    '<div class="kv"><span class="k"></span><span>El valor final lo define el asesor con la aseguradora.</span></div></div>';
+function pintarLista(){
+  const vis = visibles();
+  const lista = document.getElementById("lista");
+  if (!vis.length){ lista.innerHTML = '<div class="as-empty">Sin solicitudes en este filtro.</div>'; pintarDetalle(); return; }
+  if (!vis.find(s => s.id === selId)) selId = vis[0].id;
+  lista.innerHTML = vis.map(s =>
+    '<button class="row'+(s.id===selId?" sel":"")+'" data-id="'+esc(s.id)+'">'+
+      '<div class="row-top"><b>'+esc(nombreDe(s))+'</b><span class="badge '+esc(s.estado)+'">'+esc(ESTADO_LABEL[s.estado]||s.estado)+'</span></div>'+
+      '<div class="row-sub"><span class="prod">'+esc((s.payload&&s.payload.seguro_solicitado&&s.payload.seguro_solicitado.nombre)||s.producto||"—")+'</span>'+
+        '<span class="dot"></span><span class="time">'+esc(fecha(s.updated_at))+'</span></div>'+
+    '</button>').join("");
+  document.querySelectorAll("#lista .row").forEach(b =>
+    b.onclick = () => { selId = b.dataset.id; pintarLista(); });
+  pintarDetalle();
 }
 
-function contratoSec(s){
-  const c = (s.payload && s.payload.contrato) || {};
-  const datos = (s.payload && s.payload.datos_contratante) || {};
-  const vinc = s.payload && s.payload.vinculacion;
-  return '<div class="sol-sec"><h4>Datos de contacto (para retomar y cerrar)</h4>' +
-    kv("Nombre", datos.nombre) + kv("Identificación", datos.documento) +
-    kv("Celular", datos.telefono) + kv("Correo", datos.correo) +
-    (c.solicitud ? kv("Solicitud", c.solicitud) : "") +
-    (vinc ? kv("Vinculación radicada", vinc.radicado) : "") + '</div>';
-}
+function infoRow(k,v){ return '<div class="info-row"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v||"—")+'</span></div>'; }
 
-function perfilVivoSec(pv, esAfiliado){
-  if (!pv) return "";
-  const conv = pv.conversacional || {};
-  const intereses = (pv.intereses_productos || []).join(", ") || "—";
-  const eventos = (pv.eventos_vida || []).map(e => e.tipo).join(", ") || "—";
-  const datosConv = Object.entries(conv).filter(([k,v]) => v && k!=="notas" && (!Array.isArray(v)||v.length))
-    .map(([k,v]) => k+": "+(Array.isArray(v)?v.join("/"):v)).join(" · ") || "—";
-  const notas = (conv.notas || []).join(" · ") || "—";
-  return '<div class="sol-sec"><h4>Perfil completo (para cerrar la venta)</h4>' +
-    kv("Tipo", esAfiliado ? "Afiliado" : "No afiliado") +
-    kv("Lo que contó", datosConv) +
-    kv("Notas", notas) +
-    kv("Productos de interés", intereses) +
-    kv("Eventos de vida", eventos) + '</div>';
-}
-
-function card(s){
-  const div = document.createElement("div");
-  div.className = "sol";
-  const titulo = s.tipo === "escalamiento"
-    ? "Escalamiento a asesor humano"
-    : "Vinculación · " + ((s.payload && s.payload.contrato && s.payload.contrato.producto) || s.producto || "—");
-  let inner =
-    '<div class="sol-top"><div><h3>' + esc(titulo) + '</h3>' +
-    '<span class="mono">' + esc(s.id) + ' · sesión ' + esc(s.session_id) + ' · ' + esc(s.updated_at) + '</span></div>' +
-    '<span class="badge ' + esc(s.estado) + '">' + esc(ESTADO_LABEL[s.estado] || s.estado) + '</span></div>';
-  if (s.tipo === "escalamiento") {
-    inner += '<div class="sol-grid">' +
-      '<div class="sol-sec"><h4>Motivo</h4><div>' + esc((s.payload && s.payload.motivo) || "—") + '</div></div>' +
-      afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) + '</div>';
-  } else {
-    inner += '<div class="sol-grid">' +
-      seguroSolicitadoSec(s) +
-      afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) +
-      propSec(s.payload && s.payload.propension) + contratoSec(s) +
-      perfilVivoSec(s.payload && s.payload.perfil_vivo, s.payload && s.payload.es_afiliado) + '</div>';
-  }
-  div.innerHTML = inner;
-
-  const actions = document.createElement("div");
-  actions.className = "sol-actions";
-  const docInfo = s.payload && s.payload.doc_informativo_url;
-  if (docInfo) {
-    const a = document.createElement("a");
-    a.href = docInfo; a.target = "_blank"; a.rel = "noopener";
-    a.textContent = "Ver póliza informativa (PDF)";
-    actions.appendChild(a);
-  }
-  const c = s.payload && s.payload.contrato;
-  if (c && c.url) {
-    const a = document.createElement("a");
-    a.href = c.url; a.target = "_blank"; a.rel = "noopener";
-    a.textContent = "Ver contrato (PDF)";
-    actions.appendChild(a);
-  }
-  const vinc = s.payload && s.payload.vinculacion;
-  if (vinc && vinc.url) {
-    const a = document.createElement("a");
-    a.href = vinc.url; a.target = "_blank"; a.rel = "noopener";
-    a.textContent = "Ver resumen de vinculación (PDF)";
-    actions.appendChild(a);
-  }
+function pintarDetalle(){
+  const cont = document.getElementById("detalle");
+  const s = SOLS.find(x => x.id === selId);
+  if (!s){ cont.innerHTML = '<div class="as-empty">Elige una solicitud de la lista.</div>'; return; }
+  const p = s.payload || {};
+  const ss = p.seguro_solicitado || {};
+  const datos = p.datos_contratante || {};
+  const conv = p.conversacion || [];
+  const aseg = (ss.aseguradoras || []).map(o =>
+    '<li'+(o.aseguradora===ss.aseguradora_elegida?' class="pick"':'')+'><b>'+esc(o.aseguradora)+'</b>'+
+    (o.aseguradora===ss.aseguradora_elegida?'<span class="pill">elegida</span>':'')+
+    (o.plan?' · '+esc(o.plan):'')+(o.ofrece?'<div style="color:var(--muted);margin-top:3px">'+esc(o.ofrece)+'</div>':'')+'</li>').join("");
+  const burbujas = conv.length ? conv.map(m =>
+    '<div class="bubble '+(m.de==="cliente"?"cliente":"lara")+'"><span class="nm">'+(m.de==="cliente"?esc(nombreDe(s)):"Lara")+'</span>'+esc(m.texto)+'</div>').join("")
+    : '<div class="chat-empty">Esta solicitud no tiene conversación registrada.</div>';
   const next = ESTADOS_SIGUIENTE[s.estado];
-  if (next) {
-    const b = document.createElement("button");
-    b.className = "adv";
-    b.textContent = next[1];
-    b.onclick = () => avanzar(s.id, next[0], b);
-    actions.appendChild(b);
-  }
-  if (actions.children.length) div.appendChild(actions);
-  return div;
+
+  let acciones = "";
+  if (p.doc_informativo_url) acciones += '<a href="'+esc(p.doc_informativo_url)+'" target="_blank" rel="noopener">Ver póliza informativa (PDF)</a>';
+  if (p.contrato && p.contrato.url) acciones += '<a href="'+esc(p.contrato.url)+'" target="_blank" rel="noopener">Ver contrato (PDF)</a>';
+  if (next) acciones += '<button class="adv" id="advBtn">'+esc(next[1])+'</button>';
+
+  cont.innerHTML =
+    '<div class="as-detail">'+
+      '<div class="det-head"><div><p class="who">'+esc(nombreDe(s))+'</p>'+
+        '<div class="meta">'+esc(ss.nombre||s.producto||"Solicitud")+
+        (ss.aseguradora_elegida?' · '+esc(ss.aseguradora_elegida):'')+' · '+esc(s.id)+'</div></div>'+
+        '<span class="badge '+esc(s.estado)+'">'+esc(ESTADO_LABEL[s.estado]||s.estado)+'</span></div>'+
+      '<div class="det-body">'+
+        '<div class="block"><p class="sec-title">Conversación con Lara</p><div class="chat">'+burbujas+'</div></div>'+
+        '<div>'+
+          '<div class="block"><p class="sec-title">Datos de contacto</p>'+
+            infoRow("Nombre", datos.nombre)+infoRow("Identificación", datos.documento)+
+            infoRow("Celular", datos.telefono)+infoRow("Correo", datos.correo)+'</div>'+
+          '<div class="block"><p class="sec-title">Seguro que busca</p>'+
+            infoRow("Producto", ss.nombre)+infoRow("Precio referencial", ss.precio_desde)+
+            (aseg?'<ul class="aseg-list">'+aseg+'</ul>':'')+
+            '<div style="font-size:12px;color:var(--muted);margin-top:8px">El valor final lo defines tú con la aseguradora.</div></div>'+
+        '</div>'+
+      '</div>'+
+      (acciones?'<div class="det-actions">'+acciones+'</div>':'')+
+    '</div>';
+
+  const advBtn = document.getElementById("advBtn");
+  if (advBtn && next) advBtn.onclick = () => avanzar(s.id, next[0], advBtn);
 }
 
 async function avanzar(id, estado, btn){
-  btn.disabled = true;
+  btn.disabled = true; btn.textContent = "…";
   try {
     const r = await fetch("/api/asesor/solicitudes/" + encodeURIComponent(id) + "/estado", {
-      method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ estado })
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ estado })
     });
-    if (r.ok) cargar();
+    if (r.ok) await cargar();
   } catch (e) { btn.disabled = false; }
 }
 
 async function cargar(){
-  const lista = document.getElementById("lista");
-  const kpis = document.getElementById("kpis");
   try {
-    const r = await fetch("/api/asesor/solicitudes");
-    const d = await r.json();
-    const sols = d.solicitudes || [];
-    const porEstado = {};
-    sols.forEach(s => { porEstado[s.estado] = (porEstado[s.estado] || 0) + 1; });
-    kpis.innerHTML =
-      '<div class="as-kpi"><b>' + sols.length + '</b><span>solicitudes totales</span></div>' +
-      '<div class="as-kpi"><b>' + (porEstado.pagada || 0) + '</b><span>pagadas por gestionar</span></div>' +
-      '<div class="as-kpi"><b>' + (porEstado.enviada_aseguradora || 0) + '</b><span>en la aseguradora</span></div>' +
-      '<div class="as-kpi"><b>' + ((porEstado.emitida_aseguradora || 0) + (porEstado.cerrada || 0)) + '</b><span>emitidas / cerradas</span></div>';
-    lista.innerHTML = "";
-    if (!sols.length) {
-      lista.innerHTML = '<div class="as-empty">Aún no hay solicitudes. Completa una venta con Lara en la <a href="/#demo">demo</a> y aparecerá aquí, empaquetada para la aseguradora.</div>';
+    const d = await (await fetch("/api/asesor/solicitudes")).json();
+    SOLS = (d.solicitudes || []).sort((a,b) => (b.updated_at||"").localeCompare(a.updated_at||""));
+    const c = {}; SOLS.forEach(s => c[s.estado] = (c[s.estado]||0)+1);
+    document.getElementById("kpis").innerHTML =
+      '<div class="as-kpi"><b>'+SOLS.length+'</b><span>solicitudes</span></div>'+
+      '<div class="as-kpi"><b>'+(c.pendiente_asesor||0)+'</b><span>por gestionar</span></div>'+
+      '<div class="as-kpi"><b>'+(c.enviada_aseguradora||0)+'</b><span>en la aseguradora</span></div>'+
+      '<div class="as-kpi"><b>'+((c.emitida_aseguradora||0)+(c.cerrada||0))+'</b><span>emitidas / cerradas</span></div>';
+    if (!SOLS.length){
+      document.getElementById("chips").innerHTML = "";
+      document.getElementById("lista").innerHTML = '<div class="as-empty">Aún no hay solicitudes. Cierra una venta con Lara en la <a href="/#demo">demo</a> y aparecerá aquí.</div>';
+      document.getElementById("detalle").innerHTML = "";
       return;
     }
-    sols.forEach(s => lista.appendChild(card(s)));
+    pintarChips(); pintarLista();
   } catch (e) {
-    lista.innerHTML = '<div class="as-empty">No pude cargar las solicitudes. ¿Está corriendo el servidor?</div>';
+    document.getElementById("lista").innerHTML = '<div class="as-empty">No pude cargar las solicitudes.</div>';
   }
 }
 
+document.getElementById("search").addEventListener("input", e => { busca = e.target.value.trim().toLowerCase(); pintarLista(); });
 cargar();
-setInterval(cargar, 7000);
+setInterval(cargar, 12000);
 </script>
 </body>
 </html>

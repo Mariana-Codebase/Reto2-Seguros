@@ -171,9 +171,10 @@ def _startup():
         if sembrado:
             logger.info("Muestra demo sembrada: %s", sembrado)
         try:
-            seed.sembrar_abandonos_demo()  # perfiles de abandono para la demo de re-enganche
+            seed.sembrar_abandonos_demo()      # perfiles de abandono para la demo de re-enganche
+            seed.sembrar_solicitudes_demo()    # solicitudes con conversación para el panel del asesor
         except Exception as e:  # noqa: BLE001
-            logger.warning("No se pudieron sembrar los abandonos demo: %s", e)
+            logger.warning("No se pudieron sembrar los datos demo: %s", e)
     logger.info(
         "Lara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
         __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,

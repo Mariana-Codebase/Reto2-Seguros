@@ -1084,6 +1084,7 @@ class Session:
             "motivo": motivo, "perfil": self.perfil, "afiliado": self.afiliado,
             "es_afiliado": self.es_afiliado, "perfil_id": self.perfil_id,
             "perfil_vivo": self._perfil_vivo(),
+            "conversacion": self._transcripcion(),
             "datos": {k: v for k, v in self.datos.items()},
         })
         self._log("db", "ASESOR", f"Escalamiento {ticket} → bandeja del asesor · {motivo}")
@@ -1149,6 +1150,20 @@ class Session:
     # Colsubsidio no fabrica las pólizas: las distribuye. Lara empaqueta todo
     # lo que la aseguradora necesita (perfil, propensión explicada, datos,
     # contrato firmado, pago) y lo transmite a la bandeja del asesor.
+    def _transcripcion(self, limite: int = 40) -> list[dict[str, str]]:
+        """Historia legible de la conversación (cliente ↔ Lara) para que el asesor
+        vea de qué hablaron. Solo turnos con texto real; sin system ni tools."""
+        out: list[dict[str, str]] = []
+        for m in self.messages:
+            rol = m.get("role")
+            if rol not in ("user", "assistant"):
+                continue
+            texto = (m.get("content") or "").strip()
+            if not texto or texto.startswith("[EVENTO DEL SISTEMA]") or texto.startswith("[PERFIL DE LA BASE"):
+                continue
+            out.append({"de": "cliente" if rol == "user" else "lara", "texto": texto})
+        return out[-limite:]
+
     def _paquete_asesor(self) -> dict[str, Any]:
         return {
             "es_afiliado": self.es_afiliado,
@@ -1158,6 +1173,7 @@ class Session:
             "propension": self.propension,       # ranking + razones del motor de reglas
             "perfil_conversacional": self.perfil,
             "perfil_vivo": self._perfil_vivo(),  # perfil COMPLETO para que el asesor humano cierre
+            "conversacion": self._transcripcion(),  # de qué habló con Lara (para el asesor)
             "datos_contratante": self.datos,
             "contacto": self.contacto,
             "contrato": {k: v for k, v in (self.contrato or {}).items()

@@ -139,6 +139,21 @@
     .flow{padding:22px 16px}
     .flow-head{display:block}.flow-legend{margin-top:10px}
   }
+  /* ---- Decisiones de Cody en vivo (tira compacta) ---- */
+  .cody-live{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px;padding:12px 15px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-sm)}
+  .live-tag{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .live-tag i{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:blink 1.2s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .live-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);transition:transform .2s,box-shadow .2s,border-color .2s}
+  .live-chip .cnt{font-weight:800;font-size:13px}
+  .live-chip.seguro .cnt{color:var(--accent-d)}
+  .live-chip.reeng .cnt{color:var(--warn)}
+  .live-chip.dedup .cnt{color:var(--info)}
+  .live-chip.envio .cnt{color:#16a34a}
+  .live-chip.pulse{transform:translateY(-2px);box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent)}
+  .live-tag.pulse{color:var(--accent-d)}
+  .live-help{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--muted);text-decoration:none}
+  .live-help:hover{color:var(--accent-d)}
 </style>
 </head>
 <body>
@@ -185,52 +200,15 @@
     </div>
   </div>
 
-  <!-- ================= RECORRIDO DEL EVENTO ================= -->
-  <div class="flow">
-    <div class="flow-head">
-      <div>
-        <span class="flow-kicker">El viaje de una señal</span>
-        <h3>Qué ocurre desde el evento hasta el mensaje</h3>
-        <p class="sub">Una secuencia fácil de explicar al jurado y auditable para el equipo.</p>
-      </div>
-      <span class="flow-legend"><i></i> Flujo operativo</span>
-    </div>
-    <div class="cody-flow">
-      <article class="flow-stage" id="n-trigger">
-        <span class="stage-num">01 · SEÑAL</span>
-        <span class="stage-icon">⚡</span>
-        <b>Algo cambia</b>
-        <small>Un evento de Colsubsidio, un barrido programado o una conversación pendiente de Lara.</small>
-      </article>
-      <span class="flow-arrow" aria-hidden="true"></span>
-      <article class="flow-stage orchestrator">
-        <span class="stage-num">02 · ORQUESTA</span>
-        <span class="stage-icon">n8n</span>
-        <b>n8n entrega el contexto</b>
-        <small>Normaliza el evento y llama al endpoint correcto sin tomar decisiones comerciales.</small>
-      </article>
-      <span class="flow-arrow" aria-hidden="true"></span>
-      <article class="flow-stage cody" id="n-brain">
-        <span class="stage-num">03 · DECIDE</span>
-        <span class="stage-icon">C</span>
-        <b>Cody evalúa la acción</b>
-        <small>Combina regla explicable, propensión y memoria anti-spam.</small>
-        <div class="decision-stack">
-          <span class="decision-chip" id="n-seguro">Oferta pertinente <b class="cnt" id="c-seguro">0</b></span>
-          <span class="decision-chip" id="n-reeng">Retomar a Lara <b class="cnt" id="c-reeng">0</b></span>
-          <span class="decision-chip" id="n-dedup">Suprimir repetición <b class="cnt" id="c-dedup">0</b></span>
-        </div>
-      </article>
-      <span class="flow-arrow" aria-hidden="true"></span>
-      <article class="flow-stage" id="n-envio">
-        <span class="stage-num">04 · ACTIVA</span>
-        <span class="stage-icon">↗</span>
-        <b>Mensaje por el canal correcto</b>
-        <small>WhatsApp o correo, con la razón de la recomendación y continuidad de contexto.</small>
-        <span class="cnt" id="c-envio" hidden>0</span>
-      </article>
-    </div>
-    <p class="flow-caption"><b>Principio clave:</b> Lara conversa, n8n transporta, Cody decide con reglas y el asesor finaliza cuando corresponde.</p>
+  <!-- ============ Decisiones de Cody en vivo (compacto) ============ -->
+  <div class="cody-live" aria-label="Decisiones de Cody en vivo">
+    <span class="live-tag" id="n-brain"><i></i>Cody decidiendo en vivo</span>
+    <span class="live-chip seguro" id="n-seguro">🛡️ Oferta pertinente <b class="cnt" id="c-seguro">0</b></span>
+    <span class="live-chip reeng" id="n-reeng">💬 Retomar a Lara <b class="cnt" id="c-reeng">0</b></span>
+    <span class="live-chip dedup" id="n-dedup">🔁 Repetición evitada <b class="cnt" id="c-dedup">0</b></span>
+    <span class="live-chip envio" id="n-envio">📤 Enviadas <b class="cnt" id="c-envio">0</b></span>
+    <a class="live-help" href="/#ecosistema">¿Cómo funciona el flujo? →</a>
+    <span id="n-trigger" hidden></span>
   </div>
 
   <div class="of-cols">
