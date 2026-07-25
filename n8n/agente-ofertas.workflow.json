@@ -71,14 +71,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.CLARA_BASE_URL }}/api/eventos",
+        "url": "={{ $env.CLARA_BASE_URL }}/api/ofertas/barrido",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"serie\": \"{{ $json.serie }}\",\n  \"evento\": \"sin_interaccion_30d\",\n  \"enviar\": true\n}",
+        "jsonBody": "={\n  \"muestra\": 25\n}",
         "options": {}
       },
       "id": "http2",
-      "name": "Re-enganche por inactividad",
+      "name": "Barrido autónomo de ofertas",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [560, 640]
@@ -92,7 +92,7 @@
       "main": [[{ "node": "Responder a la base", "type": "main", "index": 0 }]]
     },
     "Cada día 9:00": {
-      "main": [[{ "node": "Re-enganche por inactividad", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Barrido autónomo de ofertas", "type": "main", "index": 0 }]]
     }
   },
   "settings": { "executionOrder": "v1" },

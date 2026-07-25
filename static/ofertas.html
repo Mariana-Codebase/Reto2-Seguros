@@ -42,6 +42,23 @@
   .est.generada{background:var(--warn-soft);color:var(--warn)}
   .est.enviada{background:var(--primary);color:#fff}
   .empty{border:1px dashed var(--line-2);border-radius:13px;padding:34px;text-align:center;color:var(--muted)}
+  .card.acc{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary) inset,var(--shadow-sm)}
+  .narr{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-bottom:6px}
+  .narr h4{margin:0 0 8px;font-size:13.5px}
+  .narr-sum{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+  .chip.ok{background:var(--primary-soft);color:var(--primary-d)}
+  .chip.mora{background:var(--warn-soft);color:var(--warn)}
+  .chip.dedup{background:var(--info-soft);color:var(--info)}
+  .step{font-size:12.5px;padding:8px 10px;border-radius:9px;border-left:3px solid var(--line-2);margin-bottom:6px;background:var(--surface-2)}
+  .step.mora{border-left-color:var(--warn)}
+  .step.dedup{border-left-color:var(--info);opacity:.85}
+  .step .serie{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .step .arrow{color:var(--muted)}
+  .step .prod{font-weight:700}
+  .badge-mini{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:2px 7px;border-radius:999px;margin-left:6px}
+  .badge-mini.mora{background:var(--warn-soft);color:var(--warn)}
+  .badge-mini.dedup{background:var(--info-soft);color:var(--info)}
 </style>
 </head>
 <body>
@@ -70,11 +87,20 @@
 
   <div class="of-cols">
     <div>
-      <div class="card">
-        <h3>Simular un evento</h3>
-        <p class="hint">Como lo haría otra base de Colsubsidio (o n8n) al detectar un cambio en el cliente.</p>
-        <label class="fld" for="serie">Afiliado (SERIE)</label>
+      <div class="card acc">
+        <h3>⚡ Barrido autónomo</h3>
+        <p class="hint">El agente NO espera al cliente: recorre la base real, y para cada afiliado decide una oferta según su perfil 360 — respetando mora (ofrece normalización) y sin repetir (anti-spam). Es lo que dispara el cron de n8n.</p>
+        <label class="fld" for="muestra">Afiliados a recorrer</label>
+        <input id="muestra" type="number" min="1" max="40" value="12">
+        <button class="btn-run" id="barrido">Ejecutar barrido sobre la base</button>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>Simular un evento puntual</h3>
+        <p class="hint">Como lo haría otra base de Colsubsidio (o n8n) al detectar un cambio en un cliente.</p>
+        <label class="fld" for="serie">Afiliado</label>
         <select id="serie"></select>
+        <label class="fld" for="serieReal">…o una SERIE real de la base</label>
+        <input id="serieReal" type="text" inputmode="numeric" placeholder="p. ej. 29 (en mora) o 1">
         <label class="fld" for="evento">Evento</label>
         <select id="evento"></select>
         <label class="fld" for="canal">Enviar (simulado)</label>
@@ -90,7 +116,9 @@
 
     <div>
       <div class="of-kpis" id="kpis"></div>
-      <div id="lista"><div class="empty">Aún no hay ofertas. Simula un evento a la izquierda.</div></div>
+      <div id="narracion"></div>
+      <h3 style="font-size:14px;margin:18px 0 8px;color:var(--muted)">Ofertas salientes</h3>
+      <div id="lista"><div class="empty">Aún no hay ofertas. Dispara un barrido o simula un evento a la izquierda.</div></div>
     </div>
   </div>
 </div>
@@ -122,11 +150,13 @@ async function cargarControles(){
 function ofertaCard(o){
   const p=o.payload||o;
   const cross=p.cross?'<div class="cross"><b>'+esc(p.cross.nombre)+'</b> — '+esc(p.cross.razon)+'</div>':'';
-  return '<div class="oferta"><div class="oferta-top"><b>'+esc(p.nombre)+'</b>'+
+  const aseg=(p.tipo==="seguro"&&p.aseguradora)?'<div class="razon" style="margin-top:3px"><b>Aseguradora:</b> '+esc(p.aseguradora)+'</div>':'';
+  const moraB=(o.evento==="en_mora_normalizacion")?'<span class="badge-mini mora">mora → normalización</span>':'';
+  return '<div class="oferta"><div class="oferta-top"><b>'+esc(p.nombre)+moraB+'</b>'+
     '<span><span class="tipo '+esc(p.tipo)+'">'+esc(p.tipo)+'</span> <span class="est '+esc(o.estado||"generada")+'">'+esc(o.estado||"generada")+'</span></span></div>'+
     '<div class="evento">evento: '+esc(o.evento||p.evento)+' · perfil '+esc(o.perfil_id||"")+'</div>'+
     '<div class="msg">'+esc(p.mensaje)+'</div>'+
-    '<div class="razon">'+esc(p.razon)+'</div>'+cross+'</div>';
+    '<div class="razon">'+esc(p.razon)+'</div>'+aseg+cross+'</div>';
 }
 
 async function refrescar(){
@@ -143,19 +173,65 @@ async function refrescar(){
   lista.innerHTML=ofertas.length?ofertas.map(ofertaCard).join(""):'<div class="empty">Aún no hay ofertas. Simula un evento a la izquierda.</div>';
 }
 
+function stepHTML(x){
+  const mora=x.mora, dedup=(!x.oferta && x.motivo && /anti-spam/i.test(x.motivo));
+  const cls="step"+(mora?" mora":"")+(dedup?" dedup":"");
+  const badge=mora?'<span class="badge-mini mora">mora → normaliza</span>'
+           :dedup?'<span class="badge-mini dedup">anti-spam</span>':'';
+  const decision=x.oferta
+    ? '<span class="prod">'+esc(x.oferta)+'</span>'+(x.tipo?' <span class="tipo '+esc(x.tipo)+'">'+esc(x.tipo)+'</span>':'')+badge
+    : '<span class="arrow">'+esc(x.motivo||"sin oferta")+'</span>'+badge;
+  const razon=x.razon?'<div style="color:var(--muted);margin-top:4px">'+esc(x.razon)+'</div>':'';
+  return '<div class="'+cls+'"><span class="serie">SERIE '+esc(x.serie||x.perfil_id||"")+'</span> '+
+    '<span class="arrow">→</span> '+decision+razon+'</div>';
+}
+
+function narrar(titulo, sums, pasos){
+  const n=document.getElementById("narracion");
+  n.innerHTML='<div class="narr"><h4>'+esc(titulo)+'</h4>'+
+    '<div class="narr-sum">'+sums.map(s=>'<span class="chip '+(s.cls||"")+'">'+esc(s.txt)+'</span>').join("")+'</div>'+
+    pasos.map(stepHTML).join("")+'</div>';
+}
+
+function serieElegida(){
+  const real=(document.getElementById("serieReal").value||"").trim();
+  return real || document.getElementById("serie").value;
+}
+
 document.getElementById("run").addEventListener("click",async()=>{
   const btn=document.getElementById("run");btn.disabled=true;btn.textContent="Ejecutando…";
   try{
-    await fetch("/api/eventos",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({serie:document.getElementById("serie").value,
-        evento:document.getElementById("evento").value,
-        enviar:document.getElementById("canal").value==="true"})});
+    const evento=document.getElementById("evento").value;
+    const r=await fetch("/api/eventos",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({serie:serieElegida(),evento:evento,
+        enviar:document.getElementById("canal").value==="true"})}).then(r=>r.json());
+    const of=r.oferta;
+    narrar("Racionalización · evento "+evento,
+      [{txt:(of?"1 oferta":"0 ofertas")+" decidida",cls:of?"ok":""},
+       ...(r.mora_detectada?[{txt:"mora detectada → normalización",cls:"mora"}]:[]),
+       ...(r.suprimida?[{txt:"suprimida (anti-spam)",cls:"dedup"}]:[])],
+      [{serie:r.perfil_id,oferta:of&&of.nombre,tipo:of&&of.tipo,razon:of&&of.razon,mora:r.mora_detectada,motivo:r.motivo}]);
     await refrescar();
   }finally{btn.disabled=false;btn.textContent="Ejecutar agente de ofertas";}
 });
 
+document.getElementById("barrido").addEventListener("click",async()=>{
+  const btn=document.getElementById("barrido");btn.disabled=true;btn.textContent="Recorriendo la base…";
+  try{
+    const muestra=parseInt(document.getElementById("muestra").value||"12",10);
+    const r=await fetch("/api/ofertas/barrido",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({muestra:muestra})}).then(r=>r.json());
+    narrar("Barrido autónomo · "+r.muestra+" afiliados de la base",
+      [{txt:r.generadas+" ofertas generadas",cls:"ok"},
+       {txt:r.normalizaciones_mora+" por mora → normalización",cls:"mora"},
+       {txt:r.suprimidas+" suprimidas (anti-spam)",cls:"dedup"}],
+      r.resultados);
+    await refrescar();
+  }finally{btn.disabled=false;btn.textContent="Ejecutar barrido sobre la base";}
+});
+
 cargarControles().then(refrescar);
-setInterval(refrescar,7000);
+setInterval(refrescar,9000);
 </script>
 </body>
 </html>

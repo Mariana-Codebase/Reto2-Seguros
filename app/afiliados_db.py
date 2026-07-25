@@ -113,6 +113,25 @@ def existe_afiliado(serie: Any) -> dict[str, Any] | None:
     return get_db()["afiliados"].find_one({"serie": s}, _SIN_ID)
 
 
+def muestra_series(n: int = 8) -> list[int]:
+    """Muestra aleatoria de SERIES de la base real (para el barrido autónomo del
+    agente de ofertas). Usa $sample de Mongo; si falla, cae a las primeras N."""
+    n = max(1, min(int(n or 8), 100))
+    db = get_db()
+    try:
+        cur = db["afiliados"].aggregate([
+            {"$sample": {"size": n}},
+            {"$project": {"_id": 0, "serie": 1}},
+        ])
+        series = [d["serie"] for d in cur if d.get("serie") is not None]
+        if series:
+            return series
+    except PyMongoError:
+        logger.warning("No se pudo tomar la muestra aleatoria; se usan las primeras series")
+    return [d["serie"] for d in db["afiliados"].find({}, {"_id": 0, "serie": 1}).limit(n)
+            if d.get("serie") is not None]
+
+
 def perfil_360(serie: Any) -> dict[str, Any] | None:
     """Vista completa del afiliado: datos + viviendas + créditos + eventos
     recientes. None si la serie no existe."""

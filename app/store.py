@@ -242,6 +242,18 @@ def set_estado_oferta(oferta_id: str, estado: str) -> bool:
     return result.matched_count > 0
 
 
+def oferta_reciente(perfil_id: str, producto_id: str, dias: int = 15) -> bool:
+    """True si ya se generó una oferta del mismo producto para el mismo perfil
+    dentro de los últimos `dias` (para no repetir/spamear al cliente)."""
+    if not perfil_id or not producto_id:
+        return False
+    limite = (dt.datetime.now() - dt.timedelta(days=dias)).isoformat(timespec="seconds")
+    return _db()["ofertas"].count_documents({
+        "perfil_id": perfil_id, "producto": producto_id,
+        "created_at": {"$gte": limite},
+    }) > 0
+
+
 def stats() -> dict[str, int]:
     db = _db()
     return {

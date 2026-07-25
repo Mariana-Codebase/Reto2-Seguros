@@ -100,6 +100,11 @@ class EstadoOfertaReq(BaseModel):
     estado: str = Field(pattern="^(generada|enviada|aceptada|descartada)$")
 
 
+class BarridoReq(BaseModel):
+    """Barrido autónomo del agente de ofertas sobre una muestra de la base real."""
+    muestra: int | None = 8           # cuántos afiliados de la base recorrer
+
+
 class ChatReq(BaseModel):
     session_id: str
     text: str = Field(min_length=1, max_length=2000)
@@ -410,6 +415,15 @@ def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str,
     if guardado:
         return guardado["id"], guardado["perfil"]
     if serie:
+        # 1) Base REAL en Mongo (500k): la fuente principal del agente de ofertas.
+        doc = afiliados_db.existe_afiliado(serie)
+        if doc is not None:
+            perfil = {"id": str(doc.get("serie")), "es_afiliado": True,
+                      "base": base_afiliados.resumen_base(doc),
+                      "propension": propension.perfilar(doc),
+                      "contacto": {}, "eventos_vida": []}
+            return str(doc.get("serie")), perfil
+        # 2) Muestra demo (fallback para series que no están en Mongo).
         af = base_afiliados.buscar(serie)
         if af:
             perfil = {"id": str(serie), "es_afiliado": True,
@@ -421,41 +435,99 @@ def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str,
     return (pid or "NA-DESCONOCIDO"), {"id": pid, "es_afiliado": False, "eventos_vida": []}
 
 
-@app.post("/api/eventos")
-def recibir_evento(req: EventoReq):
-    """Webhook del agente de ofertas. Un evento de otra base de Colsubsidio
-    (crédito desembolsado, alza de ingreso, cumpleaños, inactividad…) entra aquí:
-    enriquece el perfil, decide la mejor oferta y la deja lista (y la envía por
-    el canal, simulado). Ejemplo: crédito de vivienda -> seguro de hogar."""
-    pid, perfil = _perfil_para_ofertas(req.serie, req.perfil_id)
+def _mora_activa(serie) -> bool:
+    """True si el afiliado real tiene al menos un crédito en mora. El agente de
+    ofertas NO empuja oferta comercial a quien está en mora (P2)."""
+    if serie in (None, ""):
+        return False
+    try:
+        return any(a.get("tipo") == "mora" for a in afiliados_db.alertas_pendientes(serie))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _procesar_evento(serie, perfil_id, evento, datos, enviar) -> dict:
+    """Núcleo del agente de ofertas (reutilizado por /api/eventos y el barrido):
+    enriquece el perfil, aplica mora (P2) y dedup (P3), decide la oferta y la
+    registra/envía."""
+    pid, perfil = _perfil_para_ofertas(serie, perfil_id)
 
     # 1) El evento enriquece el perfil vivo (la base sigue creciendo).
     perfil.setdefault("eventos_vida", []).append(
-        {"tipo": req.evento, "fuente": "base_externa", "datos": req.datos or {}})
+        {"tipo": evento, "fuente": "base_externa", "datos": datos or {}})
     store.upsert_perfil(pid, bool(perfil.get("es_afiliado")), None, perfil, bump=True)
 
+    # P2 · Mora: se sustituye cualquier oferta comercial por normalización.
+    serie_real = serie if serie not in (None, "") else (perfil.get("base") or {}).get("serie")
+    mora = evento != "en_mora_normalizacion" and _mora_activa(serie_real)
+    evento_efectivo = "en_mora_normalizacion" if mora else evento
+
     # 2) El agente decide la oferta (regla evento -> producto, explicable).
-    res = ofertas.generar_oferta(perfil, req.evento, req.datos)
+    res = ofertas.generar_oferta(perfil, evento_efectivo, datos)
     oferta = res.get("oferta")
     if not oferta:
         return {"ok": True, "perfil_id": pid, "oferta": None, "motivo": res.get("motivo")}
+
+    # P3 · Dedup / anti-spam: no repetir el mismo producto al perfil en 15 días.
+    if store.oferta_reciente(pid, oferta["producto_id"], dias=15):
+        return {"ok": True, "perfil_id": pid, "oferta": None, "suprimida": True,
+                "motivo": f"Ya se ofreció {oferta['nombre']} a este perfil hace poco (anti-spam, 15 días)."}
 
     # 3) Se registra y (si aplica) se envía por el canal del perfil.
     estado = "generada"
     entrega = {"simulado": True, "detalle": "no enviada"}
     contacto = (perfil.get("contacto") or {})
     destino = contacto.get("destino") or contacto.get("correo") or contacto.get("telefono")
-    if req.enviar and destino:
+    if enviar and destino:
         if oferta["canal"] == "correo":
             entrega = notify.send_email(destino, "Una recomendación de Colsubsidio para ti", oferta["mensaje"])
         else:
             entrega = notify.send_whatsapp(destino, oferta["mensaje"])
         estado = "enviada"
-    store.insert_oferta(oferta["id"], pid, req.evento, oferta["tipo"], oferta["producto_id"],
+    store.insert_oferta(oferta["id"], pid, evento_efectivo, oferta["tipo"], oferta["producto_id"],
                         oferta["canal"], estado, {**oferta, "entrega": entrega})
     logger.info("Agente de ofertas · evento=%s perfil=%s -> %s (%s)",
-                req.evento, pid, oferta["nombre"], estado)
-    return {"ok": True, "perfil_id": pid, "estado": estado, "oferta": oferta, "entrega": entrega}
+                evento_efectivo, pid, oferta["nombre"], estado)
+    return {"ok": True, "perfil_id": pid, "estado": estado, "oferta": oferta,
+            "evento_efectivo": evento_efectivo, "mora_detectada": mora, "entrega": entrega}
+
+
+@app.post("/api/eventos")
+def recibir_evento(req: EventoReq):
+    """Webhook del agente de ofertas. Un evento de otra base de Colsubsidio
+    (crédito desembolsado, alza de ingreso, cumpleaños, inactividad…) entra aquí:
+    enriquece el perfil, decide la mejor oferta y la deja lista (y la envía por
+    el canal, simulado). Ejemplo: crédito de vivienda -> seguro de hogar."""
+    return _procesar_evento(req.serie, req.perfil_id, req.evento, req.datos, req.enviar)
+
+
+@app.post("/api/ofertas/barrido")
+def ofertas_barrido(req: BarridoReq):
+    """P1 · Barrido AUTÓNOMO: el agente no espera al cliente. Toma una muestra de
+    la base real (Mongo) y, para cada afiliado, decide y radica una oferta según
+    su perfil 360 — respetando mora (normalización) y sin repetir (dedup). Es lo
+    que el cron de n8n dispara cada día."""
+    n = max(1, min(int(req.muestra or 8), 40))
+    series = afiliados_db.muestra_series(n)
+    generadas, suprimidas, normalizaciones, resultados = 0, 0, 0, []
+    for serie in series:
+        r = _procesar_evento(serie, None, "sin_interaccion_30d", {}, enviar=True)
+        item = {"serie": serie}
+        if r.get("oferta"):
+            generadas += 1
+            if r.get("mora_detectada"):
+                normalizaciones += 1
+            item.update({"oferta": r["oferta"]["nombre"], "tipo": r["oferta"]["tipo"],
+                         "razon": r["oferta"]["razon"], "mora": bool(r.get("mora_detectada"))})
+        else:
+            suprimidas += 1
+            item["motivo"] = r.get("motivo")
+        resultados.append(item)
+    logger.info("Barrido autónomo · muestra=%d generadas=%d suprimidas=%d mora=%d",
+                len(series), generadas, suprimidas, normalizaciones)
+    return {"ok": True, "muestra": len(series), "generadas": generadas,
+            "suprimidas": suprimidas, "normalizaciones_mora": normalizaciones,
+            "resultados": resultados}
 
 
 # --------------------------------------------------------------------------

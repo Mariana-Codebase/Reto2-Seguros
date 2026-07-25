@@ -68,7 +68,8 @@ CREDITOS: dict[str, dict[str, str]] = {
 
 def _seguro(pid: str) -> dict[str, str]:
     p = kb.CATALOG[pid]
-    return {"nombre": p["nombre"], "desc": kb._REASONS.get(pid, "")}
+    return {"nombre": p["nombre"], "desc": kb._REASONS.get(pid, ""),
+            "aseguradora": kb.aseguradora(pid)}
 
 
 # --------------------------------------------------------------------------
@@ -113,6 +114,12 @@ EVENTO_REGLAS: dict[str, dict[str, Any]] = {
         "razon": "Estuviste consultando vivienda: el crédito de vivienda Colsubsidio puede hacerla posible.",
         "cross": ("seguro", "hogar", "Y el seguro de hogar protege ese patrimonio desde el primer día."),
     },
+    # P2 · Cuando hay mora, NO se empuja oferta comercial: se ofrece normalización.
+    "en_mora_normalizacion": {
+        "tipo": "credito", "producto": "compra_cartera",
+        "razon": ("Vimos una cuota en mora. Antes de nuevas ofertas, la compra de cartera "
+                  "puede unificar tus deudas en una sola cuota más manejable."),
+    },
 }
 
 # Canal por defecto según lo que se sepa de la persona.
@@ -130,7 +137,7 @@ def _oferta_producto(tipo: str, pid: str) -> dict[str, Any]:
                 "desc": c.get("desc", ""), "url": c.get("url", CREDITOS_URL)}
     s = _seguro(pid)
     return {"tipo": "seguro", "producto_id": pid, "nombre": s["nombre"], "desc": s["desc"],
-            "url": "https://www.colsubsidio.com/seguros"}
+            "aseguradora": s.get("aseguradora"), "url": "https://www.colsubsidio.com/seguros"}
 
 
 def _mensaje(nombre: str | None, prod: dict[str, Any], razon: str) -> str:
@@ -156,6 +163,13 @@ def generar_oferta(perfil: dict[str, Any], evento: str, datos: dict[str, Any] | 
              (perfil or {}).get("nombre")
 
     regla = EVENTO_REGLAS.get(evento)
+    if regla is None and evento in ("interes_sin_cierre", "sin_cierre"):
+        # P4 · Interés abandonado: la persona pidió un seguro con Clara y no cerró.
+        pid = (perfil or {}).get("seguro_solicitado")
+        if pid and pid in kb.CATALOG:
+            regla = {"tipo": "seguro", "producto": pid,
+                     "razon": (f"Nos quedó pendiente tu {kb.CATALOG[pid]['nombre'].lower()}: "
+                               "si quieres, retomamos justo donde lo dejamos.")}
     if regla is None:
         # Evento no mapeado o genérico (re-enganche): usa la propensión del perfil.
         base = _mejor_por_propension(perfil)
@@ -171,6 +185,7 @@ def generar_oferta(perfil: dict[str, Any], evento: str, datos: dict[str, Any] | 
         "tipo": prod["tipo"],
         "producto_id": prod["producto_id"],
         "nombre": prod["nombre"],
+        "aseguradora": prod.get("aseguradora"),
         "razon": regla["razon"],
         "url": prod["url"],
         "canal": _canal(perfil),
@@ -190,6 +205,8 @@ def eventos_soportados() -> list[dict[str, str]]:
     for ev, r in EVENTO_REGLAS.items():
         prod = _oferta_producto(r["tipo"], r["producto"])
         out.append({"evento": ev, "ofrece": prod["nombre"], "tipo": r["tipo"], "razon": r["razon"]})
+    out.append({"evento": "interes_sin_cierre", "ofrece": "El seguro que pidió y no cerró",
+                "tipo": "seguro", "razon": "Re-enganche por interés abandonado (usa lo que Clara detectó)."})
     out.append({"evento": "(cualquier otro)", "ofrece": "Mejor seguro por propensión",
                 "tipo": "seguro", "razon": "Re-enganche basado en el perfil del afiliado."})
     return out
