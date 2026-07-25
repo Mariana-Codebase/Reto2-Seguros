@@ -150,7 +150,7 @@ class Settings:
     SMTP_USER: str = _env("SMTP_USER")
     SMTP_PASS: str = _env("SMTP_PASS")
     SMTP_FROM: str = _env(
-        "SMTP_FROM", "Clara - Colsubsidio Seguros <no-reply@colsubsidio.demo>"
+        "SMTP_FROM", "Lara - Colsubsidio Seguros <no-reply@colsubsidio.demo>"
     )
 
     # --- Twilio (WhatsApp / SMS, opcional) ---

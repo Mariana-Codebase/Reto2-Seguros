@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Panel del asesor — Clara | Colsubsidio × 30X</title>
-<meta name="description" content="Bandeja de vinculaciones: Clara vende de forma autónoma y transmite cada solicitud empaquetada al asesor, que la gestiona con la aseguradora.">
+<title>Panel del asesor — Lara | Colsubsidio × 30X</title>
+<meta name="description" content="Bandeja de vinculaciones: Lara vende de forma autónoma y transmite cada solicitud empaquetada al asesor, que la gestiona con la aseguradora.">
 <meta name="theme-color" content="#ffd000">
 <script>
   (function(){try{var t=localStorage.getItem("clara-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
@@ -66,7 +66,7 @@
       </div>
     </div>
     <nav class="nav-links">
-      <button onclick="location.href='/'">Volver a Clara</button>
+      <button onclick="location.href='/'">Volver a Lara</button>
     </nav>
   </div>
 </header>
@@ -75,7 +75,7 @@
   <div class="as-head">
     <div>
       <h1>Bandeja de vinculaciones</h1>
-      <p>Colsubsidio distribuye seguros, no los emite. Clara identifica a la persona, arma su perfil completo,
+      <p>Colsubsidio distribuye seguros, no los emite. Lara identifica a la persona, arma su perfil completo,
         recomienda con la aseguradora y el precio referencial, y radica aquí cada solicitud — con el seguro que
         busca, sus datos de contacto y el PDF informativo — para que el asesor le envíe la póliza y el link de pago.</p>
     </div>
@@ -254,7 +254,7 @@ async function cargar(){
       '<div class="as-kpi"><b>' + ((porEstado.emitida_aseguradora || 0) + (porEstado.cerrada || 0)) + '</b><span>emitidas / cerradas</span></div>';
     lista.innerHTML = "";
     if (!sols.length) {
-      lista.innerHTML = '<div class="as-empty">Aún no hay solicitudes. Completa una venta con Clara en la <a href="/#demo">demo</a> y aparecerá aquí, empaquetada para la aseguradora.</div>';
+      lista.innerHTML = '<div class="as-empty">Aún no hay solicitudes. Completa una venta con Lara en la <a href="/#demo">demo</a> y aparecerá aquí, empaquetada para la aseguradora.</div>';
       return;
     }
     sols.forEach(s => lista.appendChild(card(s)));

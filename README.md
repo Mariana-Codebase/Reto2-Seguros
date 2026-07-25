@@ -1,4 +1,4 @@
-# Clara — Venta automatizada de seguros
+# Lara — Venta automatizada de seguros
 
 Solución al **Reto 2 · Seguros** · Hackathon [Colsubsidio × 30X](https://innovacion.colsubsidio.com/) · Bogotá, julio de 2026
 
@@ -8,7 +8,7 @@ Solución al **Reto 2 · Seguros** · Hackathon [Colsubsidio × 30X](https://inn
 ![SQLite](https://img.shields.io/badge/SQLite-trazabilidad_total-003B57?logo=sqlite&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-listo-2496ED?logo=docker&logoColor=white)
 
-**Clara** es una asesora digital que lleva a cada afiliado desde *"no sé qué seguro
+**Lara** es una asesora digital que lleva a cada afiliado desde *"no sé qué seguro
 necesito"* hasta *"ya quedé asegurado"*, sin intervención humana: identifica la
 propensión desde la base real de afiliados, personaliza la oferta, explica cada
 recomendación, cierra la vinculación y — como Colsubsidio distribuye pólizas, no
@@ -17,7 +17,7 @@ compra con la aseguradora.
 
 ## Dos agentes que trabajan juntos
 
-| | Agente 1 · **Clara** (conversacional) | Agente 2 · **Ofertas** (proactivo) |
+| | Agente 1 · **Lara** (conversacional) | Agente 2 · **Ofertas** (proactivo) |
 |---|---|---|
 | **Cuándo actúa** | Cuando la persona llega y escribe | Solo, ante eventos de las bases de Colsubsidio |
 | **Qué hace** | Identifica si es afiliado, diagnostica, recomienda, cotiza, contrata, firma, cobra y radica la vinculación | Detecta un cambio (crédito desembolsado, alza de ingreso, cumpleaños, inactividad) y envía la oferta pertinente |
@@ -41,21 +41,21 @@ python server.py              # → http://localhost:8000
 
 ## Recorrido de la demo
 
-0. **Identificación** — Al iniciar, Clara puede reconocer si la persona es afiliada:
+0. **Identificación** — Al iniciar, Lara puede reconocer si la persona es afiliada:
    busca su número en la base y, si existe, carga su perfil y propensión; si no,
    sigue como no afiliada (y un asesor completará la vinculación). En la demo, el
    selector *"Perfil de la base de afiliados"* hace esa identificación; la opción
    *"Visitante anónimo"* recorre el camino de no afiliado.
 1. En **Demo interactiva**, el selector *"Perfil de la base de afiliados"* carga
-   perfiles reales (identificados por SERIE). Clara saluda personalizada según el
+   perfiles reales (identificados por SERIE). Lara saluda personalizada según el
    perfil y el panel **"Propensión · por qué esta oferta"** muestra las razones
    exactas de la recomendación. Al cambiar de perfil, **la oferta cambia**:
    monoparental → Vida · joven sin grupo familiar → Accidentes · compra viajes →
    Asistencia en Viajes · usó el servicio de vivienda → Hogar · pensionado → Exequial.
 2. El flujo también funciona para un **visitante anónimo**: ante *"no sé qué seguro
-   necesito"*, Clara diagnostica con preguntas abiertas y adapta la recomendación a
+   necesito"*, Lara diagnostica con preguntas abiertas y adapta la recomendación a
    lo que la persona cuenta (mascotas, vehículo, viajes, dependientes…).
-3. Elegido un producto, Clara reúne los datos, genera el **contrato en PDF**, captura
+3. Elegido un producto, Lara reúne los datos, genera el **contrato en PDF**, captura
    la **firma electrónica** y entrega el enlace de **pago** (sandbox: la tarjeta
    `4242 4242 4242 4242` aprueba; la `4111…` simula rechazo).
 4. Con el pago aprobado, la **vinculación queda confirmada y radicada** y se genera
@@ -123,7 +123,7 @@ corrige ahí, sin tocar el motor. Para regenerar mapa, estadísticas y muestra d
 ## Panel del asesor (`/asesor`)
 
 Colsubsidio **no fabrica pólizas: las distribuye**. Por eso la venta autónoma
-termina en una **bandeja de vinculaciones**: al firmarse el contrato, Clara
+termina en una **bandeja de vinculaciones**: al firmarse el contrato, Lara
 transmite la solicitud empaquetada — perfil de la base con segmentos
 interpretados, propensión con razones, datos del tomador, contrato PDF, estado del
 pago y resumen de vinculación — y el asesor la avanza por estados hasta que la
@@ -134,7 +134,7 @@ pendiente_pago → pagada → enviada a aseguradora → emitida → cerrada
 ```
 
 Cada avance **notifica a la sesión del afiliado**: si pregunta por su solicitud,
-Clara responde con el estado real. Los escalamientos a humano también llegan a la
+Lara responde con el estado real. Los escalamientos a humano también llegan a la
 bandeja como tickets. El asesor recibe un **perfil completo** del usuario (lo de la
 base + lo que contó + intereses + eventos de vida) para cerrar con contexto.
 
@@ -142,7 +142,7 @@ base + lo que contó + intereses + eventos de vida) para cerrar con contexto.
 
 ## Agente de ofertas (`/ofertas`) — el segundo agente
 
-Mientras Clara atiende a quien llega, el **agente de ofertas** actúa por su cuenta.
+Mientras Lara atiende a quien llega, el **agente de ofertas** actúa por su cuenta.
 Escucha **eventos** de las bases de Colsubsidio y, para cada uno, decide la oferta
 más pertinente con una **regla explicable** (nada aleatorio) y la envía por el mejor
 canal. Cruza dos portafolios: **seguros** y **créditos** (colsubsidio.com/creditos).
@@ -172,7 +172,7 @@ evento** y ver la decisión. El workflow importable está en
 ## Arquitectura: el modelo pone las palabras, el sistema pone la verdad
 
 Vender seguros con un LLM tiene un riesgo crítico: que el modelo invente una
-cobertura, un precio o una condición. Clara está diseñada para que no pueda pasar:
+cobertura, un precio o una condición. Lara está diseñada para que no pueda pasar:
 
 | Principio | Cómo se garantiza |
 |---|---|
@@ -186,7 +186,7 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 | **Trazabilidad total** | Perfil, cotización, contrato, pago y vinculación quedan en SQLite y a la vista en la interfaz. |
 
 ```
-  Afiliado           Clara (Gemini)            Backend determinístico        Asesor
+  Afiliado           Lara (Gemini)            Backend determinístico        Asesor
      │  "no sé qué       │                              │                      │
      │   necesito"       │                              │                      │
      ├──────────────────▶│ propensión (base 500k) +     │                      │
@@ -209,7 +209,7 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 ├── server.py              # Punto de entrada (python server.py)
 ├── app/
 │   ├── main.py            # API FastAPI + checkout + paneles + webhooks de eventos
-│   ├── agent.py           # Agente 1 (Clara): sesión, herramientas, guardrail, perfil vivo
+│   ├── agent.py           # Agente 1 (Lara): sesión, herramientas, guardrail, perfil vivo
 │   ├── ofertas.py         # Agente 2: reglas evento → oferta (seguros + créditos)
 │   ├── base_afiliados.py  # Lookup en la base: ¿es afiliado? carga su perfil
 │   ├── propension.py      # Motor de propensión: 34 reglas explicables
@@ -233,7 +233,7 @@ cobertura, un precio o una condición. Clara está diseñada para que no pueda p
 
 | Endpoint | Qué hace |
 |---|---|
-| `POST /api/session` · `POST /api/chat` | Conversación con Clara (agente 1) |
+| `POST /api/session` · `POST /api/chat` | Conversación con Lara (agente 1) |
 | `POST /api/identificar` | ¿Es afiliado? busca en la base y carga su perfil |
 | `GET /api/perfil/{id}` · `GET /api/perfiles` | Perfil vivo (la base que se enriquece) |
 | `POST /api/eventos` | **Agente de ofertas**: evento → oferta (lo llama n8n) |

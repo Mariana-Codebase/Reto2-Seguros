@@ -1,7 +1,7 @@
 /**
- * Clara · Agent Flow — workflow animado del agente (hero).
+ * Lara · Agent Flow — workflow animado del agente (hero).
  * Vanilla SVG + CSS. Sin librerías externas.
- * Flujo real: Afiliado → Consulta → Clara → [Perfil · Coberturas · Cotizar] → Decide → Respuesta
+ * Flujo real: Afiliado → Consulta → Lara → [Perfil · Coberturas · Cotizar] → Decide → Respuesta
  */
 (function () {
   "use strict";
@@ -25,7 +25,7 @@
       bullets: ["POST /api/chat", "Sesión persistida", "Aviso Ley 1581"],
     },
     agent: {
-      name: "Clara",
+      name: "Lara",
       hint: "Analiza y decide",
       detail: "Gemini conversa y pide herramientas. No inventa precios ni coberturas: solo orquesta.",
       bullets: ["Entiende la intención", "Elige herramientas", "Guardrail de salida"],
@@ -51,7 +51,7 @@
     respuesta: {
       name: "Respuesta",
       hint: "Vuelve al afiliado",
-      detail: "Clara responde con respaldo documental. Luego puede avanzar a contrato, firma y pago.",
+      detail: "Lara responde con respaldo documental. Luego puede avanzar a contrato, firma y pago.",
       bullets: ["Lenguaje claro", "Coberturas citadas", "Listo para cerrar"],
     },
   };
@@ -110,7 +110,7 @@
   function build(root) {
     root.innerHTML = "";
     root.setAttribute("role", "img");
-    root.setAttribute("aria-label", "Flujo animado: cómo trabaja el agente Clara");
+    root.setAttribute("aria-label", "Flujo animado: cómo trabaja el agente Lara");
 
     const label = document.createElement("div");
     label.className = "af-label";
@@ -322,7 +322,7 @@
     await animateParticle(ctl, ui, "e-query-agent", { duration: 750, slot: 0 });
     if (!(await gate())) return;
 
-    // 3. Clara analiza
+    // 3. Lara analiza
     setNodeState(N, "perfil", "next");
     setNodeState(N, "coberturas", "next");
     setNodeState(N, "cotizar", "next");

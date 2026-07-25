@@ -1,4 +1,4 @@
-# Clara — Asesora digital de seguros
+# Lara — Asesora digital de seguros
 
 **Reto 2 · Seguros** · Hackathon [Colsubsidio × 30X](https://innovacion.colsubsidio.com/) · Bogotá, julio de 2026
 
@@ -8,7 +8,7 @@
 
 ## La idea en una frase
 
-**Clara** conversa como una asesora real: perfila a cada persona, encuentra el seguro que le encaja y entrega al vendedor humano un expediente **listo para cerrar** — más rápido, con contexto y sin inventar coberturas ni precios.
+**Lara** conversa como una asesora real: perfila a cada persona, encuentra el seguro que le encaja y entrega al vendedor humano un expediente **listo para cerrar** — más rápido, con contexto y sin inventar coberturas ni precios.
 
 No reemplaza al asesor en el cobro ni en la facturación. **Prepara el terreno** para que el cierre comercial sea humano, regulado y eficiente.
 
@@ -24,23 +24,23 @@ No reemplaza al asesor en el cobro ni en la facturación. **Prepara el terreno**
 | **Diálogo primero, venta después** | No empuja un producto: entiende la vida de la persona (hogar, dependientes, viajes, riesgos) y recién entonces orienta. |
 | **Base real de 500.000 afiliados** | La recomendación nace de reglas auditables sobre datos de Colsubsidio, no de intuición del modelo.                      |
 | **Cada “por qué” es explicable**   | El panel de propensión muestra *variable → puntos → razón*. Nada de caja negra.                                         |
-| **El LLM no inventa la verdad**    | Clara solo conversa y llama herramientas; coberturas, precios y propensión salen del backend.                           |
-| **Cierre donde debe estar**        | Pago y facturación los hace el asesor. Clara escala cuando el caso ya esta practicamente definido.                      |
-| **Dos agentes, una base viva**     | Quien llega habla con Clara; los eventos de otras bases disparan ofertas proactivas. El perfil crece con ambos.         |
+| **El LLM no inventa la verdad**    | Lara solo conversa y llama herramientas; coberturas, precios y propensión salen del backend.                           |
+| **Cierre donde debe estar**        | Pago y facturación los hace el asesor. Lara escala cuando el caso ya esta practicamente definido.                      |
+| **Dos agentes, una base viva**     | Quien llega habla con Lara; los eventos de otras bases disparan ofertas proactivas. El perfil crece con ambos.         |
 
 
-Colsubsidio **distribuye** pólizas; no las emite. El valor de Clara está en la **calidad del perfil y de la recomendación** que llega a la bandeja — no en emitir ni cobrar.
+Colsubsidio **distribuye** pólizas; no las emite. El valor de Lara está en la **calidad del perfil y de la recomendación** que llega a la bandeja — no en emitir ni cobrar.
 
 ---
 
 
 
-## Cómo trabaja Clara
+## Cómo trabaja Lara
 
-Clara recibe un mensaje en el chat e interactúa de la forma más humana posible. El objetivo operativo es uno: **perfilar** y dejar al vendedor un proceso más ameno y rápido.
+Lara recibe un mensaje en el chat e interactúa de la forma más humana posible. El objetivo operativo es uno: **perfilar** y dejar al vendedor un proceso más ameno y rápido.
 
 
-| Situación del usuario          | Qué hace Clara                                                               |
+| Situación del usuario          | Qué hace Lara                                                               |
 | ------------------------------ | ---------------------------------------------------------------------------- |
 | **Aún no sabe** qué necesita   | Guía con preguntas naturales hasta el seguro que mejor encaja con su perfil. |
 | **Ya tiene claro** el producto | Corrobora requisitos; si aplica, **escala a un humano** para el cierre.      |
@@ -68,7 +68,7 @@ El asesor recibe un **perfil completo**: datos de la base + lo contado en el cha
 ## Dos agentes, una misma base viva
 
 
-|                  | Agente 1 · **Clara** (conversacional)                                                                                                              | Agente 2 · **Ofertas** (proactivo)                                                                               |
+|                  | Agente 1 · **Lara** (conversacional)                                                                                                              | Agente 2 · **Ofertas** (proactivo)                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Cuándo actúa** | Cuando la persona llega y escribe                                                                                                                  | Ante eventos de las bases de Colsubsidio                                                                         |
 | **Qué hace**     | Identifica afiliado o visitante, perfila por diálogo, recomienda con respaldo, cotiza para orientar y **escala al asesor** con el expediente listo | Detecta un cambio (crédito desembolsado, alza de ingreso, cumpleaños, inactividad…) y envía la oferta pertinente |
@@ -84,7 +84,7 @@ El agente 2 se orquesta con **n8n** (`POST /api/eventos`); la inteligencia vive 
 
 ## Qué se ve en la solución
 
-1. **Identificación** — Clara reconoce si la persona es afiliada: busca en la base, carga perfil y propensión; si no existe, continúa como visitante con perfil nuevo. En la interfaz, el selector *“Perfil de la base de afiliados”* (identificado por SERIE) o *“Visitante anónimo”* elige ese camino.
+1. **Identificación** — Lara reconoce si la persona es afiliada: busca en la base, carga perfil y propensión; si no existe, continúa como visitante con perfil nuevo. En la interfaz, el selector *“Perfil de la base de afiliados”* (identificado por SERIE) o *“Visitante anónimo”* elige ese camino.
 2. **Oferta que cambia con la persona** — Con un perfil real, el saludo y la recomendación se personalizan. El panel **“Propensión · por qué esta oferta”** muestra las razones exactas. Ejemplos: monoparental → Vida · joven sin grupo familiar → Accidentes · compra viajes → Asistencia en Viajes · usó vivienda → Hogar · pensionado → Exequial.
 3. **Diálogo y auditoría en vivo** — Preguntas naturales (hogar, dependientes, vehículo, viajes, preocupaciones…). Cada decisión relevante queda registrada junto al chat. Cuando el caso está listo, **escala a humano** con el contexto completo.
 
@@ -141,7 +141,7 @@ El mapa es **editable** sin tocar el motor. Regeneración: `python scripts/perfi
 
 ## Panel del asesor (`/asesor`)
 
-Clara termina cuando el caso está listo para un humano:
+Lara termina cuando el caso está listo para un humano:
 
 - perfil de la base (segmentos interpretados),
 - propensión con razones,
@@ -156,7 +156,7 @@ Los **escalamientos** llegan como tickets. El asesor usa ese expediente para **f
 
 ## Agente de ofertas (`/ofertas`)
 
-Mientras Clara atiende a quien llega, el segundo agente escucha **eventos** y responde con ofertas explicables (seguros y créditos):
+Mientras Lara atiende a quien llega, el segundo agente escucha **eventos** y responde con ofertas explicables (seguros y créditos):
 
 
 | Evento                                 | Oferta                                       | Por qué                                 |
@@ -194,7 +194,7 @@ Interfaz de simulación: `/ofertas`. Workflow n8n: `[n8n/agente-ofertas.workflow
 
 
 ```
-  Afiliado / visitante     Clara (Gemini)           Backend                 Asesor humano
+  Afiliado / visitante     Lara (Gemini)           Backend                 Asesor humano
          │                      │                      │                         │
          │  mensaje en chat     │                      │                         │
          ├─────────────────────▶│ propensión + diálogo │                         │
@@ -252,7 +252,7 @@ docker run -p 7860:7860 -e GEMINI_API_KEY=AIza... clara
 
 | Endpoint                                     | Qué hace                   |
 | -------------------------------------------- | -------------------------- |
-| `POST /api/session` · `POST /api/chat`       | Conversación con Clara     |
+| `POST /api/session` · `POST /api/chat`       | Conversación con Lara     |
 | `POST /api/identificar`                      | ¿Es afiliado? carga perfil |
 | `GET /api/perfil/{id}` · `GET /api/perfiles` | Perfil vivo                |
 | `POST /api/eventos`                          | Agente de ofertas (n8n)    |

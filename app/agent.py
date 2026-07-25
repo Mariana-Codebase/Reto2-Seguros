@@ -1,5 +1,5 @@
 """
-El cerebro conversacional de Clara.
+El cerebro conversacional de Lara.
 
 - Objeto Session: memoria de la conversación, perfil extraído, máquina de
   estados, consentimiento, pagos y auditoría. Serializable a JSON para
@@ -53,7 +53,7 @@ def perfil_humano(p: dict[str, Any]) -> str:
 # --------------------------------------------------------------------------
 # System prompt (adaptado del documento del Reto 2)
 # --------------------------------------------------------------------------
-SYSTEM_PROMPT = """Eres Clara, la asesora digital de seguros de Colsubsidio. Acompañas a un afiliado desde que no sabe qué necesita hasta que queda asegurado, de forma clara, honesta y sin presionar.
+SYSTEM_PROMPT = """Eres Lara, la asesora digital de seguros de Colsubsidio. Acompañas a un afiliado desde que no sabe qué necesita hasta que queda asegurado, de forma clara, honesta y sin presionar.
 
 REGLA DE ORO (NUNCA LA ROMPAS)
 - Toda afirmación sobre coberturas, amparos, exclusiones o condiciones DEBE provenir de la herramienta consultar_coberturas. Si no tienes respaldo, no lo afirmes.
@@ -128,7 +128,7 @@ FASE 4 · DATOS DE CONTACTO (para poder retomar y para tenerla en cuenta en ofer
 - Pide máximo 2 datos por mensaje. CADA VEZ que recibas datos, llama a registrar_datos (no vuelvas a preguntar lo que ya te dieron).
 - Datos del bien SOLO si el producto los necesita para la póliza: Autos (marca, línea, año, placa), Moto (además cilindraje), Mascotas (nombre, especie, raza, edad), Viajes (destino, fechas). El resto: con los datos de contacto basta; los detalles finos los completa el asesor.
 
-FASE 5 · CIERRE (cuando le gusta una póliza) — Clara NO cobra ni emite
+FASE 5 · CIERRE (cuando le gusta una póliza) — Lara NO cobra ni emite
 - Cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas, y ya tengas nombre + identificación + celular o correo, llama a solicitar_cierre con ese producto.
 - solicitar_cierre genera un PDF INFORMATIVO de la póliza (no es emisión ni contrato) y radica el caso al área encargada con el perfil completo. Comparte ese PDF con la persona.
 - Confirma explícitamente: "¿este es el seguro que buscas?". Si dice que sí, avísale que la información fue enviada al ÁREA ENCARGADA, que le hará llegar el LINK DE PAGO y la PÓLIZA.
@@ -286,7 +286,7 @@ TOOLS: list[dict[str, Any]] = [
                             "encargada con el perfil completo y el seguro solicitado. Requiere que ya tengas "
                             "nombre, número de identificación y celular o correo (pídelos antes con registrar_datos). "
                             "Tras llamarla: comparte el PDF, confirma que ese es el seguro que busca y avísale que "
-                            "el área encargada le enviará el link de pago y la póliza. Clara nunca cobra ni emite."),
+                            "el área encargada le enviará el link de pago y la póliza. Lara nunca cobra ni emite."),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -518,7 +518,7 @@ class Session:
     # ---- perfil de la base de afiliados (propensión) ----
     def set_afiliado(self, afiliado: dict[str, Any]) -> None:
         """Ancla la sesión a un afiliado real de la base (identificado por SERIE,
-        sin nombre). Corre el motor de propensión y le da a Clara el contexto y
+        sin nombre). Corre el motor de propensión y le da a Lara el contexto y
         el ranking explicado, para que la oferta arranque personalizada."""
         self.afiliado = afiliado
         self.propension = propension.perfilar(afiliado)
@@ -871,7 +871,7 @@ class Session:
 
         entrega = {"simulado": True, "detalle": "sin destino"}
         if destino and canal == "correo":
-            cuerpo = ("Hola,\n\nAdjunto encontrarás el resumen de tu recomendación de seguros preparado por Clara.\n"
+            cuerpo = ("Hola,\n\nAdjunto encontrarás el resumen de tu recomendación de seguros preparado por Lara.\n"
                       "Este documento es informativo y no constituye una póliza.\n\nColsubsidio Seguros.")
             entrega = notify.send_email(destino, "Tu resumen de seguros - Colsubsidio", cuerpo,
                                         str(pdfgen.DOCS_DIR / fname))
@@ -1088,7 +1088,7 @@ class Session:
                 "mensaje": "Un asesor humano tomará el caso y contactará al afiliado."}
 
     def _tool_solicitar_cierre(self, a: dict[str, Any]) -> dict[str, Any]:
-        """La persona manifestó que le gusta una póliza. Clara NO emite ni cobra:
+        """La persona manifestó que le gusta una póliza. Lara NO emite ni cobra:
         genera un PDF informativo de la póliza y radica el caso, con el perfil
         completo y el seguro solicitado, a la bandeja del asesor. El área
         encargada será quien envíe el link de pago y la póliza."""
@@ -1143,7 +1143,7 @@ class Session:
         }
 
     # ---- paquete de vinculación para el asesor / aseguradora ----
-    # Colsubsidio no fabrica las pólizas: las distribuye. Clara empaqueta todo
+    # Colsubsidio no fabrica las pólizas: las distribuye. Lara empaqueta todo
     # lo que la aseguradora necesita (perfil, propensión explicada, datos,
     # contrato firmado, pago) y lo transmite a la bandeja del asesor.
     def _paquete_asesor(self) -> dict[str, Any]:

@@ -1,5 +1,5 @@
 /* =========================================================================
-   Clara — Frontend (conectado al backend FastAPI + Gemini)
+   Lara — Frontend (conectado al backend FastAPI + Gemini)
    El agente vive en el servidor; aquí solo se renderiza la conversación,
    el perfil extraído, la auditoría y los documentos.
 ========================================================================= */

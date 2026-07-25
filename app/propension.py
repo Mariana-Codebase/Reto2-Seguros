@@ -14,7 +14,7 @@ este seguro y no otro?» — con reglas 100% explicables, NO caja negra:
   desglose completo (variable, valor observado, puntos, razón) acompaña
   cada recomendación y se muestra en la interfaz y en la auditoría.
 - El motor solo afirma lo que los datos respaldan. Lo que la base no
-  contiene (mascotas, vehículo...) no se infiere aquí: lo descubre Clara
+  contiene (mascotas, vehículo...) no se infiere aquí: lo descubre Lara
   conversando y se suma después.
 
 ETIQUETAS ANONIMIZADAS. Colsubsidio entregó las clasificaciones internas
@@ -359,7 +359,7 @@ def reglas_documentadas() -> list[dict[str, Any]]:
 
 def describir_segmentos(a: dict[str, Any]) -> dict[str, str]:
     """Descripción legible de las etiquetas anonimizadas de un afiliado según
-    el mapa documentado (para el contexto de Clara y el panel del asesor)."""
+    el mapa documentado (para el contexto de Lara y el panel del asesor)."""
     out = {}
     for dim, campo in [("SEGMENTO_GRUPO_FAMILIAR", "segmento_familiar"),
                        ("SEGMENTO_POBLACIONAL", "segmento_poblacional"),

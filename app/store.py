@@ -107,7 +107,7 @@ def purge_old_sessions(ttl_hours: int | None = None) -> int:
 
 # --------------------------------------------------------------------------
 # Solicitudes: la bandeja del asesor / aseguradora.
-# Colsubsidio no emite pólizas: Clara empaqueta cada vinculación y la
+# Colsubsidio no emite pólizas: Lara empaqueta cada vinculación y la
 # transmite aquí para que el asesor la gestione con la aseguradora.
 # --------------------------------------------------------------------------
 def upsert_solicitud(solicitud_id: str, session_id: str, tipo: str, producto: str | None,

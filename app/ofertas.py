@@ -2,7 +2,7 @@
 ofertas.py — El AGENTE DE OFERTAS (segundo agente, proactivo/saliente)
 ======================================================================
 
-Mientras Clara (agente 1) conversa con quien llega, este agente actúa por su
+Mientras Lara (agente 1) conversa con quien llega, este agente actúa por su
 cuenta: escucha EVENTOS de las bases de Colsubsidio (un crédito desembolsado, un
 alza de ingreso, un cumpleaños, inactividad…) y, para cada uno, decide la
 oferta más pertinente y por qué canal enviarla. Cruza dos mundos:
@@ -10,7 +10,7 @@ oferta más pertinente y por qué canal enviarla. Cruza dos mundos:
   · Seguros  (portafolio de app/knowledge.py)
   · Créditos (portafolio de Colsubsidio: colsubsidio.com/creditos)
 
-Regla de oro (igual que Clara): nada aleatorio. Cada oferta sale de una regla
+Regla de oro (igual que Lara): nada aleatorio. Cada oferta sale de una regla
 evento→producto con una razón explicable. El disparo lo puede hacer n8n (u otro
 orquestador) llamando POST /api/eventos; la inteligencia vive aquí, versionada
 y testeable.
@@ -164,7 +164,7 @@ def generar_oferta(perfil: dict[str, Any], evento: str, datos: dict[str, Any] | 
 
     regla = EVENTO_REGLAS.get(evento)
     if regla is None and evento in ("interes_sin_cierre", "sin_cierre"):
-        # P4 · Interés abandonado: la persona pidió un seguro con Clara y no cerró.
+        # P4 · Interés abandonado: la persona pidió un seguro con Lara y no cerró.
         pid = (perfil or {}).get("seguro_solicitado")
         if pid and pid in kb.CATALOG:
             regla = {"tipo": "seguro", "producto": pid,
@@ -206,7 +206,7 @@ def eventos_soportados() -> list[dict[str, str]]:
         prod = _oferta_producto(r["tipo"], r["producto"])
         out.append({"evento": ev, "ofrece": prod["nombre"], "tipo": r["tipo"], "razon": r["razon"]})
     out.append({"evento": "interes_sin_cierre", "ofrece": "El seguro que pidió y no cerró",
-                "tipo": "seguro", "razon": "Re-enganche por interés abandonado (usa lo que Clara detectó)."})
+                "tipo": "seguro", "razon": "Re-enganche por interés abandonado (usa lo que Lara detectó)."})
     out.append({"evento": "(cualquier otro)", "ofrece": "Mejor seguro por propensión",
                 "tipo": "seguro", "razon": "Re-enganche basado en el perfil del afiliado."})
     return out

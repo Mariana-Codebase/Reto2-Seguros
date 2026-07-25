@@ -34,7 +34,7 @@ logger = logging.getLogger("clara.afiliados_db")
 
 _SIN_ID = {"_id": 0}
 
-# Campos que la conversación con Clara puede modificar sobre un afiliado.
+# Campos que la conversación con Lara puede modificar sobre un afiliado.
 CAMPOS_EDITABLES = {
     "genero", "rango_edad", "rango_salarial", "categoria",
     "segmento_familiar", "segmento_poblacional", "piramide",
@@ -162,7 +162,7 @@ def _nueva_serie(db: Any) -> int:
 def crear_afiliado(datos: dict[str, Any]) -> dict[str, Any]:
     """Crea un afiliado nuevo con serie asignada (max serie + 1).
 
-    `datos` trae los campos que Clara recogió en la conversación (minúsculas,
+    `datos` trae los campos que Lara recogió en la conversación (minúsculas,
     mismo esquema de parse_afiliado). Si incluye `vivienda` y/o `credito`
     (dicts), crea también esos registros. Registra el evento "creado" y
     devuelve el documento creado (sin _id)."""

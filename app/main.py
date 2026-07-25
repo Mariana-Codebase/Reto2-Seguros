@@ -1,5 +1,5 @@
 """
-API de Clara (FastAPI) + entrega de la interfaz.
+API de Lara (FastAPI) + entrega de la interfaz.
 
 Endpoints:
   GET  /                          -> interfaz (static/index.html)
@@ -33,7 +33,7 @@ from .config import settings
 logger = logging.getLogger("clara.api")
 
 app = FastAPI(
-    title="Clara · Venta automatizada de seguros",
+    title="Lara · Venta automatizada de seguros",
     version=__version__,
     docs_url=None if settings.is_production else "/api/docs",
     redoc_url=None,
@@ -45,7 +45,7 @@ SESSIONS: dict[str, agent.Session] = {}
 app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
 
 SALUDO = (
-    "Hola, soy Clara, la asesora digital de seguros de Colsubsidio. "
+    "Hola, soy Lara, la asesora digital de seguros de Colsubsidio. "
     "Antes de empezar: tus datos se tratan conforme a la Política de Tratamiento de Datos "
     "Personales de Colsubsidio (Ley 1581 de 2012) y puedes solicitar su eliminación cuando quieras. "
     "Para empezar, cuéntame: ¿ya sabes qué seguro buscas o prefieres que te ayude a encontrar "
@@ -121,7 +121,7 @@ class FirmaReq(BaseModel):
 
 
 class AfiliadoCrearReq(BaseModel):
-    """Datos con los que Clara (o el equipo) registra un afiliado nuevo. Todos
+    """Datos con los que Lara (o el equipo) registra un afiliado nuevo. Todos
     opcionales salvo lo mínimo para personalizar; la SERIE la asigna la base."""
     genero: str | None = Field(default=None, pattern="^[FM]$")
     rango_edad: str | None = None
@@ -162,7 +162,7 @@ def _startup():
         if sembrado:
             logger.info("Muestra demo sembrada: %s", sembrado)
     logger.info(
-        "Clara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
+        "Lara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
         __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,
     )
 
@@ -231,7 +231,7 @@ def crear_sesion(req: SessionReq):
             if hook:
                 gancho = f" Por lo que Colsubsidio ya conoce de ti, creo que lo primero que deberíamos mirar juntos es {hook}."
         saludo = (
-            "Hola, soy Clara, la asesora digital de seguros de Colsubsidio. "
+            "Hola, soy Lara, la asesora digital de seguros de Colsubsidio. "
             "Tus datos se tratan conforme a la Política de Tratamiento de Datos Personales "
             "(Ley 1581 de 2012) y puedes pedir su eliminación cuando quieras. "
             f"Veo que eres parte de la familia Colsubsidio.{gancho} "
@@ -329,7 +329,7 @@ def propension_reglas():
 
 
 # --------------------------------------------------------------------------
-# Panel del asesor: Colsubsidio distribuye, no emite. Clara transmite cada
+# Panel del asesor: Colsubsidio distribuye, no emite. Lara transmite cada
 # vinculación empaquetada y el asesor la gestiona con la aseguradora.
 # --------------------------------------------------------------------------
 @app.get("/asesor", include_in_schema=False)
@@ -354,7 +354,7 @@ def asesor_cambiar_estado(solicitud_id: str, req: EstadoSolicitudReq):
     if not store.set_estado_solicitud(solicitud_id, req.estado):
         raise HTTPException(status_code=404, detail="Solicitud no encontrada.")
     # Lazo de vuelta al afiliado: la sesión queda enterada del avance para que
-    # Clara pueda informarlo si el afiliado pregunta por su solicitud.
+    # Lara pueda informarlo si el afiliado pregunta por su solicitud.
     aviso = _ESTADO_AVISO.get(req.estado)
     sol = next((x for x in store.list_solicitudes() if x["id"] == solicitud_id), None)
     if aviso and sol:
@@ -636,7 +636,7 @@ def pago_estado(session_id: str):
 @app.post("/api/confirmar-pago")
 def confirmar_pago(req: ConfirmarReq):
     """Tras el pago aprobado: confirma y radica la vinculación (Colsubsidio
-    distribuye, no emite pólizas) y deja que Clara confirme en lenguaje natural.
+    distribuye, no emite pólizas) y deja que Lara confirme en lenguaje natural.
     La póliza la emitirá la aseguradora desde el panel del asesor."""
     s = _get_session(req.session_id)
     pago = s.payments.get(req.token)

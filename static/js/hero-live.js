@@ -1,5 +1,5 @@
 /* =========================================================================
-   Clara · Hero live chat — bucle lento y muy visible
+   Lara · Hero live chat — bucle lento y muy visible
 ========================================================================= */
 "use strict";
 
@@ -8,12 +8,12 @@
     const body = document.getElementById("heroLiveChat");
     const statusEl = document.getElementById("heroLiveStatus");
     if (!body) {
-      console.warn("[Clara] #heroLiveChat no encontrado");
+      console.warn("[Lara] #heroLiveChat no encontrado");
       return;
     }
 
     const lines = [
-      { role: "bot", text: "Hola, soy Clara. Para recomendarte lo adecuado, primero quiero entender tu situación." },
+      { role: "bot", text: "Hola, soy Lara. Para recomendarte lo adecuado, primero quiero entender tu situación." },
       { role: "user", text: "Vivo en arriendo con mi pareja e hijo." },
       {
         role: "bot",
@@ -141,7 +141,7 @@
       gen += 1;
       body.style.transition = "opacity .35s ease";
       body.style.opacity = "1";
-      console.info("[Clara] hero live chat started");
+      console.info("[Lara] hero live chat started");
       play(gen);
     }
 

@@ -345,7 +345,7 @@ def cotizar(producto: str, rango_edad: str | None = None, dependientes: int = 0)
         "aseguradoras": aseguradoras(producto),  # opciones (simuladas) con plan y diferencial
         "precio_mensual": precio,
         "precio_formateado": format_cop(precio),
-        "precio_desde": format_desde(precio),  # forma en que Clara DEBE presentarlo
+        "precio_desde": format_desde(precio),  # forma en que Lara DEBE presentarlo
         "moneda": "COP",
         "desglose": desglose,
         "vigencia": "anual renovable",
@@ -358,7 +358,7 @@ def format_cop(n: int) -> str:
 
 def format_desde(n: int) -> str:
     """Precio SIEMPRE referencial: 'desde $X/mes'. El valor definitivo lo fija el
-    asesor consultando a la aseguradora; Clara nunca da un precio cerrado."""
+    asesor consultando a la aseguradora; Lara nunca da un precio cerrado."""
     return f"desde {format_cop(n)}/mes"
 
 
