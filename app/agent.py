@@ -111,9 +111,11 @@ FASE 1 · DIAGNÓSTICO (cuando la persona NO sabe qué necesita)
 - Cuando entiendas su necesidad principal y tengas algo de contexto, resume en tus palabras lo que escuchaste y confirma UNA sola vez.
 
 FASE 2 · RECOMENDACIÓN
-- Llama a recomendar para obtener las opciones (ya vienen con aseguradora, coberturas y precio referencial). Si la persona pidió productos concretos, pásalos en `productos`.
-- Presenta las opciones ordenadas por ajuste a lo que la persona expresó (no por precio). Para CADA una menciona: la ASEGURADORA que la respalda (campo `aseguradora` de la herramienta, tal como en Colsubsidio), por qué encaja, qué cubre, qué NO cubre y el precio.
+- Llama a recomendar para obtener las opciones (ya vienen con aseguradoras, coberturas y precio referencial). Si la persona pidió productos concretos, pásalos en `productos`.
+- Presenta las opciones ordenadas por ajuste a lo que la persona expresó (no por precio). Para CADA producto menciona: por qué encaja, qué cubre, qué NO cubre y el precio.
+- ASEGURADORAS: cada producto trae el campo `aseguradoras` con una o varias opciones (p. ej. Seguros Bolívar y Sura). Si hay varias, di brevemente QUÉ OFRECE cada una (su `plan` y su diferencial `ofrece`) para que la persona pueda comparar y elegir aseguradora. Si hay una sola, nómbrala.
 - PRECIOS: SIEMPRE "desde $X/mes" (usa el campo `precio_desde`). NUNCA des un precio cerrado ni digas que ese es el valor final: es referencial y el valor definitivo lo calcula el ASESOR consultando a la aseguradora. Si preguntan el precio exacto, explícalo así con transparencia.
+- DATOS SIMULADOS: el catálogo, las aseguradoras y los precios son ilustrativos para esta demo. No los presentes como oficiales; si te preguntan por su exactitud o de dónde salen, acláralo con naturalidad (son de muestra y el asesor confirma lo real). No inventes coberturas fuera de las que devuelven las herramientas.
 - Cierra preguntando qué dudas tiene, sin empujar la compra.
 
 FASE 3 · DUDAS
@@ -290,6 +292,8 @@ TOOLS: list[dict[str, Any]] = [
                 "properties": {
                     "producto": {"type": "string", "enum": kb.PRODUCTOS_VALIDOS,
                                  "description": "El producto que la persona quiere asegurar."},
+                    "aseguradora": {"type": "string",
+                                    "description": "Opcional. Nombre de la aseguradora que la persona prefirió, si eligió una (p. ej. 'Seguros Bolívar' o 'Sura')."},
                 },
                 "required": ["producto"],
             },
@@ -1114,9 +1118,12 @@ class Session:
         q = kb.cotizar(producto, self.perfil.get("rango_edad"), self.perfil.get("dependientes", 0))
         sol_id = f"SOL-{dt.date.today().year}-{uuid.uuid4().hex[:6].upper()}"
         paquete = self._paquete_asesor()
+        elegida = (a.get("aseguradora") or "").strip() or None
         paquete["seguro_solicitado"] = {
             "producto_id": producto, "nombre": kb.CATALOG[producto]["nombre"],
-            "aseguradora": kb.aseguradora(producto), "precio_desde": q.get("precio_desde"),
+            "aseguradora_elegida": elegida,                 # la que la persona prefirió (si dijo)
+            "aseguradoras": kb.aseguradoras(producto),      # opciones simuladas (plan + diferencial)
+            "precio_desde": q.get("precio_desde"),
         }
         paquete["doc_informativo_url"] = url
         store.upsert_solicitud(sol_id, self.id, "vinculacion", producto, "pendiente_asesor", paquete)

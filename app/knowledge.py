@@ -301,6 +301,7 @@ def consultar_coberturas(producto: str, tipo: str = "amparo") -> dict[str, Any]:
     return {
         "producto": p["nombre"],
         "aseguradora": aseguradora(producto),
+        "aseguradoras": aseguradoras(producto),
         "tipo": tipo,
         "chunks": p[tipo],
         "fuente": p["fuente"],
@@ -341,6 +342,7 @@ def cotizar(producto: str, rango_edad: str | None = None, dependientes: int = 0)
         "producto": p["nombre"],
         "producto_id": producto,
         "aseguradora": aseguradora(producto),
+        "aseguradoras": aseguradoras(producto),  # opciones (simuladas) con plan y diferencial
         "precio_mensual": precio,
         "precio_formateado": format_cop(precio),
         "precio_desde": format_desde(precio),  # forma en que Clara DEBE presentarlo
@@ -361,17 +363,120 @@ def format_desde(n: int) -> str:
 
 
 # --------------------------------------------------------------------------
-# Aseguradora que respalda cada producto (Colsubsidio DISTRIBUYE; la póliza la
-# emite la aseguradora aliada). Debe mostrarse igual que en la página de
-# Colsubsidio. PENDIENTE: reemplazar el placeholder por el nombre real de cada
-# aseguradora por producto.
+# Aseguradoras aliadas por producto. Colsubsidio DISTRIBUYE; la póliza la emite
+# la aseguradora. Cada producto puede tener VARIAS opciones (p. ej. Seguros
+# Bolívar y Sura), cada una con su plan y su diferencial.
+#
+# DATOS SIMULADOS: nombres de aseguradoras, planes, diferenciales y precios son
+# ILUSTRATIVOS, creados para el reto/demo y para mostrar el funcionamiento del
+# agente. NO son datos oficiales de Colsubsidio ni de las aseguradoras. La
+# cotización y la póliza reales las define un asesor con la aseguradora.
 # --------------------------------------------------------------------------
-_ASEGURADORA_DEFAULT = "Aseguradora aliada de Colsubsidio (por confirmar)"
-ASEGURADORAS: dict[str, str] = {pid: _ASEGURADORA_DEFAULT for pid in CATALOG}
+DATOS_SIMULADOS = True
+AVISO_SIMULADO = ("Nota: aseguradoras, planes y precios son SIMULADOS para esta demo; "
+                  "son ilustrativos. La cotización y la póliza reales las confirma un asesor "
+                  "con la aseguradora.")
+
+ASEGURADORAS: dict[str, list[dict[str, str]]] = {
+    "vida": [
+        {"aseguradora": "Seguros Bolívar", "plan": "Vida Familiar",
+         "ofrece": "Doble indemnización si el fallecimiento deja a un menor sin adulto responsable y renta mensual para los hijos hasta los 18 (o 25 si estudian)."},
+        {"aseguradora": "Sura", "plan": "Vida Flexible",
+         "ofrece": "Permite designar hermanos o tutores como beneficiarios sin recargo y libera el capital de forma fraccionada para un manejo responsable."},
+    ],
+    "hogar": [
+        {"aseguradora": "Seguros Bolívar", "plan": "Primer Techo",
+         "ofrece": "Incendio y terremoto (obligatorio para crédito hipotecario), asistencia de mudanza y daños durante remodelación el primer año."},
+        {"aseguradora": "Sura", "plan": "Contenido y Arriendo",
+         "ofrece": "Protege tus contenidos y suma responsabilidad civil frente al propietario; ideal si vives en arriendo."},
+    ],
+    "autos": [
+        {"aseguradora": "Sura", "plan": "Todo Riesgo Premium",
+         "ofrece": "Reposición a valor de reemplazo los 2 primeros años, repuestos originales y vehículo de reemplazo de gama equivalente."},
+        {"aseguradora": "Seguros Bolívar", "plan": "Todo Riesgo Clásico",
+         "ofrece": "Cobertura completa de daños, hurto y responsabilidad civil con red de talleres amplia y asistencia en vía 24/7."},
+    ],
+    "moto": [
+        {"aseguradora": "Seguros del Estado", "plan": "Moto Urbana",
+         "ofrece": "Responsabilidad civil y hurto para uso personal hasta 200cc, con trámite ágil."},
+        {"aseguradora": "Sura", "plan": "Moto Trabajo",
+         "ofrece": "RC ampliada a terceros para uso comercial (domicilios/mensajería) y amparo de incapacidad laboral del conductor."},
+    ],
+    "mascotas": [
+        {"aseguradora": "Seguros Bolívar", "plan": "Mascota Salud",
+         "ofrece": "Atención veterinaria por accidente o enfermedad, cirugías y hospitalización en red de clínicas aliadas."},
+        {"aseguradora": "Sura", "plan": "Mascota Plus",
+         "ofrece": "Cubre condiciones hereditarias por raza y cuidados geriátricos para mascotas mayores, sin negar cobertura por edad."},
+    ],
+    "salud": [
+        {"aseguradora": "Sura", "plan": "Complementario Salud",
+         "ofrece": "Complementa tu EPS con especialistas, exámenes y telemedicina, con tiempos de atención más cortos."},
+        {"aseguradora": "Colmédica", "plan": "Medicina Prepagada",
+         "ofrece": "Acceso a red de clínicas de alto nivel, habitación individual y atención domiciliaria."},
+    ],
+    "juridica": [
+        {"aseguradora": "Seguros Bolívar", "plan": "Respaldo Legal",
+         "ofrece": "Asesoría jurídica y acompañamiento en trámites civiles, laborales y de familia."},
+        {"aseguradora": "Sura", "plan": "Defensa Jurídica",
+         "ofrece": "Orientación legal telefónica ilimitada y gastos de defensa en procesos cubiertos."},
+    ],
+    "accidentes": [
+        {"aseguradora": "Seguros del Estado", "plan": "Accidentes Personales",
+         "ofrece": "Indemnización por accidente, incapacidad y gastos médicos, con suscripción simplificada."},
+        {"aseguradora": "Sura", "plan": "Protección Activa",
+         "ofrece": "Renta diaria por hospitalización y cobertura de fracturas, pensada para vida activa e independientes."},
+    ],
+    "asistencia_multiple": [
+        {"aseguradora": "Seguros Bolívar", "plan": "Asistencia 360",
+         "ofrece": "Plomería, cerrajería, electricidad, grúa y asistencia médica de emergencia 24/7 en un solo plan."},
+        {"aseguradora": "MAPFRE", "plan": "Multiasistencia Hogar y Vía",
+         "ofrece": "Asistencias de hogar y vehículo con cupos ampliados y atención en todo el país."},
+    ],
+    "exequial": [
+        {"aseguradora": "Los Olivos", "plan": "Exequial Familiar",
+         "ofrece": "Servicio exequial completo para el titular y su grupo familiar, con cobertura inmediata."},
+        {"aseguradora": "Seguros Bolívar", "plan": "Acompañamiento Exequial",
+         "ofrece": "Servicio funerario más auxilio económico y asistencia en trámites para la familia."},
+    ],
+    "accidentes_exequial": [
+        {"aseguradora": "Seguros del Estado", "plan": "Accidentes + Exequial",
+         "ofrece": "Une la indemnización por accidentes con el servicio exequial para toda la familia en una sola cuota."},
+        {"aseguradora": "Sura", "plan": "Protección Integral",
+         "ofrece": "Amparo por accidentes personales y respaldo exequial con asistencia 24/7."},
+    ],
+    "vida_ahorro": [
+        {"aseguradora": "Sura", "plan": "Vida y Ahorro",
+         "ofrece": "Protege tu vida mientras construyes un ahorro programado con rendimientos para una meta futura."},
+        {"aseguradora": "Seguros Bolívar", "plan": "Futuro Seguro",
+         "ofrece": "Combina seguro de vida con ahorro flexible y aportes que puedes ajustar según tus ingresos."},
+    ],
+    "asistencia_familiar": [
+        {"aseguradora": "Seguros Bolívar", "plan": "Médico en Casa",
+         "ofrece": "Médico a domicilio, orientación médica telefónica 24/7 y medicamentos de urgencia para la familia."},
+        {"aseguradora": "Sura", "plan": "Salud en Familia",
+         "ofrece": "Telemedicina, enfermería a domicilio y segunda opinión médica para todo el grupo familiar."},
+    ],
+    "viajes": [
+        {"aseguradora": "Assist Card", "plan": "Asistencia en Viajes",
+         "ofrece": "Asistencia médica internacional, cobertura por equipaje y cancelación de viaje."},
+        {"aseguradora": "Sura", "plan": "Viaje Tranquilo",
+         "ofrece": "Gastos médicos en el exterior, telemedicina de viaje y acompañamiento ante imprevistos."},
+    ],
+}
+
+_ASEGURADORA_DEFAULT = "Aseguradora aliada de Colsubsidio"
+
+
+def aseguradoras(producto: str) -> list[dict[str, str]]:
+    """Opciones de aseguradora (simuladas) para el producto: cada una con
+    `aseguradora`, `plan` y `ofrece`."""
+    return ASEGURADORAS.get((producto or "").lower().strip(), [])
 
 
 def aseguradora(producto: str) -> str:
-    return ASEGURADORAS.get((producto or "").lower().strip(), _ASEGURADORA_DEFAULT)
+    """Resumen legible de las aseguradoras aliadas del producto (solo nombres)."""
+    nombres = [o["aseguradora"] for o in aseguradoras(producto)]
+    return " / ".join(nombres) if nombres else _ASEGURADORA_DEFAULT
 
 
 # --------------------------------------------------------------------------
@@ -498,6 +603,7 @@ def recomendar(perfil: dict[str, Any], productos: list[str] | None = None,
             "producto_id": i,
             "nombre": p["nombre"],
             "aseguradora": aseguradora(i),
+            "aseguradoras": aseguradoras(i),
             "por_que": _REASONS[i],
             "propension": razones_base.get(i),
             "cubre": p["amparo"][:3],

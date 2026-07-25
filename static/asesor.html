@@ -131,9 +131,14 @@ function propSec(prop){
 function seguroSolicitadoSec(s){
   const ss = s.payload && s.payload.seguro_solicitado;
   if (!ss) return "";
+  const opciones = (ss.aseguradoras || []).map(o =>
+    "<li><b>" + esc(o.aseguradora) + "</b>" + (o.plan ? " · " + esc(o.plan) : "") +
+    (o.ofrece ? ": " + esc(o.ofrece) : "") + "</li>").join("");
   return '<div class="sol-sec"><h4>Seguro que busca</h4>' +
-    kv("Producto", ss.nombre) + kv("Aseguradora", ss.aseguradora) +
+    kv("Producto", ss.nombre) +
+    kv("Aseguradora elegida", ss.aseguradora_elegida || "Sin elegir (mostrar opciones)") +
     kv("Precio referencial", ss.precio_desde) +
+    (opciones ? '<div class="kv"><span class="k">Opciones (simuladas)</span></div><ul>' + opciones + '</ul>' : "") +
     '<div class="kv"><span class="k"></span><span>El valor final lo define el asesor con la aseguradora.</span></div></div>';
 }
 
