@@ -421,13 +421,16 @@ def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str,
     if guardado:
         return guardado["id"], guardado["perfil"]
     if serie:
+        # Canal simulado para que el envío del agente saliente se refleje en la
+        # demo (afiliado de la base sin contacto conversacional aún).
+        contacto = {"canal": "whatsapp", "destino": f"+57·demo·{serie}"}
         # 1) Base REAL en Mongo (500k): la fuente principal del agente de ofertas.
         doc = afiliados_db.existe_afiliado(serie)
         if doc is not None:
             perfil = {"id": str(doc.get("serie")), "es_afiliado": True,
                       "base": base_afiliados.resumen_base(doc),
                       "propension": propension.perfilar(doc),
-                      "contacto": {}, "eventos_vida": []}
+                      "contacto": contacto, "eventos_vida": []}
             return str(doc.get("serie")), perfil
         # 2) Muestra demo (fallback para series que no están en Mongo).
         af = base_afiliados.buscar(serie)
@@ -435,7 +438,7 @@ def _perfil_para_ofertas(serie: str | None, perfil_id: str | None) -> tuple[str,
             perfil = {"id": str(serie), "es_afiliado": True,
                       "base": base_afiliados.resumen_base(af),
                       "propension": propension.perfilar(af),
-                      "contacto": {}, "eventos_vida": []}
+                      "contacto": contacto, "eventos_vida": []}
             return str(serie), perfil
     # Perfil mínimo desconocido.
     return (pid or "NA-DESCONOCIDO"), {"id": pid, "es_afiliado": False, "eventos_vida": []}

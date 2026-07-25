@@ -4,17 +4,17 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Agente de ofertas — Lara | Colsubsidio × 30X</title>
-<meta name="description" content="Segundo agente: reacciona a eventos de las bases de Colsubsidio (crédito desembolsado, alza de ingreso, inactividad) y envía la oferta pertinente de seguro o crédito.">
+<meta name="description" content="Segundo agente: reacciona a eventos de las bases de Colsubsidio (crédito desembolsado, alza de ingreso, inactividad) y envía la oferta pertinente de seguro o crédito, respetando mora y sin repetir.">
 <script>
   (function(){try{var t=localStorage.getItem("clara-theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
 </script>
 <link rel="stylesheet" href="/static/css/styles.css">
 <style>
-  .of-wrap{max-width:1120px;margin:0 auto;padding:28px 20px 60px}
+  .of-wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
   .of-head h1{margin:0;font-size:26px}
-  .of-head p{margin:6px 0 0;color:var(--muted);max-width:720px}
-  .of-cols{display:grid;grid-template-columns:340px 1fr;gap:20px;margin-top:20px}
-  @media(max-width:880px){.of-cols{grid-template-columns:1fr}}
+  .of-head p{margin:6px 0 0;color:var(--muted);max-width:760px}
+  .of-cols{display:grid;grid-template-columns:330px 1fr;gap:20px;margin-top:18px}
+  @media(max-width:900px){.of-cols{grid-template-columns:1fr}}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
   .card h3{margin:0 0 4px;font-size:15px}
   .card .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
@@ -23,42 +23,69 @@
   select:focus,input:focus{outline:none;border-color:var(--primary)}
   .btn-run{margin-top:14px;width:100%;font:inherit;font-weight:700;font-size:14px;padding:11px;border-radius:11px;border:none;background:var(--primary);color:#fff;cursor:pointer}
   .btn-run:hover{background:var(--primary-d)}
-  .of-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-  .of-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
+  .btn-run.sec{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+  .btn-run.on{background:var(--warn);color:#1a1200}
+
+  /* ---- Diagrama de flujo (estilo n8n) ---- */
+  .flow{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 22px;margin-top:16px;box-shadow:var(--shadow-sm)}
+  .flow h3{margin:0 0 2px;font-size:15px}
+  .flow .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .fl{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:6px}
+  .fcol{display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0}
+  .fcol.branches{gap:10px}
+  .node{position:relative;background:var(--surface-2);border:1.5px solid var(--line-2);border-radius:12px;padding:11px 13px;min-width:158px;transition:border-color .25s,box-shadow .25s,transform .25s}
+  .node .ntop{display:flex;align-items:center;gap:8px}
+  .node .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px;background:var(--primary-soft);color:var(--primary-d);flex:none}
+  .node b{font-size:13px;display:block}
+  .node small{color:var(--muted);font-size:11.5px;display:block;margin-top:3px;line-height:1.35}
+  .node .cnt{position:absolute;top:-9px;right:-9px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--primary);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+  .node.brain{border-color:var(--primary);background:var(--primary-soft)}
+  .node.brain .ico{background:var(--primary);color:#fff}
+  .node.mora .ico{background:var(--warn-soft);color:var(--warn)} .node.mora .cnt{background:var(--warn);color:#1a1200}
+  .node.dedup .ico{background:var(--info-soft);color:var(--info)} .node.dedup .cnt{background:var(--info)}
+  .node.credito .ico{background:var(--info-soft);color:var(--info)}
+  .node.envio{border-color:var(--primary)} .node.envio .ico{background:var(--primary);color:#fff}
+  .node.pulse{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);transform:translateY(-2px)}
+  .node.mora.pulse{border-color:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+  .node.dedup.pulse{border-color:var(--info);box-shadow:0 0 0 4px var(--info-soft)}
+  .conn{display:flex;align-items:center;padding:0 4px;color:var(--line-2)}
+  .conn svg{width:40px;height:22px}
+  .conn.tall{align-items:stretch}
+  .fanwrap{display:flex;align-items:center}
+  .fan{display:flex;flex-direction:column;justify-content:center;padding:0 2px}
+  .fan svg{width:34px}
+
+  .of-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .of-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 15px;min-width:112px}
   .of-kpi b{font-size:20px;color:var(--primary-d)}
   [data-theme="dark"] .of-kpi b{color:var(--primary)}
   .of-kpi span{display:block;font-size:12px;color:var(--muted)}
-  .oferta{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-bottom:12px}
+
+  .oferta{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:11px;animation:pop .35s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .oferta.fade{animation:fade .5s ease forwards}
+  @keyframes fade{to{opacity:.25;filter:grayscale(.6)}}
   .oferta-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .oferta-top b{font-size:15px}
+  .oferta-top b{font-size:14.5px}
   .tipo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:3px 9px;border-radius:999px}
   .tipo.seguro{background:var(--primary-soft);color:var(--primary-d)}
   .tipo.credito{background:var(--info-soft);color:var(--info)}
   .oferta .evento{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
-  .oferta .msg{margin:8px 0;font-size:13px;background:var(--surface-2);border-radius:9px;padding:9px 11px;border:1px solid var(--line)}
+  .oferta .msg{margin:8px 0;font-size:12.5px;background:var(--surface-2);border-radius:9px;padding:8px 10px;border:1px solid var(--line)}
   .oferta .razon{font-size:12.5px;color:var(--muted)}
   .oferta .cross{margin-top:8px;font-size:12px;padding:7px 10px;border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 8px 8px 0}
   .est{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}
   .est.generada{background:var(--warn-soft);color:var(--warn)}
   .est.enviada{background:var(--primary);color:#fff}
-  .empty{border:1px dashed var(--line-2);border-radius:13px;padding:34px;text-align:center;color:var(--muted)}
-  .card.acc{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary) inset,var(--shadow-sm)}
-  .narr{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-bottom:6px}
-  .narr h4{margin:0 0 8px;font-size:13.5px}
-  .narr-sum{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-  .chip{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
-  .chip.ok{background:var(--primary-soft);color:var(--primary-d)}
-  .chip.mora{background:var(--warn-soft);color:var(--warn)}
-  .chip.dedup{background:var(--info-soft);color:var(--info)}
-  .step{font-size:12.5px;padding:8px 10px;border-radius:9px;border-left:3px solid var(--line-2);margin-bottom:6px;background:var(--surface-2)}
-  .step.mora{border-left-color:var(--warn)}
-  .step.dedup{border-left-color:var(--info);opacity:.85}
-  .step .serie{font-family:var(--mono);font-size:11px;color:var(--muted)}
-  .step .arrow{color:var(--muted)}
-  .step .prod{font-weight:700}
+  .empty{border:1px dashed var(--line-2);border-radius:13px;padding:30px;text-align:center;color:var(--muted)}
   .badge-mini{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:2px 7px;border-radius:999px;margin-left:6px}
   .badge-mini.mora{background:var(--warn-soft);color:var(--warn)}
-  .badge-mini.dedup{background:var(--info-soft);color:var(--info)}
+  .listhead{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 8px}
+  .listhead h3{font-size:14px;margin:0;color:var(--muted)}
+  .listhead span{font-size:12px;color:var(--muted)}
+  .liveflag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warn)}
+  .liveflag .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.25}}
 </style>
 </head>
 <body>
@@ -67,7 +94,7 @@
     <div class="brandlock">
       <span class="cobrand"><img class="logo-cols" src="/static/img/colsubsidio.png" alt="Colsubsidio"><span class="xsign">×</span><img class="logo-30x" src="/static/img/30x.png" alt="30X"></span>
       <span class="vdiv"></span>
-      <div class="product"><div class="mark">C</div><div><b>Agente de ofertas</b><span>Segundo agente · proactivo</span></div></div>
+      <div class="product"><div class="mark">L</div><div><b>Agente de ofertas</b><span>Segundo agente · proactivo</span></div></div>
     </div>
     <nav class="nav-links">
       <button onclick="location.href='/'">Lara (agente 1)</button>
@@ -80,71 +107,122 @@
   <div class="of-head">
     <h1>Agente de ofertas</h1>
     <p>El segundo agente no espera a que el cliente llegue: escucha <b>eventos</b> de las bases de Colsubsidio
-      (un crédito desembolsado, un alza de ingreso, un cumpleaños, inactividad) y para cada uno decide la
-      <b>oferta más pertinente</b> —de seguro o de crédito— y la envía por el mejor canal. Lo puede disparar
-      <b>n8n</b> llamando <code>POST /api/eventos</code>; aquí puedes simular un evento y ver la decisión.</p>
+      (o barre la base) y para cada persona decide la <b>oferta más pertinente</b> con una regla explicable —
+      respetando mora y sin repetir. Lo dispara <b>n8n</b>; abajo puedes verlo trabajar y entender su lógica.</p>
+  </div>
+
+  <!-- ================= DIAGRAMA DE FLUJO (estilo n8n) ================= -->
+  <div class="flow">
+    <h3>Cómo razona el agente</h3>
+    <p class="sub">Cada afiliado entra por un disparador y el agente lo enruta por una de estas ramas. Los contadores se llenan en vivo cuando ejecutas el barrido o un evento.</p>
+    <div class="fl">
+      <div class="fcol">
+        <div class="node" id="n-trigger"><div class="ntop"><span class="ico">⚡</span><b>Disparador</b></div><small>Evento de otra base o barrido diario (n8n)</small></div>
+      </div>
+      <div class="conn"><svg viewBox="0 0 40 22"><path d="M0 11 H34 M28 5 L34 11 L28 17" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+      <div class="fcol">
+        <div class="node brain" id="n-brain"><div class="ntop"><span class="ico">🧠</span><b>Agente de ofertas</b></div><small>Regla evento→producto + propensión. Todo explicable.</small></div>
+      </div>
+      <div class="fanwrap">
+        <div class="fan"><svg viewBox="0 0 34 150" height="150"><path d="M0 75 H16 M16 75 V20 H30 M16 75 H30 M16 75 V130 H30 M16 110 H30" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+      </div>
+      <div class="fcol branches">
+        <div class="node mora" id="n-mora"><span class="cnt" id="c-mora">0</span><div class="ntop"><span class="ico">⚠️</span><b>¿En mora?</b></div><small>No se empuja venta: ofrece <b>Compra de Cartera</b> (normalización).</small></div>
+        <div class="node seguro" id="n-seguro"><span class="cnt" id="c-seguro">0</span><div class="ntop"><span class="ico">🛡️</span><b>Propensión</b></div><small>Elige el <b>mejor seguro</b> por afinidad del perfil.</small></div>
+        <div class="node credito" id="n-credito"><span class="cnt" id="c-credito">0</span><div class="ntop"><span class="ico">💳</span><b>Evento de crédito</b></div><small>Cruza con el portafolio de <b>crédito</b> cuando aplica.</small></div>
+        <div class="node dedup" id="n-dedup"><span class="cnt" id="c-dedup">0</span><div class="ntop"><span class="ico">🔁</span><b>¿Ya ofrecido?</b></div><small><b>Anti-spam</b>: si se ofreció hace &lt;15 días, se suprime.</small></div>
+      </div>
+      <div class="conn"><svg viewBox="0 0 40 22"><path d="M0 11 H34 M28 5 L34 11 L28 17" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+      <div class="fcol">
+        <div class="node envio" id="n-envio"><span class="cnt" id="c-envio">0</span><div class="ntop"><span class="ico">📤</span><b>Envío por canal</b></div><small>WhatsApp o correo del cliente (simulado en la demo).</small></div>
+      </div>
+    </div>
   </div>
 
   <div class="of-cols">
     <div>
       <div class="card acc">
         <h3>⚡ Barrido autónomo</h3>
-        <p class="hint">El agente NO espera al cliente: recorre la base real, y para cada afiliado decide una oferta según su perfil 360 — respetando mora (ofrece normalización) y sin repetir (anti-spam). Es lo que dispara el cron de n8n.</p>
+        <p class="hint">El agente recorre la base y decide una oferta por afiliado. Es lo que dispara el cron de n8n cada día.</p>
         <label class="fld" for="muestra">Afiliados a recorrer</label>
         <input id="muestra" type="number" min="1" max="40" value="12">
-        <button class="btn-run" id="barrido">Ejecutar barrido sobre la base</button>
+        <button class="btn-run" id="barrido">Ejecutar barrido</button>
+        <button class="btn-run sec" id="auto">▶ Demo automática (corre solo)</button>
       </div>
       <div class="card" style="margin-top:14px">
         <h3>Simular un evento puntual</h3>
         <p class="hint">Como lo haría otra base de Colsubsidio (o n8n) al detectar un cambio en un cliente.</p>
-        <label class="fld" for="serie">Afiliado</label>
+        <label class="fld" for="serie">Afiliado (muestra demo)</label>
         <select id="serie"></select>
         <label class="fld" for="serieReal">…o una SERIE real de la base</label>
-        <input id="serieReal" type="text" inputmode="numeric" placeholder="p. ej. 29 (en mora) o 1">
+        <input id="serieReal" type="text" inputmode="numeric" placeholder="p. ej. 1, o una en mora">
         <label class="fld" for="evento">Evento</label>
         <select id="evento"></select>
-        <label class="fld" for="canal">Enviar (simulado)</label>
-        <select id="canal"><option value="true">Sí, enviar por su canal</option><option value="false">No, solo generar</option></select>
         <button class="btn-run" id="run">Ejecutar agente de ofertas</button>
       </div>
       <div class="card" style="margin-top:14px">
         <h3>Portafolio de crédito</h3>
-        <p class="hint">Sacado del portafolio Colsubsidio; el agente lo cruza con los seguros.</p>
+        <p class="hint">El agente lo cruza con los seguros según el evento.</p>
         <div id="creditos"></div>
       </div>
     </div>
 
     <div>
       <div class="of-kpis" id="kpis"></div>
-      <div id="narracion"></div>
-      <h3 style="font-size:14px;margin:18px 0 8px;color:var(--muted)">Ofertas salientes</h3>
-      <div id="lista"><div class="empty">Aún no hay ofertas. Dispara un barrido o simula un evento a la izquierda.</div></div>
+      <div class="listhead">
+        <h3>Ofertas salientes</h3>
+        <span id="liststat"></span>
+      </div>
+      <div id="lista"><div class="empty">Aún no hay ofertas. Dale a “Ejecutar barrido” o “Demo automática”.</div></div>
     </div>
   </div>
 </div>
 
 <script>
 "use strict";
+const CAP = 15;                     // máximo de ofertas visibles (las demás se van)
+const acum = {mora:0, seguro:0, credito:0, dedup:0, envio:0};  // contadores del flujo
+let autoTimer = null;
+
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
 
 async function cargarControles(){
   const [demo, cat] = await Promise.all([
-    fetch("/api/afiliados-demo").then(r=>r.json()),
+    fetch("/api/afiliados-demo").then(r=>r.json()).catch(()=>({afiliados:[]})),
     fetch("/api/ofertas/catalogo").then(r=>r.json())
   ]);
-  const serie = document.getElementById("serie");
-  demo.afiliados.forEach(a=>{
+  const serie=document.getElementById("serie");
+  (demo.afiliados||[]).forEach(a=>{
     const o=document.createElement("option");o.value=a.serie;
-    o.textContent="SERIE "+a.serie+" · "+a.arquetipo_desc;serie.appendChild(o);
+    o.textContent="SERIE "+a.serie+" · "+(a.arquetipo_desc||"");serie.appendChild(o);
   });
   const evento=document.getElementById("evento");
   cat.eventos.filter(e=>e.evento!=="(cualquier otro)").forEach(e=>{
     const o=document.createElement("option");o.value=e.evento;
     o.textContent=e.evento+" → "+e.ofrece;evento.appendChild(o);
   });
-  const cr=document.getElementById("creditos");
-  cr.innerHTML=Object.values(cat.creditos).map(c=>
+  document.getElementById("creditos").innerHTML=Object.values(cat.creditos).map(c=>
     '<div style="font-size:12.5px;margin-bottom:7px"><b>'+esc(c.nombre)+'</b><br><span style="color:var(--muted)">'+esc(c.desc)+'</span></div>').join("");
+}
+
+/* ---- diagrama de flujo: contadores + pulso en las ramas activas ---- */
+function setCnt(id,n){document.getElementById(id).textContent=n;}
+function pulse(nodeId){
+  const el=document.getElementById(nodeId); if(!el)return;
+  el.classList.add("pulse"); setTimeout(()=>el.classList.remove("pulse"),700);
+}
+function pintarFlujo(){
+  setCnt("c-mora",acum.mora); setCnt("c-seguro",acum.seguro);
+  setCnt("c-credito",acum.credito); setCnt("c-dedup",acum.dedup); setCnt("c-envio",acum.envio);
+}
+function registrarResultado(x){
+  // suma al flujo según la rama que tomó cada afiliado
+  pulse("n-brain");
+  if(!x.oferta){ if(x.motivo&&/anti-spam/i.test(x.motivo)){acum.dedup++;pulse("n-dedup");} return; }
+  if(x.mora){ acum.mora++; pulse("n-mora"); }
+  else if(x.tipo==="credito"){ acum.credito++; pulse("n-credito"); }
+  else { acum.seguro++; pulse("n-seguro"); }
+  acum.envio++; pulse("n-envio");
 }
 
 function ofertaCard(o){
@@ -161,36 +239,20 @@ function ofertaCard(o){
 
 async function refrescar(){
   const d=await fetch("/api/ofertas/salientes").then(r=>r.json());
-  const ofertas=d.ofertas||[];
-  const enviadas=ofertas.filter(o=>o.estado==="enviada").length;
-  const seguros=ofertas.filter(o=>o.tipo==="seguro").length;
+  const todas=d.ofertas||[];
+  const enviadas=todas.filter(o=>o.estado==="enviada").length;
+  const seguros=todas.filter(o=>o.tipo==="seguro").length;
   document.getElementById("kpis").innerHTML=
-    '<div class="of-kpi"><b>'+ofertas.length+'</b><span>ofertas generadas</span></div>'+
+    '<div class="of-kpi"><b>'+todas.length+'</b><span>ofertas generadas</span></div>'+
     '<div class="of-kpi"><b>'+enviadas+'</b><span>enviadas al cliente</span></div>'+
     '<div class="of-kpi"><b>'+seguros+'</b><span>de seguro</span></div>'+
-    '<div class="of-kpi"><b>'+(ofertas.length-seguros)+'</b><span>de crédito</span></div>';
-  const lista=document.getElementById("lista");
-  lista.innerHTML=ofertas.length?ofertas.map(ofertaCard).join(""):'<div class="empty">Aún no hay ofertas. Simula un evento a la izquierda.</div>';
-}
-
-function stepHTML(x){
-  const mora=x.mora, dedup=(!x.oferta && x.motivo && /anti-spam/i.test(x.motivo));
-  const cls="step"+(mora?" mora":"")+(dedup?" dedup":"");
-  const badge=mora?'<span class="badge-mini mora">mora → normaliza</span>'
-           :dedup?'<span class="badge-mini dedup">anti-spam</span>':'';
-  const decision=x.oferta
-    ? '<span class="prod">'+esc(x.oferta)+'</span>'+(x.tipo?' <span class="tipo '+esc(x.tipo)+'">'+esc(x.tipo)+'</span>':'')+badge
-    : '<span class="arrow">'+esc(x.motivo||"sin oferta")+'</span>'+badge;
-  const razon=x.razon?'<div style="color:var(--muted);margin-top:4px">'+esc(x.razon)+'</div>':'';
-  return '<div class="'+cls+'"><span class="serie">SERIE '+esc(x.serie||x.perfil_id||"")+'</span> '+
-    '<span class="arrow">→</span> '+decision+razon+'</div>';
-}
-
-function narrar(titulo, sums, pasos){
-  const n=document.getElementById("narracion");
-  n.innerHTML='<div class="narr"><h4>'+esc(titulo)+'</h4>'+
-    '<div class="narr-sum">'+sums.map(s=>'<span class="chip '+(s.cls||"")+'">'+esc(s.txt)+'</span>').join("")+'</div>'+
-    pasos.map(stepHTML).join("")+'</div>';
+    '<div class="of-kpi"><b>'+(todas.length-seguros)+'</b><span>de crédito</span></div>';
+  // Cap de 15: solo las más recientes; las demás "se van".
+  const vis=todas.slice(0,CAP);
+  document.getElementById("liststat").textContent =
+    todas.length>CAP ? ("mostrando 15 más recientes de "+todas.length) : (todas.length+" en total");
+  document.getElementById("lista").innerHTML =
+    vis.length ? vis.map(ofertaCard).join("") : '<div class="empty">Aún no hay ofertas. Dale a “Ejecutar barrido” o “Demo automática”.</div>';
 }
 
 function serieElegida(){
@@ -203,35 +265,44 @@ document.getElementById("run").addEventListener("click",async()=>{
   try{
     const evento=document.getElementById("evento").value;
     const r=await fetch("/api/eventos",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({serie:serieElegida(),evento:evento,
-        enviar:document.getElementById("canal").value==="true"})}).then(r=>r.json());
-    const of=r.oferta;
-    narrar("Racionalización · evento "+evento,
-      [{txt:(of?"1 oferta":"0 ofertas")+" decidida",cls:of?"ok":""},
-       ...(r.mora_detectada?[{txt:"mora detectada → normalización",cls:"mora"}]:[]),
-       ...(r.suprimida?[{txt:"suprimida (anti-spam)",cls:"dedup"}]:[])],
-      [{serie:r.perfil_id,oferta:of&&of.nombre,tipo:of&&of.tipo,razon:of&&of.razon,mora:r.mora_detectada,motivo:r.motivo}]);
-    await refrescar();
+      body:JSON.stringify({serie:serieElegida(),evento:evento,enviar:true})}).then(r=>r.json());
+    registrarResultado({serie:r.perfil_id,oferta:r.oferta&&r.oferta.nombre,tipo:r.oferta&&r.oferta.tipo,mora:r.mora_detectada,motivo:r.motivo});
+    pintarFlujo(); await refrescar();
   }finally{btn.disabled=false;btn.textContent="Ejecutar agente de ofertas";}
 });
 
+async function correrBarrido(muestra){
+  const r=await fetch("/api/ofertas/barrido",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({muestra:muestra})}).then(r=>r.json());
+  // anima cada resultado escalonado para que se vea "trabajando"
+  (r.resultados||[]).forEach((x,i)=>setTimeout(()=>{registrarResultado(x);pintarFlujo();}, i*140));
+  setTimeout(refrescar, (r.resultados||[]).length*140 + 200);
+  return r;
+}
+
 document.getElementById("barrido").addEventListener("click",async()=>{
-  const btn=document.getElementById("barrido");btn.disabled=true;btn.textContent="Recorriendo la base…";
-  try{
-    const muestra=parseInt(document.getElementById("muestra").value||"12",10);
-    const r=await fetch("/api/ofertas/barrido",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({muestra:muestra})}).then(r=>r.json());
-    narrar("Barrido autónomo · "+r.muestra+" afiliados de la base",
-      [{txt:r.generadas+" ofertas generadas",cls:"ok"},
-       {txt:r.normalizaciones_mora+" por mora → normalización",cls:"mora"},
-       {txt:r.suprimidas+" suprimidas (anti-spam)",cls:"dedup"}],
-      r.resultados);
-    await refrescar();
-  }finally{btn.disabled=false;btn.textContent="Ejecutar barrido sobre la base";}
+  const btn=document.getElementById("barrido");btn.disabled=true;btn.textContent="Recorriendo…";
+  try{ await correrBarrido(parseInt(document.getElementById("muestra").value||"12",10)); }
+  finally{ setTimeout(()=>{btn.disabled=false;btn.textContent="Ejecutar barrido";}, 900); }
 });
 
-cargarControles().then(refrescar);
-setInterval(refrescar,9000);
+/* ---- Demo automática: el agente corre solo, por lotes pequeños ---- */
+function setAuto(on){
+  const btn=document.getElementById("auto");
+  const head=document.getElementById("liststat");
+  if(on){
+    btn.classList.add("on"); btn.textContent="⏸ Pausar demo automática";
+    correrBarrido(4);
+    autoTimer=setInterval(()=>correrBarrido(4), 4500);
+  }else{
+    btn.classList.remove("on"); btn.textContent="▶ Demo automática (corre solo)";
+    clearInterval(autoTimer); autoTimer=null;
+  }
+}
+document.getElementById("auto").addEventListener("click",()=>setAuto(!autoTimer));
+
+cargarControles().then(()=>{pintarFlujo();refrescar();});
+setInterval(()=>{ if(!autoTimer) refrescar(); }, 9000);
 </script>
 </body>
 </html>
