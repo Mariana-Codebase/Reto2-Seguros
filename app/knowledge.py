@@ -300,6 +300,7 @@ def consultar_coberturas(producto: str, tipo: str = "amparo") -> dict[str, Any]:
     p = CATALOG[producto]
     return {
         "producto": p["nombre"],
+        "aseguradora": aseguradora(producto),
         "tipo": tipo,
         "chunks": p[tipo],
         "fuente": p["fuente"],
@@ -339,8 +340,10 @@ def cotizar(producto: str, rango_edad: str | None = None, dependientes: int = 0)
     return {
         "producto": p["nombre"],
         "producto_id": producto,
+        "aseguradora": aseguradora(producto),
         "precio_mensual": precio,
         "precio_formateado": format_cop(precio),
+        "precio_desde": format_desde(precio),  # forma en que Clara DEBE presentarlo
         "moneda": "COP",
         "desglose": desglose,
         "vigencia": "anual renovable",
@@ -349,6 +352,26 @@ def cotizar(producto: str, rango_edad: str | None = None, dependientes: int = 0)
 
 def format_cop(n: int) -> str:
     return "$" + f"{int(n):,}".replace(",", ".")
+
+
+def format_desde(n: int) -> str:
+    """Precio SIEMPRE referencial: 'desde $X/mes'. El valor definitivo lo fija el
+    asesor consultando a la aseguradora; Clara nunca da un precio cerrado."""
+    return f"desde {format_cop(n)}/mes"
+
+
+# --------------------------------------------------------------------------
+# Aseguradora que respalda cada producto (Colsubsidio DISTRIBUYE; la póliza la
+# emite la aseguradora aliada). Debe mostrarse igual que en la página de
+# Colsubsidio. PENDIENTE: reemplazar el placeholder por el nombre real de cada
+# aseguradora por producto.
+# --------------------------------------------------------------------------
+_ASEGURADORA_DEFAULT = "Aseguradora aliada de Colsubsidio (por confirmar)"
+ASEGURADORAS: dict[str, str] = {pid: _ASEGURADORA_DEFAULT for pid in CATALOG}
+
+
+def aseguradora(producto: str) -> str:
+    return ASEGURADORAS.get((producto or "").lower().strip(), _ASEGURADORA_DEFAULT)
 
 
 # --------------------------------------------------------------------------
@@ -474,12 +497,14 @@ def recomendar(perfil: dict[str, Any], productos: list[str] | None = None,
         opciones.append({
             "producto_id": i,
             "nombre": p["nombre"],
+            "aseguradora": aseguradora(i),
             "por_que": _REASONS[i],
             "propension": razones_base.get(i),
             "cubre": p["amparo"][:3],
             "no_cubre": p["exclusion"],
             "precio_mensual": q["precio_mensual"],
             "precio_formateado": q["precio_formateado"],
+            "precio_desde": q["precio_desde"],
             "fuente": p["fuente"],
         })
     return {"opciones": opciones}

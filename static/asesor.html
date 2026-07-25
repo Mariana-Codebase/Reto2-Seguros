@@ -75,9 +75,9 @@
   <div class="as-head">
     <div>
       <h1>Bandeja de vinculaciones</h1>
-      <p>Colsubsidio distribuye seguros, no los emite. Clara cierra la venta de forma 100% autónoma y
-        transmite aquí cada solicitud empaquetada — perfil, propensión explicada, contrato firmado y pago —
-        para que el asesor la gestione con la aseguradora correspondiente.</p>
+      <p>Colsubsidio distribuye seguros, no los emite. Clara identifica a la persona, arma su perfil completo,
+        recomienda con la aseguradora y el precio referencial, y radica aquí cada solicitud — con el seguro que
+        busca, sus datos de contacto y el PDF informativo — para que el asesor le envíe la póliza y el link de pago.</p>
     </div>
     <button class="btn ghost" onclick="cargar()">Actualizar</button>
   </div>
@@ -89,6 +89,7 @@
 <script>
 "use strict";
 const ESTADOS_SIGUIENTE = {
+  pendiente_asesor: ["enviada_aseguradora", "Enviar póliza y link de pago"],  // el asesor toma el caso
   pendiente_pago: null,                       // avanza sola cuando el afiliado paga
   pagada: ["enviada_aseguradora", "Enviar a la aseguradora"],
   enviada_aseguradora: ["emitida_aseguradora", "Marcar emitida por la aseguradora"],
@@ -97,8 +98,9 @@ const ESTADOS_SIGUIENTE = {
   cerrada: null
 };
 const ESTADO_LABEL = {
-  pendiente_pago: "Pendiente de pago", pagada: "Pagada · lista para aseguradora",
-  enviada_aseguradora: "Enviada a aseguradora", emitida_aseguradora: "Emitida por aseguradora",
+  pendiente_asesor: "Pendiente del asesor", pendiente_pago: "Pendiente de pago",
+  pagada: "Pagada · lista para aseguradora",
+  enviada_aseguradora: "Póliza y pago enviados", emitida_aseguradora: "Emitida por aseguradora",
   cerrada: "Cerrada", nueva: "Nueva"
 };
 
@@ -126,14 +128,23 @@ function propSec(prop){
     '<ul>' + razones + '</ul></div>';
 }
 
+function seguroSolicitadoSec(s){
+  const ss = s.payload && s.payload.seguro_solicitado;
+  if (!ss) return "";
+  return '<div class="sol-sec"><h4>Seguro que busca</h4>' +
+    kv("Producto", ss.nombre) + kv("Aseguradora", ss.aseguradora) +
+    kv("Precio referencial", ss.precio_desde) +
+    '<div class="kv"><span class="k"></span><span>El valor final lo define el asesor con la aseguradora.</span></div></div>';
+}
+
 function contratoSec(s){
   const c = (s.payload && s.payload.contrato) || {};
   const datos = (s.payload && s.payload.datos_contratante) || {};
   const vinc = s.payload && s.payload.vinculacion;
-  return '<div class="sol-sec"><h4>Contratación</h4>' +
-    kv("Tomador", datos.nombre) + kv("Contacto", datos.correo || datos.telefono) +
-    kv("Solicitud", c.solicitud) + kv("Prima", c.precio_formateado ? c.precio_formateado + "/mes" : null) +
-    kv("Firmado", c.firmado ? "Sí · " + ((c.firma && c.firma.at) || "") : "No") +
+  return '<div class="sol-sec"><h4>Datos de contacto (para retomar y cerrar)</h4>' +
+    kv("Nombre", datos.nombre) + kv("Identificación", datos.documento) +
+    kv("Celular", datos.telefono) + kv("Correo", datos.correo) +
+    (c.solicitud ? kv("Solicitud", c.solicitud) : "") +
     (vinc ? kv("Vinculación radicada", vinc.radicado) : "") + '</div>';
 }
 
@@ -169,6 +180,7 @@ function card(s){
       afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) + '</div>';
   } else {
     inner += '<div class="sol-grid">' +
+      seguroSolicitadoSec(s) +
       afiliadoSec(s.payload && s.payload.afiliado, s.payload && s.payload.segmentos_interpretados) +
       propSec(s.payload && s.payload.propension) + contratoSec(s) +
       perfilVivoSec(s.payload && s.payload.perfil_vivo, s.payload && s.payload.es_afiliado) + '</div>';
@@ -177,6 +189,13 @@ function card(s){
 
   const actions = document.createElement("div");
   actions.className = "sol-actions";
+  const docInfo = s.payload && s.payload.doc_informativo_url;
+  if (docInfo) {
+    const a = document.createElement("a");
+    a.href = docInfo; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "Ver póliza informativa (PDF)";
+    actions.appendChild(a);
+  }
   const c = s.payload && s.payload.contrato;
   if (c && c.url) {
     const a = document.createElement("a");
