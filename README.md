@@ -8,7 +8,7 @@ Dos agentes de IA que llevan a cada afiliado desde *«no sé qué seguro necesit
 
 ### ▶️ Demo en vivo — **https://clara-production-d3e5.up.railway.app**
 
-| [💬 Hablar con Lara](https://clara-production-d3e5.up.railway.app/) | [⚡ Panel de Cody](https://clara-production-d3e5.up.railway.app/ofertas) | [🗂️ Panel del asesor](https://clara-production-d3e5.up.railway.app/asesor) |
+| [💬 Hablar con Lara](https://clara-production-d3e5.up.railway.app/#demo) | [⚡ Panel de Cody](https://clara-production-d3e5.up.railway.app/ofertas) | [🗂️ Panel del asesor](https://clara-production-d3e5.up.railway.app/asesor) |
 |:--:|:--:|:--:|
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
