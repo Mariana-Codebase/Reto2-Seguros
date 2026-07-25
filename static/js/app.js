@@ -63,7 +63,15 @@ document.querySelectorAll("[data-scroll]").forEach(b => {
 
 (function initViewFromHash() {
   const id = (location.hash || "").replace("#", "");
-  if (id && document.getElementById(id)) showView(id);
+  const target = id && document.getElementById(id);
+  if (!target) return;
+  if (target.classList.contains("view")) {
+    showView(id);
+    return;
+  }
+  showView("inicio");
+  try { history.replaceState(null, "", "#" + id); } catch (e) { /* noop */ }
+  requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
 })();
 
 /* ---------- Etiquetas legibles del perfil ---------- */
