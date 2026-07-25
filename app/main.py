@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import (__version__, afiliados_db, agent, base_afiliados, knowledge as kb,
-               llm, notify, ofertas, payments, propension, store)
+               llm, notify, ofertas, payments, propension, seed, store)
 from .config import settings
 
 logger = logging.getLogger("clara.api")
@@ -155,6 +155,12 @@ class AfiliadoActualizarReq(BaseModel):
 @app.on_event("startup")
 def _startup():
     purged = store.purge_old_sessions()
+    # Siembra la muestra demo si la base de afiliados está vacía (no bloquea el
+    # arranque si Mongo no está listo: sembrar_si_vacia captura sus errores).
+    if settings.SEED_MUESTRA > 0:
+        sembrado = seed.sembrar_si_vacia(settings.SEED_MUESTRA)
+        if sembrado:
+            logger.info("Muestra demo sembrada: %s", sembrado)
     logger.info(
         "Clara v%s lista · entorno=%s · proveedor=%s · modelo=%s · sesiones purgadas=%d",
         __version__, settings.ENV, settings.llm_provider, settings.llm_model, purged,

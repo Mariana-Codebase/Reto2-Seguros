@@ -112,6 +112,8 @@ class Settings:
         return self.llm_provider != "ollama"
 
     # --- Servidor ---
+    # Muestra demo a sembrar si la base de afiliados está vacía (0 = no sembrar).
+    SEED_MUESTRA: int = int(_env("SEED_MUESTRA", "250"))
     PORT: int = int(_env("PORT", "8000"))
     ENV: str = _env("APP_ENV", "development")  # development | production
     LOG_LEVEL: str = _env("LOG_LEVEL", "INFO")
