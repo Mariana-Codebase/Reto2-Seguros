@@ -13,15 +13,19 @@
     }
 
     const lines = [
-      { role: "bot", text: "Hola, soy Lara. Para recomendarte lo adecuado, primero quiero entender tu situación." },
-      { role: "user", text: "Vivo en arriendo con mi pareja e hijo." },
+      { role: "bot", text: "Hola, soy Lara. Antes de recomendarte algo, quiero entender qué necesitas proteger." },
+      { role: "user", text: "Vivo en arriendo con mi pareja e hijo y quiero proteger nuestro ingreso." },
       {
         role: "bot",
-        text: "Con base en tu perfil te propongo el Seguro de Vida: protege el ingreso de tu familia.",
-        stamp: "✓ respaldado · $28.900/mes"
+        text: "Por tu perfil, el Seguro de Vida es una buena opción. Te comparto la información y sus coberturas verificadas.",
+        stamp: "✓ información respaldada · desde $28.900/mes"
       },
-      { role: "user", text: "Me interesa. ¿Me lo envías por escrito?" },
-      { role: "bot", text: "Te envié el resumen a tu correo y aquí tienes tu enlace de pago seguro." }
+      { role: "user", text: "Me gustó esta opción. Quiero continuar." },
+      {
+        role: "bot",
+        text: "Perfecto. Dejé tu solicitud y la información del seguro listas. Un asesor continuará contigo para enviarte la póliza y generar la información de pago.",
+        stamp: "✓ caso enviado al panel asesor"
+      }
     ];
 
     let gen = 0;

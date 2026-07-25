@@ -13,9 +13,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css?v=nav-maicol-cody">
+<link rel="stylesheet" href="/static/css/styles.css?v=system-flow-3">
 <link rel="stylesheet" href="/static/css/arch.css">
-<link rel="stylesheet" href="/static/css/agent-flow.css">
+<link rel="stylesheet" href="/static/css/agent-flow.css?v=system-flow-3">
 </head>
 <body>
 
@@ -41,9 +41,7 @@
     </button>
     <nav class="nav-links" id="mainNav" aria-label="Navegación principal">
       <button data-view="inicio" class="active">Inicio</button>
-      <button data-view="demo">Probar Lara</button>
       <button data-scroll="ecosistema">Cómo funciona</button>
-      <button data-view="arquitectura">Tecnología</button>
       <span class="nav-divider" aria-hidden="true"></span>
       <a class="nav-agent-link" href="/ofertas" title="Cody: agente proactivo orquestado por n8n">
         <span class="nav-agent-dot"></span>Cody
@@ -69,7 +67,7 @@
           clara, explicable y trazable.</p>
         <div class="hero-actions">
           <button class="btn primary" data-view="demo">Hablar con Lara</button>
-          <button class="btn ghost" data-scroll="ecosistema">Conocer el ecosistema</button>
+          <a class="btn ghost" href="/ofertas">Conoce a Cody</a>
         </div>
         <div class="hero-dev">
           <span class="hero-dev-label">Desarrollado por</span>
@@ -89,31 +87,112 @@
           </ul>
         </div>
       </div>
-      <div class="hero-card" aria-hidden="true">
+      <div class="hero-card" aria-label="Conversación demostrativa con Lara">
         <div class="hc-head">
           <div class="hc-avatar">C</div>
           <div><b>Lara</b><br><small><span class="live-dot"></span> <span id="heroLiveStatus">En línea · responde al instante</span></small></div>
           <span class="hero-live-badge" aria-hidden="true">EN VIVO</span>
         </div>
         <div class="hc-body" id="heroLiveChat"></div>
+        <div class="hc-tech" aria-label="Tecnología de la conversación">
+          <span>Sol 5.6</span><i></i><span>RAG verificado</span><i></i><span>Perfil vivo</span>
+        </div>
       </div>
     </div>
 
     <div class="container">
-      <div class="agent-flow" id="agentFlow" aria-label="Cómo trabaja el agente Lara"></div>
-    </div>
+      <section class="system-console" aria-labelledby="systemFlowTitle">
+        <div class="sf-toolbar">
+          <div class="sf-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="sf-trace">SYSTEM_TRACE · 0148</span>
+          <span class="sf-live"><i></i> Operación trazable</span>
+        </div>
+        <div class="sf-heading">
+          <div>
+            <span class="eyebrow">El sistema completo, en vivo</span>
+            <h2 id="systemFlowTitle">De una conversación a una oportunidad, sin perder el contexto.</h2>
+          </div>
+          <p>Lara escucha, Sol 5.6 razona, las herramientas verifican, n8n transporta el contexto y Cody actúa cuando aparece el momento correcto.</p>
+        </div>
 
-    <div class="container">
+        <div class="sf-canvas">
+          <div class="sf-flow" id="systemFlow" role="list" aria-label="Flujo de Lara, Sol 5.6, n8n, Cody y el asesor">
+            <button class="sf-node is-active" type="button" role="listitem" data-sf-step="0" aria-pressed="true">
+              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
+              <span class="sf-step">01 · INICIA</span>
+              <span class="sf-icon user" aria-hidden="true">◎</span>
+              <strong>Afiliado</strong>
+              <small>Expresa su necesidad</small>
+              <span class="sf-chip">intención</span>
+            </button>
+            <button class="sf-node" type="button" role="listitem" data-sf-step="1" aria-pressed="false">
+              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
+              <span class="sf-step">02 · ENTIENDE</span>
+              <span class="sf-icon lara" aria-hidden="true">L</span>
+              <strong>Lara</strong>
+              <small>Conversa y construye el perfil</small>
+              <span class="sf-chip">agente conversacional</span>
+            </button>
+            <button class="sf-node sf-node-model" type="button" role="listitem" data-sf-step="2" aria-pressed="false">
+              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
+              <span class="sf-step">03 · RAZONA</span>
+              <span class="sf-icon model" aria-hidden="true">S</span>
+              <strong>Sol 5.6</strong>
+              <small>Elige la herramienta correcta</small>
+              <span class="sf-tools"><b>Mongo</b><b>RAG</b><b>Reglas</b></span>
+            </button>
+            <button class="sf-node sf-node-n8n" type="button" role="listitem" data-sf-step="3" aria-pressed="false">
+              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
+              <span class="sf-step">04 · ORQUESTA</span>
+              <span class="sf-icon n8n" aria-hidden="true">n8n</span>
+              <strong>n8n</strong>
+              <small>Mueve contexto y eventos</small>
+              <span class="sf-chip">webhooks</span>
+            </button>
+            <button class="sf-node sf-node-cody" type="button" role="listitem" data-sf-step="4" aria-pressed="false">
+              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
+              <span class="sf-step">05 · ACTIVA</span>
+              <span class="sf-icon cody" aria-hidden="true">C</span>
+              <strong>Cody</strong>
+              <small>Detecta y retoma oportunidades</small>
+              <span class="sf-tools"><b>eventos</b><b>anti-spam</b></span>
+            </button>
+            <button class="sf-node" type="button" role="listitem" data-sf-step="5" aria-pressed="false">
+              <span class="sf-port in" aria-hidden="true"></span><span class="sf-port out" aria-hidden="true"></span>
+              <span class="sf-step">06 · FINALIZA</span>
+              <span class="sf-icon advisor" aria-hidden="true">✓</span>
+              <strong>Asesor</strong>
+              <small>Continúa el cierre regulado</small>
+              <span class="sf-tools"><b>póliza</b><b>pago</b></span>
+            </button>
+            <span class="sf-signal" aria-hidden="true"></span>
+          </div>
+
+          <div class="sf-detail" id="systemFlowDetail" aria-live="polite">
+            <span class="sf-detail-index">01</span>
+            <div>
+              <strong>El afiliado inicia con una necesidad real.</strong>
+              <p>El flujo comienza con lenguaje natural; no obliga a elegir un producto antes de entender la situación.</p>
+            </div>
+            <div class="sf-detail-tags"><span>entrada conversacional</span><span>consentimiento</span></div>
+          </div>
+        </div>
+        <div class="sf-principle">
+          <span><b>Lara</b> entiende</span><i></i>
+          <span><b>Sol 5.6</b> razona</span><i></i>
+          <span><b>Reglas</b> verifican</span><i></i>
+          <span><b>n8n</b> conecta</span><i></i>
+          <span><b>Cody</b> activa</span><i></i>
+          <span><b>Asesor</b> finaliza</span>
+        </div>
+      </section>
+
       <div class="kpis">
         <div class="kpi" data-reveal><b>2</b><span>agentes especializados, una sola experiencia</span></div>
         <div class="kpi" data-reveal data-reveal-delay="1"><b>0</b><span>afirmaciones sin respaldo documental</span></div>
         <div class="kpi" data-reveal data-reveal-delay="2"><b>100%</b><span>de las decisiones quedan auditadas</span></div>
         <div class="kpi" data-reveal data-reveal-delay="3"><b>&lt; 5 min</b><span>del primer mensaje a la vinculación confirmada</span></div>
       </div>
-    </div>
-
-    <div class="container">
-      <div class="agent-flow cody-flow" id="codyFlow" aria-label="Cerebro de Cody: evento, regla, envío y actualización"></div>
     </div>
   </section>
 
@@ -675,9 +754,8 @@
 </footer>
 
 <script src="/static/js/app.js?v=nav-maicol-cody"></script>
-<script src="/static/js/hero-live.js?v=lara-cody-merge"></script>
+<script src="/static/js/hero-live.js?v=system-flow-3"></script>
 <script src="/static/js/arch.js"></script>
-<script src="/static/js/agent-flow.js?v=lara-cody-merge"></script>
-<script src="/static/js/cody-flow.js?v=lara-cody-merge"></script>
+<script src="/static/js/agent-flow.js?v=system-flow-3"></script>
 </body>
 </html>
