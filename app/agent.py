@@ -88,7 +88,8 @@ FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
      - Existe y activo → salúdalo reconociendo su relación con Colsubsidio y personaliza; NO recites los datos ni menciones "la base".
      - No existe → dile con naturalidad que no lo encuentras y ofrécele registrarlo. Si acepta, pide con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio.
      - Existe pero inactivo → coméntalo con tacto y ofrece orientación para reactivarlo, sin frenar la asesoría.
-  2) Dice que NO es afiliada, que no tiene el número o prefiere no darlo → llama a identificar_afiliado con documento vacío: así igual creamos un perfil vivo que se enriquece con la charla y que el asesor recibe al final. No insistas con el número.
+  2) Dice que NO es afiliada → llama a identificar_afiliado con documento vacío para crear su perfil vivo. Antes de continuar con diagnóstico, recomendación o cotización, registra su nombre completo y su número de identificación civil con registrar_datos. Pide primero el nombre y luego la identificación, UNA sola pregunta por mensaje, explicando que es para crear su perfil y no perder el proceso. No vuelvas a pedirle número de afiliado/SERIE: es distinto de su identificación civil.
+  3) Dice que no tiene la SERIE a mano o prefiere no darla, sin afirmar que no es afiliada → llama a identificar_afiliado con documento vacío y continúa sin insistir. No la marques como afiliada.
 - Conserva la respuesta que dio a la bifurcación del saludo; después de identificarla continúa directamente por esa ruta, sin volver a preguntarla:
   - Si YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
   - Si NO sabe o quiere que la ayudes a elegir → entra a FASE 1 · DIAGNÓSTICO con preguntas abiertas.
@@ -159,11 +160,11 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "identificar_afiliado",
-            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número: llámala con documento vacío para continuar como no afiliada (igual se crea un perfil vivo que el asesor recibe). Si la persona te da un número de afiliado/SERIE, usa verificar_afiliado en su lugar. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
+            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número de afiliado/SERIE: llámala con documento vacío para crear su perfil vivo. Si confirma que NO es afiliada, después debes recopilar nombre completo e identificación civil mediante registrar_datos, una pregunta por turno. No confundas identificación civil con SERIE. Si da una SERIE, usa verificar_afiliado. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "documento": {"type": "string", "description": "Número de afiliado o documento. Vacío si no es afiliado o no lo tiene."},
+                    "documento": {"type": "string", "description": "Número de afiliado/SERIE. Vacío si no es afiliado o no lo tiene. La identificación civil se registra después con registrar_datos."},
                 },
             },
         },
@@ -744,8 +745,9 @@ class Session:
                 self._guardar_perfil_vivo(bump=False)
                 self._log("db", "AFILIADOS", f"No afiliado (sin documento) · perfil {self.perfil_id}")
             return {"es_afiliado": False,
-                    "mensaje": "La persona no es afiliada o no tiene su número. Continúa ayudándola igual; "
-                               "al final un asesor completará su vinculación. No vuelvas a pedir el número."}
+                    "mensaje": "Perfil no afiliado creado. Antes de continuar, registra con registrar_datos "
+                               "su nombre completo y luego su identificación civil, una pregunta por mensaje. "
+                               "No vuelvas a pedir número de afiliado/SERIE."}
         # Con número: busca PRIMERO en la base real (Mongo) y ancla el perfil 360;
         # si no está ahí, cae a la muestra demo. Así el asesor recibe el expediente.
         doc_mongo = afiliados_db.existe_afiliado(doc)
@@ -1252,6 +1254,16 @@ def _capture_data(session: Session, user_text: str) -> None:
         data = extraction.extract_perfil(user_text)
         if data:
             session._tool_registrar_perfil(data)
+    # Un no afiliado debe quedar identificado desde el inicio, no solo al
+    # cierre. Esto reconoce respuestas naturales como "me llamo Ana Pérez".
+    if session.es_afiliado is False and (
+        not session.datos.get("nombre") or not session.datos.get("documento")
+    ):
+        data = extraction.extract_datos(user_text)
+        if data:
+            session._tool_registrar_datos({
+                k: v for k, v in data.items() if k in ("nombre", "documento")
+            })
     # Capa estructurada: datos de contratación durante el cierre.
     if session.estado == "CIERRE":
         data = extraction.extract_datos(user_text)
@@ -1294,6 +1306,21 @@ def run_turn(session: Session, user_text: str | None, system_event: str | None =
             continue  # dejar que el modelo redacte con los resultados
         reply_text = (msg.get("content") or "").strip()
         break
+
+    # Regla determinística: aunque el modelo intente avanzar, un no afiliado
+    # no pasa al diagnóstico sin nombre e identificación civil.
+    if session.es_afiliado is False:
+        if not session.datos.get("nombre"):
+            reply_text = (
+                "Claro, puedo ayudarte aunque no seas afiliado. Para crear tu perfil "
+                "y no perder el proceso, ¿cuál es tu nombre completo?"
+            )
+        elif not session.datos.get("documento"):
+            nombre = session.datos["nombre"].split()[0]
+            reply_text = (
+                f"Gracias, {nombre}. Para completar tu perfil, "
+                "¿cuál es tu número de identificación?"
+            )
 
     _guardrail(reply_text, session.tools_used_turn, session)
     session.persist()
