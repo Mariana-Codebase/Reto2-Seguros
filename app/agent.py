@@ -1494,7 +1494,9 @@ def run_turn(session: Session, user_text: str | None, system_event: str | None =
         )
         _sincronizar_respuesta(session, reply_text)
     elif session.contacto_temprano_pendiente and not session.contacto_temprano_solicitado:
-        if not _respuesta_pide_contacto(reply_text):
+        # Si el modelo mezcló la solicitud con otra pregunta, se conserva un
+        # solo objetivo por mensaje para que no suene como formulario.
+        if not _respuesta_pide_contacto(reply_text) or reply_text.count("?") > 1:
             reply_text = (
                 "Antes de seguir, ¿me compartes un celular o correo? Lo usaríamos únicamente "
                 "para retomar este servicio si se cae la conexión y no perder tu avance."
