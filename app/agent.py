@@ -87,6 +87,8 @@ RESPONDE Y ACLARA — nunca repitas el prompt (esto te hace sonar humano, no un 
 - Si lo que responde NO encaja con lo que pediste (p. ej. escribe números cuando pediste su nombre, o letras/nombre cuando pediste un número), NO repitas el mismo mensaje: reconoce lo que escribió, acláralo con amabilidad y explica en concreto qué necesitas y para qué. Ej.: "Creo que me enviaste unos números; para armar tu perfil necesito tu nombre completo, ¿cómo te llamas?".
 - Si necesitas volver a pedir un dato, hazlo con OTRA redacción; nunca mandes dos veces el mismo texto.
 - Al pedir la identificación, ACLARA de qué se trata: pide su número de CÉDULA DE CIUDADANÍA (y si no la tiene, el documento con que se identifica: cédula de extranjería o pasaporte). Es distinto del número de afiliado/SERIE.
+- SI LA PERSONA NO QUIERE O RECHAZA ("no quiero un seguro", "no quiero nada", "solo estaba mirando", "no gracias"): NO insistas ni repitas tu pregunta. Reconócelo con calidez y respeto, dile que sin problema y que aquí estás si algún día quiere revisar cómo proteger lo que le importa, y cierra amable. Después de un rechazo, JAMÁS vuelvas a pedir el mismo dato ni relances la misma pregunta.
+- Si la persona cambia de tema, se muestra molesta o dice algo que no esperabas, ADÁPTATE: atiende lo que dijo, no sigas con tu guion como si no hubiera hablado. Nunca respondas dos veces lo mismo.
 
 FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
 - El saludo ya pregunta si la persona sabe qué busca o quiere ayuda. RESPETA su respuesta: empieza reconociendo su intención o necesidad en una frase cálida; no la ignores para lanzar una pregunta administrativa.
@@ -97,7 +99,7 @@ FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
      - Existe y activo → salúdalo reconociendo su relación con Colsubsidio y personaliza; NO recites los datos ni menciones "la base".
      - No existe → dile con naturalidad que no lo encuentras y ofrécele registrarlo. Si acepta, pide con calidez los datos básicos (género, rango de edad, rango salarial, ciudad) y llama a crear_afiliado. No es obligatorio.
      - Existe pero inactivo → coméntalo con tacto y ofrece orientación para reactivarlo, sin frenar la asesoría.
-  2) Dice que NO es afiliada → llama a identificar_afiliado con documento vacío para crear su perfil vivo. Antes de continuar con diagnóstico, recomendación o cotización, registra su nombre completo y su número de identificación civil con registrar_datos. Pide primero el nombre y luego la identificación, UNA sola pregunta por mensaje, explicando que es para crear su perfil y no perder el proceso. No vuelvas a pedirle número de afiliado/SERIE: es distinto de su identificación civil.
+  2) Dice que NO es afiliada → llama a identificar_afiliado con documento vacío y CONTINÚA con normalidad hacia el diagnóstico o el atajo, según lo que respondió al saludo. NO le pidas nombre ni identificación TODAVÍA: eso se recoge más adelante (FASE 4), solo cuando muestre interés real en un producto. No vuelvas a pedirle el número de afiliado/SERIE.
   3) Dice que no tiene la SERIE a mano o prefiere no darla, sin afirmar que no es afiliada → llama a identificar_afiliado con documento vacío y continúa sin insistir. No la marques como afiliada.
 - Conserva la respuesta que dio a la bifurcación del saludo; después de identificarla continúa directamente por esa ruta, sin volver a preguntarla:
   - Si YA SABE qué quiere o nombra un producto/necesidad concreta (viaje, moto, mascota, exequial, salud, etc.) → ve al ATAJO.
@@ -174,7 +176,7 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "identificar_afiliado",
-            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número de afiliado/SERIE: llámala con documento vacío para crear su perfil vivo. Si confirma que NO es afiliada, después debes recopilar nombre completo e identificación civil mediante registrar_datos, una pregunta por turno. No confundas identificación civil con SERIE. Si da una SERIE, usa verificar_afiliado. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
+            "description": "Úsala SOLO cuando la persona diga que NO es afiliada o que no tiene su número de afiliado/SERIE: llámala con documento vacío para crear su perfil vivo. Después CONTINÚA con normalidad (diagnóstico o atajo); NO le pidas nombre ni identificación en ese momento (eso se recoge más adelante, solo cuando muestre interés real en un producto). Si da una SERIE, usa verificar_afiliado. NUNCA la llames si ya identificaste o verificaste a la persona en este chat.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -759,9 +761,11 @@ class Session:
                 self._guardar_perfil_vivo(bump=False)
                 self._log("db", "AFILIADOS", f"No afiliado (sin documento) · perfil {self.perfil_id}")
             return {"es_afiliado": False,
-                    "mensaje": "Perfil no afiliado creado. Antes de continuar, registra con registrar_datos "
-                               "su nombre completo y luego su identificación civil, una pregunta por mensaje. "
-                               "No vuelvas a pedir número de afiliado/SERIE."}
+                    "mensaje": "Perfil no afiliado creado. CONTINÚA la asesoría con normalidad (diagnóstico o "
+                               "atajo según lo que respondió al saludo). NO le pidas nombre ni identificación "
+                               "ahora: eso se recoge más adelante, solo cuando muestre interés real en un "
+                               "producto. Si dice que no quiere nada, respétalo y no insistas. No vuelvas a "
+                               "pedir el número de afiliado/SERIE."}
         # Con número: busca PRIMERO en la base real (Mongo) y ancla el perfil 360;
         # si no está ahí, cae a la muestra demo. Así el asesor recibe el expediente.
         doc_mongo = afiliados_db.existe_afiliado(doc)
@@ -1325,6 +1329,18 @@ def _capture_data(session: Session, user_text: str) -> None:
 # --------------------------------------------------------------------------
 # Bucle del agente
 # --------------------------------------------------------------------------
+def _es_repeticion(session: Session, reply_text: str) -> bool:
+    """True si la respuesta es casi idéntica a la del turno anterior del
+    asistente (bucle degenerado del modelo)."""
+    asistentes = [(m.get("content") or "").strip() for m in session.messages
+                  if m.get("role") == "assistant" and (m.get("content") or "").strip()]
+    if len(asistentes) < 2:
+        return False
+    norm = lambda s: re.sub(r"\s+", " ", s.lower()).strip()  # noqa: E731
+    a, b = norm(asistentes[-1]), norm(asistentes[-2])
+    return a == b or (len(a) > 25 and (a in b or b in a))
+
+
 def run_turn(session: Session, user_text: str | None, system_event: str | None = None) -> dict[str, Any]:
     """Ejecuta un turno del agente: puede encadenar varias llamadas a herramientas."""
     session.audit = []
@@ -1358,20 +1374,13 @@ def run_turn(session: Session, user_text: str | None, system_event: str | None =
         reply_text = (msg.get("content") or "").strip()
         break
 
-    # Regla determinística: aunque el modelo intente avanzar, un no afiliado
-    # no pasa al diagnóstico sin nombre e identificación civil.
-    if session.es_afiliado is False:
-        if not session.datos.get("nombre"):
-            reply_text = (
-                "Claro, puedo ayudarte aunque no seas afiliado. Para crear tu perfil "
-                "y no perder el proceso, ¿cuál es tu nombre completo?"
-            )
-        elif not session.datos.get("documento"):
-            nombre = session.datos["nombre"].split()[0]
-            reply_text = (
-                f"Gracias, {nombre}. Para completar tu perfil, "
-                "¿cuál es tu número de identificación?"
-            )
+    # Red de seguridad anti-repetición: si el modelo devolvió (casi) el mismo
+    # texto que su turno anterior, es un bucle degenerado. Lo cortamos con una
+    # respuesta de reconducción cálida en vez de repetir.
+    if reply_text and _es_repeticion(session, reply_text):
+        reply_text = ("Perdón si me repetí. Cuéntame en tus palabras qué necesitas o qué duda tienes, "
+                      "y con gusto te ayudo. Y si por ahora no buscas nada, no hay problema: aquí estoy "
+                      "cuando quieras revisar cómo proteger lo que te importa.")
 
     _guardrail(reply_text, session.tools_used_turn, session)
     session.persist()

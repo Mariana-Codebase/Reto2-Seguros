@@ -227,10 +227,17 @@ function pintarLista(){
 
 function infoRow(k,v){ return '<div class="info-row"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v||"—")+'</span></div>'; }
 
-function pintarDetalle(){
+let _detSig = "";
+function pintarDetalle(force){
   const cont = document.getElementById("detalle");
   const s = SOLS.find(x => x.id === selId);
-  if (!s){ cont.innerHTML = '<div class="as-empty">Elige una solicitud de la lista.</div>'; return; }
+  if (!s){ cont.innerHTML = '<div class="as-empty">Elige una solicitud de la lista.</div>'; _detSig = ""; return; }
+  // Firma del detalle: si nada cambió y no es forzado, NO re-renderizar (evita que
+  // el auto-refresh salte el scroll del chat cada pocos segundos).
+  const sig = s.id + "|" + s.estado + "|" + ((s.payload && s.payload.conversacion || []).length);
+  const cambio = sig !== _detSig;
+  if (!force && !cambio) return;
+  _detSig = sig;
   const p = s.payload || {};
   const ss = p.seguro_solicitado || {};
   const datos = p.datos_contratante || {};
@@ -278,6 +285,9 @@ function pintarDetalle(){
   if (advBtn) advBtn.onclick = () => esPendiente ? continuar(s.id, advBtn) : avanzar(s.id, next[0], advBtn);
   const delBtn = document.getElementById("delBtn");
   if (delBtn) delBtn.onclick = () => descartar(s.id, delBtn);
+  // Al renderizar (nueva selección o mensajes nuevos), muestra el final del chat.
+  const chatEl = cont.querySelector(".chat");
+  if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
 }
 
 async function avanzar(id, estado, btn){
