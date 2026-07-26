@@ -6,6 +6,7 @@
 "use strict";
 
 const API = ""; // mismo origen
+const SESSION_KEY = "clara-active-session";
 
 /* ---------- Estado global ---------- */
 let started = false;
@@ -13,6 +14,18 @@ let sessionId = null;
 let busy = false;
 let pollTimer = null;
 let afiliadosDemo = [];   // muestra anonimizada de la base (por SERIE)
+
+function rememberSession(id) {
+  sessionId = id || null;
+  try {
+    if (sessionId) localStorage.setItem(SESSION_KEY, sessionId);
+    else localStorage.removeItem(SESSION_KEY);
+  } catch (e) { /* almacenamiento no disponible */ }
+}
+
+function savedSession() {
+  try { return localStorage.getItem(SESSION_KEY); } catch (e) { return null; }
+}
 
 /* ---------- Navegación entre vistas ---------- */
 const views = document.querySelectorAll(".view");
@@ -293,18 +306,46 @@ function renderPropension(prop) {
 }
 
 /* ---------- Inicio de la demo ---------- */
+async function restoreDemo() {
+  const saved = savedSession();
+  if (!saved) return false;
+  const r = await fetch(API + "/api/session/" + encodeURIComponent(saved), { cache: "no-store" });
+  if (!r.ok) {
+    rememberSession(null);
+    return false;
+  }
+  const d = await r.json();
+  rememberSession(d.session_id);
+  chat.innerHTML = "";
+  (d.messages || []).forEach(m => {
+    if (m.de === "cliente") addUser(m.texto);
+    else addBot(m.texto);
+  });
+  setState(d.estado || "DIAGNOSTICO");
+  renderPropension(d.propension);
+  if (d.perfil) updateProfile(d.perfil);
+  if ((d.messages || []).length <= 1) starterChips(!!d.afiliado);
+  else clearChips();
+  addSystem("Conversación restaurada. Puedes continuar donde la dejaste.");
+  return true;
+}
+
 async function startDemo() {
   started = true;
   busy = true;
   showTyping();
   await loadAfiliados();
   try {
+    if (await restoreDemo()) {
+      hideTyping();
+      return;
+    }
     const serie = afiliadoSel && afiliadoSel.value ? afiliadoSel.value : null;
     const body = { canal: "WhatsApp" };
     if (serie) body.serie = serie;
     const r = await apiPost("/api/session", body);
     const d = await r.json();
-    sessionId = d.session_id;
+    rememberSession(d.session_id);
     hideTyping();
     setState(d.estado || "DIAGNOSTICO");
     pushAudit(d.audit);
@@ -359,7 +400,7 @@ async function handleSend() {
       if (afiliadoSel && afiliadoSel.value) body.serie = afiliadoSel.value;
       const rs = await apiPost("/api/session", body);
       const ds = await rs.json();
-      sessionId = ds.session_id;
+      rememberSession(ds.session_id);
       addSystem("La sesión anterior expiró; inicié una nueva y sigo contigo.");
       r = await apiPost("/api/chat", { session_id: sessionId, text });
     }
@@ -569,7 +610,7 @@ async function resetDemo() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   renderPropension(null);
   started = false;
-  sessionId = null;
+  rememberSession(null);
   await startDemo();
 }
 document.getElementById("resetDemo").addEventListener("click", resetDemo);

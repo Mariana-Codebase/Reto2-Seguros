@@ -256,7 +256,23 @@ def crear_sesion(req: SessionReq):
     s.persist()
     return {"session_id": s.id, "reply": saludo, "estado": s.estado,
             "perfil": s.perfil, "audit": s.audit, "canal": s.canal,
-            "afiliado": s.afiliado, "propension": s.propension}
+             "afiliado": s.afiliado, "propension": s.propension}
+
+
+@app.get("/api/session/{session_id}")
+def estado_sesion(session_id: str):
+    """Restaura la misma conversación al volver desde Cody o el asesor."""
+    s = _get_session(session_id)
+    return {
+        "session_id": s.id,
+        "estado": s.estado,
+        "perfil": s.perfil,
+        "datos": s.datos,
+        "contacto": s.contacto,
+        "afiliado": s.afiliado,
+        "propension": s.propension,
+        "messages": s._transcripcion(limite=100),
+    }
 
 
 @app.post("/api/chat")

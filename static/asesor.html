@@ -120,6 +120,7 @@
       <a href="/">Inicio</a>
       <a href="/#ecosistema">Cómo funciona</a>
       <span class="nav-divider" aria-hidden="true"></span>
+      <a class="nav-agent-link" href="/#demo"><span class="nav-agent-dot"></span>Lara</a>
       <a class="nav-agent-link" href="/ofertas"><span class="nav-agent-dot"></span>Cody</a>
       <a class="nav-secondary-link active" href="/asesor" aria-current="page">Panel asesor</a>
     </nav>
@@ -234,7 +235,9 @@ function pintarDetalle(force){
   if (!s){ cont.innerHTML = '<div class="as-empty">Elige una solicitud de la lista.</div>'; _detSig = ""; return; }
   // Firma del detalle: si nada cambió y no es forzado, NO re-renderizar (evita que
   // el auto-refresh salte el scroll del chat cada pocos segundos).
-  const sig = s.id + "|" + s.estado + "|" + ((s.payload && s.payload.conversacion || []).length);
+  const sig = s.id + "|" + s.estado + "|" +
+    JSON.stringify((s.payload && s.payload.conversacion) || []) + "|" +
+    JSON.stringify((s.payload && s.payload.datos_contratante) || {});
   const cambio = sig !== _detSig;
   if (!force && !cambio) return;
   _detSig = sig;
@@ -341,7 +344,7 @@ async function cargar(){
 
 document.getElementById("search").addEventListener("input", e => { busca = e.target.value.trim().toLowerCase(); pintarLista(); });
 cargar();
-setInterval(cargar, 12000);
+setInterval(cargar, 2000);
 </script>
 </body>
 </html>

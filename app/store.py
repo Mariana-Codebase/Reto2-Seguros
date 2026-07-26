@@ -266,6 +266,37 @@ def actualizar_payload_solicitud(sol_id: str, payload: dict[str, Any]) -> bool:
     return r.matched_count > 0
 
 
+def sincronizar_solicitudes_sesion(session_id: str, campos_vivos: dict[str, Any]) -> int:
+    """Actualiza las solicitudes ligadas a una sesión con la conversación viva.
+
+    El payload se conserva como JSON por compatibilidad. Si el asesor ya añadió
+    mensajes, se mantiene ese tramo después de la conversación Lara ↔ cliente.
+    """
+    actualizadas = 0
+    docs = _db()["solicitudes"].find({"session_id": session_id}, {"payload": 1})
+    for doc in docs:
+        try:
+            payload = json.loads(doc.get("payload") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            payload = {}
+        conversacion_anterior = payload.get("conversacion") or []
+        inicio_asesor = next(
+            (i for i, mensaje in enumerate(conversacion_anterior)
+             if mensaje.get("de") == "asesor"),
+            None,
+        )
+        tramo_asesor = conversacion_anterior[inicio_asesor:] if inicio_asesor is not None else []
+        payload.update(campos_vivos)
+        payload["conversacion"] = list(campos_vivos.get("conversacion") or []) + tramo_asesor
+        body = json.dumps(payload, ensure_ascii=False, default=str)
+        result = _db()["solicitudes"].update_one(
+            {"_id": doc["_id"]},
+            {"$set": {"payload": body, "updated_at": _now()}},
+        )
+        actualizadas += result.modified_count
+    return actualizadas
+
+
 def limpiar_ofertas() -> int:
     """Borra la bandeja de ofertas salientes (para reiniciar la demo). Devuelve
     cuántas se eliminaron."""
