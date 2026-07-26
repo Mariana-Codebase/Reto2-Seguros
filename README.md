@@ -6,7 +6,8 @@
 
 Dos agentes de IA que llevan a cada afiliado desde *«no sé qué seguro necesito»* hasta *«ya quedé asegurado»* — de forma explicable, trazable y sin cajas negras.
 
-### ▶️ Demo en vivo — **https://clara-production-d3e5.up.railway.app**
+### **[📹Video/Pitch de Lara + Cody](https://youtu.be/JkOcqmdmccg)**
+### **[💻 Demo en vivo](https://clara-production-d3e5.up.railway.app)**
 
 | [💬 Hablar con Lara](https://clara-production-d3e5.up.railway.app/#demo) | [⚡ Panel de Cody](https://clara-production-d3e5.up.railway.app/ofertas) | [🗂️ Panel del asesor](https://clara-production-d3e5.up.railway.app/asesor) |
 |:--:|:--:|:--:|
