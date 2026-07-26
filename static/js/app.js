@@ -446,6 +446,8 @@ function render(d) {
     if (a.type === "recomendacion") {
       addBot("", { extra: buildOptionCards(a.data.opciones) });
     } else if (a.type === "documento") {
+      // El documento de cierre es material interno del asesor, nunca del cliente.
+      if (a.data.kind === "poliza_info") return;
       const ent = a.data.entrega || {};
       addSystem("Resumen en PDF · " + (ent.detalle || "generado"));
       actionChips.push({ label: "Ver el resumen (PDF)", action: () => window.open(a.data.url, "_blank") });

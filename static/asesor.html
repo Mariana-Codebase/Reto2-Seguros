@@ -69,6 +69,18 @@
   .info-row .k{color:var(--muted)}
   .info-row .v{font-weight:600;text-align:right}
   .block{margin-bottom:20px}
+  .case-summary{margin:16px 20px 0;padding:16px 18px;border:1px solid color-mix(in srgb,var(--brand) 58%,var(--line));border-radius:14px;background:linear-gradient(135deg,var(--brand-soft,rgba(255,208,0,.14)),var(--surface))}
+  .case-summary-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .case-summary-head span{font-size:11px;text-transform:uppercase;letter-spacing:.55px;font-weight:800;color:var(--muted)}
+  .case-summary-head i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:5px}
+  .case-summary-head i:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
+  .case-summary h3{font-size:17px;margin:0 0 5px}
+  .case-summary .reason{font-size:13px;line-height:1.5;color:var(--muted);margin:0}
+  .case-facts{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+  .case-facts span{font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+  .case-context{font-size:12.5px;line-height:1.5;margin:11px 0 0;color:var(--ink)}
+  .case-next{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5}
+  .case-next b{color:var(--accent-d)}
   .aseg-list{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
   .aseg-list li{font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
   .aseg-list li b{color:var(--ink)}
@@ -244,6 +256,21 @@ function pintarDetalle(force){
   const p = s.payload || {};
   const ss = p.seguro_solicitado || {};
   const datos = p.datos_contratante || {};
+  const perfil = p.perfil_conversacional || p.perfil || {};
+  const resumen = p.resumen_asesor || {
+    tipo_cliente: p.es_afiliado === true ? "Afiliado" : (p.es_afiliado === false ? "No afiliado" : null),
+    necesidad: ss.nombre || s.producto || "Solicitud de asesoría",
+    producto: ss.nombre || s.producto,
+    aseguradora: ss.aseguradora_elegida,
+    canal: p.contacto && p.contacto.canal && p.contacto.destino
+      ? p.contacto.canal + ": " + p.contacto.destino : null,
+    datos_clave: [
+      perfil.rango_edad ? "Edad: " + perfil.rango_edad : null,
+      perfil.dependientes != null ? perfil.dependientes + " dependiente(s)" : null,
+      ...(perfil.notas || [])
+    ].filter(Boolean),
+    siguiente_accion: "Contactar al cliente y continuar la gestión con la aseguradora."
+  };
   const conv = p.conversacion || [];
   const aseg = (ss.aseguradoras || []).map(o =>
     '<li'+(o.aseguradora===ss.aseguradora_elegida?' class="pick"':'')+'><b>'+esc(o.aseguradora)+'</b>'+
@@ -256,6 +283,23 @@ function pintarDetalle(force){
   const next = ESTADOS_SIGUIENTE[s.estado];
 
   const esPendiente = s.estado === "pendiente_asesor";
+  const facts = [
+    resumen.tipo_cliente,
+    resumen.producto && resumen.producto !== "Por confirmar" ? resumen.producto : null,
+    resumen.aseguradora && !resumen.aseguradora.startsWith("Por confirmar") ? resumen.aseguradora : null,
+    resumen.canal && resumen.canal !== "Por confirmar" ? resumen.canal : null
+  ].filter(Boolean);
+  const claves = (resumen.datos_clave || []).filter(Boolean);
+  const summaryHtml = resumen.necesidad ? (
+    '<div class="case-summary">'+
+      '<div class="case-summary-head"><span>Resumen preparado por Lara</span><i>Sincronizado</i></div>'+
+      '<h3>'+esc(resumen.necesidad)+'</h3>'+
+      (resumen.motivo_recomendacion?'<p class="reason">'+esc(resumen.motivo_recomendacion)+'</p>':'')+
+      (facts.length?'<div class="case-facts">'+facts.map(x=>'<span>'+esc(x)+'</span>').join("")+'</div>':'')+
+      (claves.length?'<p class="case-context"><b>Contexto clave:</b> '+claves.map(esc).join(" · ")+'</p>':'')+
+      '<div class="case-next"><b>Siguiente acción:</b> '+esc(resumen.siguiente_accion||"Contactar al cliente y continuar la gestión con la aseguradora.")+'</div>'+
+    '</div>'
+  ) : "";
   let acciones = "";
   if (p.doc_informativo_url) acciones += '<a href="'+esc(p.doc_informativo_url)+'" target="_blank" rel="noopener">Ver póliza informativa (PDF)</a>';
   if (p.contrato && p.contrato.url) acciones += '<a href="'+esc(p.contrato.url)+'" target="_blank" rel="noopener">Ver contrato (PDF)</a>';
@@ -269,6 +313,7 @@ function pintarDetalle(force){
         '<div class="meta">'+esc(ss.nombre||s.producto||"Solicitud")+
         (ss.aseguradora_elegida?' · '+esc(ss.aseguradora_elegida):'')+' · '+esc(s.id)+'</div></div>'+
         '<span class="badge '+esc(s.estado)+'">'+esc(ESTADO_LABEL[s.estado]||s.estado)+'</span></div>'+
+      summaryHtml+
       '<div class="det-body">'+
         '<div class="block"><p class="sec-title">Conversación con Lara</p><div class="chat">'+burbujas+'</div></div>'+
         '<div>'+

@@ -110,7 +110,7 @@ FASE 0 · ESCUCHA E IDENTIFICACIÓN (antes de recomendar o cotizar)
 - Durante la charla, cuando el afiliado corrija o aporte un dato de su perfil (ciudad, rango salarial, etc.), usa actualizar_afiliado para dejarlo registrado y refrescar su expediente para el asesor. Para promociones o novedades de su relación con Colsubsidio usa consultar_ofertas y consultar_alertas.
 
 ROL DE COLSUBSIDIO (tenlo claro y sé transparente si preguntan)
-- Colsubsidio es INTERMEDIARIO: distribuye seguros de varias aseguradoras, no los emite. Tú automatizas el diagnóstico, la recomendación (con la aseguradora de cada producto) y la captura de datos, y preparas un PDF informativo; al final un ASESOR HUMANO, con el perfil completo que tú preparas, envía la póliza y el link de pago y finaliza la vinculación con la aseguradora. Tú NUNCA cobras, emites ni firmas.
+- Colsubsidio es INTERMEDIARIO: distribuye seguros de varias aseguradoras, no los emite. Tú automatizas el diagnóstico, la recomendación y la captura de datos, y preparas internamente el expediente del asesor; al final un ASESOR HUMANO envía la póliza y genera la información de pago para finalizar la vinculación con la aseguradora. Tú NUNCA cobras, emites ni firmas.
 
 ATAJO · PETICIÓN DIRECTA (muy importante)
 - Si la persona dice de entrada qué seguro quiere ("solo quiero un seguro de viaje", "quiero asegurar mi moto"), NO la interrogues con el diagnóstico completo. Reconoce su necesidad y ve directo a ese producto: llama a recomendar con ese producto en `productos` (o cotizar + consultar_coberturas), preséntalo con su aseguradora y precio "desde $X/mes", resuelve dudas y avanza a datos de contacto y cierre.
@@ -150,7 +150,7 @@ FASE 4 · DATOS DE CONTACTO (para poder retomar y para tenerla en cuenta en ofer
 
 FASE 5 · CIERRE (cuando le gusta una póliza) — Lara NO cobra ni emite
 - Cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas, y ya tengas nombre + identificación + celular o correo, llama a solicitar_cierre con ese producto.
-- solicitar_cierre genera un PDF INFORMATIVO de la póliza (no es emisión ni contrato) y radica el caso al área encargada con el perfil completo. Comparte ese PDF con la persona.
+- solicitar_cierre prepara un resumen interno y radica el caso al área encargada con el perfil completo. NO muestres ni compartas PDF con la persona durante el cierre.
 - Confirma explícitamente: "¿este es el seguro que buscas?". Si dice que sí, avísale que la información fue enviada al ÁREA ENCARGADA, que le hará llegar el LINK DE PAGO y la PÓLIZA.
 - NUNCA pidas datos de tarjeta, no generes cobros ni links de pago tú misma, no "emitas" ni "firmes" pólizas. Todo eso lo hace el asesor.
 
@@ -301,12 +301,12 @@ TOOLS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "solicitar_cierre",
-            "description": ("Úsala cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas. Genera "
-                            "un PDF informativo de esa póliza (NO la emite ni cobra) y radica el caso al área "
-                            "encargada con el perfil completo y el seguro solicitado. Requiere que ya tengas "
+            "description": ("Úsala cuando la persona manifieste que LE GUSTA o QUIERE una de las pólizas. Prepara "
+                            "un resumen interno para el asesor y radica el caso al área encargada con el perfil "
+                            "completo y el seguro solicitado. Requiere que ya tengas "
                             "nombre, número de identificación y celular o correo (pídelos antes con registrar_datos). "
-                            "Tras llamarla: comparte el PDF, confirma que ese es el seguro que busca y avísale que "
-                            "el área encargada le enviará el link de pago y la póliza. Lara nunca cobra ni emite."),
+                            "Tras llamarla: NO muestres ni compartas documentos; confirma la radicación y avísale "
+                            "que el asesor continuará con la póliza y la información de pago. Lara nunca cobra ni emite."),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -1145,9 +1145,9 @@ class Session:
 
     def _tool_solicitar_cierre(self, a: dict[str, Any]) -> dict[str, Any]:
         """La persona manifestó que le gusta una póliza. Lara NO emite ni cobra:
-        genera un PDF informativo de la póliza y radica el caso, con el perfil
-        completo y el seguro solicitado, a la bandeja del asesor. El área
-        encargada será quien envíe el link de pago y la póliza."""
+        prepara un documento interno y radica el caso, con el perfil completo y
+        el seguro solicitado, a la bandeja del asesor. El documento no se
+        muestra al cliente."""
         producto = (a.get("producto") or "").lower()
         if producto not in kb.CATALOG:
             return {"error": "Indica el producto (uno del catálogo) que la persona quiere asegurar."}
@@ -1180,22 +1180,21 @@ class Session:
             "aseguradora_elegida": elegida,                 # la que la persona prefirió (si dijo)
             "aseguradoras": kb.aseguradoras(producto),      # opciones simuladas (plan + diferencial)
             "precio_desde": q.get("precio_desde"),
+            "motivo_recomendacion": (opciones[0].get("por_que") if opciones else None),
         }
+        paquete["resumen_asesor"] = self._resumen_asesor(paquete["seguro_solicitado"])
         paquete["doc_informativo_url"] = url
         store.upsert_solicitud(sol_id, self.id, "vinculacion", producto, "pendiente_asesor", paquete)
         self._guardar_perfil_vivo()  # el perfil vivo queda con el seguro solicitado, para ofertas
         self._set_estado("CIERRE")
         self._log("db", "ASESOR", f"Solicitud {sol_id} radicada al asesor · {producto} · pendiente_asesor")
-        self.actions.append({"type": "documento",
-                             "data": {"kind": "poliza_info", "url": url, "producto": producto,
-                                      "aseguradora": kb.aseguradora(producto)}})
         return {
-            "ok": True, "solicitud": sol_id, "url": url,
+            "ok": True, "solicitud": sol_id,
             "producto": kb.CATALOG[producto]["nombre"], "aseguradora": kb.aseguradora(producto),
-            "mensaje": ("Generé el PDF informativo de la póliza (NO es emisión) y radiqué el caso al área "
-                        "encargada con el perfil completo. Comparte el PDF, confirma con la persona que ESE es "
-                        "el seguro que busca, y avísale que el ÁREA ENCARGADA le enviará el LINK DE PAGO y la "
-                        "PÓLIZA. Tú no cobras ni emites nada."),
+            "mensaje": ("Radiqué el caso al asesor con el perfil completo y el seguro elegido. NO muestres "
+                        "ni compartas documentos con la persona. Confirma que la solicitud quedó radicada y "
+                        "que el asesor continuará con el envío de la póliza y la generación de la información "
+                        "de pago."),
         }
 
     # ---- paquete de vinculación para el asesor / aseguradora ----
@@ -1215,6 +1214,43 @@ class Session:
                 continue
             out.append({"de": "cliente" if rol == "user" else "lara", "texto": texto})
         return out[-limite:]
+
+    def _resumen_asesor(self, seguro: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Resumen operativo, compacto y compuesto solo por datos conocidos."""
+        seguro = seguro or {}
+        claves: list[str] = []
+        if self.perfil.get("hogar"):
+            claves.append(_HOGAR.get(self.perfil["hogar"], str(self.perfil["hogar"])))
+        if self.perfil.get("vehiculo"):
+            claves.append(_VEH.get(self.perfil["vehiculo"], str(self.perfil["vehiculo"])))
+        if self.perfil.get("dependientes") is not None:
+            claves.append(f"{self.perfil['dependientes']} dependiente(s)")
+        if self.perfil.get("ocupacion"):
+            claves.append(f"Ocupación: {self.perfil['ocupacion']}")
+        if self.perfil.get("rango_edad"):
+            claves.append(f"Edad: {self.perfil['rango_edad']}")
+        claves.extend(str(n) for n in (self.perfil.get("notas") or []) if n)
+
+        prioridad = _PRIO.get(self.perfil.get("prioridad"), "")
+        canal = self.contacto.get("canal") or ""
+        destino = self.contacto.get("destino") or ""
+        return {
+            "cliente": self.datos.get("nombre") or "Por confirmar",
+            "identificacion": self.datos.get("documento") or "Por confirmar",
+            "tipo_cliente": "Afiliado" if self.es_afiliado else "No afiliado",
+            "canal": f"{canal}: {destino}" if canal and destino else "Por confirmar",
+            "necesidad": prioridad or seguro.get("nombre") or "Protección por confirmar",
+            "datos_clave": claves,
+            "producto": seguro.get("nombre") or "Por confirmar",
+            "aseguradora": seguro.get("aseguradora_elegida") or "Por confirmar con el cliente",
+            "precio_desde": seguro.get("precio_desde"),
+            "motivo_recomendacion": seguro.get("motivo_recomendacion") or "",
+            "intencion": "La persona confirmó que quiere continuar con la solicitud.",
+            "siguiente_accion": (
+                "Contactar al cliente, confirmar la alternativa final con la aseguradora, "
+                "enviar la póliza y generar la información de pago."
+            ),
+        }
 
     def _paquete_asesor(self) -> dict[str, Any]:
         return {
