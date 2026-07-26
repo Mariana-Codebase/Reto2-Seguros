@@ -144,9 +144,13 @@ function mdToHtml(text) {
   const close = () => { if (list) { html += "</" + list + ">"; list = null; } };
   for (const raw of lines) {
     const line = raw.replace(/\s+$/, "");
-    const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+    const ol = line.match(/^\s*(\d+)\.\s+(.*)$/);
     const ul = line.match(/^\s*[-*]\s+(.*)$/);
-    if (ol) { if (list !== "ol") { close(); html += "<ol>"; list = "ol"; } html += "<li>" + mdInline(ol[1]) + "</li>"; }
+    if (ol) {
+      const n = Number(ol[1]);
+      if (list !== "ol") { close(); html += '<ol start="' + n + '">'; list = "ol"; }
+      html += '<li value="' + n + '">' + mdInline(ol[2]) + "</li>";
+    }
     else if (ul) { if (list !== "ul") { close(); html += "<ul>"; list = "ul"; } html += "<li>" + mdInline(ul[1]) + "</li>"; }
     else if (line.trim() === "") { close(); html += "<br>"; }
     else { close(); html += mdInline(line) + "<br>"; }
